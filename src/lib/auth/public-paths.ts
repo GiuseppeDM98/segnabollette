@@ -7,6 +7,6 @@ export function isPublicPath(pathname: string): boolean {
 
 /** Accept only internal absolute paths as a post-login destination (no open redirect). */
 export function safeNextPath(raw: string | null | undefined): string {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return '/';
+  if (!raw?.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return '/';
   return raw;
 }

@@ -3,7 +3,8 @@
 > Read **WORKFLOW.md** first (session rules, guided verification). This file is the core of the
 > repo-wide rules; domain narratives go to `doc/guide/<tema>.md` as they are born (a stub stays
 > here). Every rule below holds for all the code; a section marked *(from spec NN)* describes what
-> that spec installs and is updated by it.
+> that spec installs and is updated by it, and a name tagged *(from spec NN)* inside a rule does
+> not exist until that spec is implemented.
 
 ## 1. What this repo is
 
@@ -18,15 +19,15 @@ alone.
 ### 2.1 Layers and imports
 
 `src/app` (pages, route handlers, Server Actions) is thin: zod → `requireUser()` → a service →
-map the result (`toActionResult`, `toErrorResponse`). `src/lib/services/*` holds the use cases;
+map the result (`toActionResult`, `toErrorResponse` *(from spec 06)*). `src/lib/services/*` holds the use cases;
 every service takes `db: Db` first and its other dependencies (`blob`, `extractor`, `now`, `clock`)
 explicitly. `src/lib/db/repositories/*` is the only place that writes SQL (Drizzle).
 `src/lib/domain/*` and `src/lib/engine/*` are pure: no Drizzle, no `next/*`, no `fetch`, no clock
 (they take `today`/`now` as parameters). Gateways: `src/lib/extraction/anthropic-extractor.ts` is the
 only file importing `@anthropic-ai/sdk`; `src/lib/blob/vercel-blob-store.ts` the only server file
 importing `@vercel/blob`; `src/components/charts/recharts.ts` the only file importing `recharts`.
-The app reaches external services through `src/lib/container.ts` (`getDb`, `getBlobStore`,
-`getBillExtractor`; fakes under `E2E_FAKE_SERVICES=1`); CLI scripts in `scripts/` build their
+The app reaches external services through `src/lib/container.ts` (`getDb`; `getBlobStore`,
+`getBillExtractor` and their fakes under `E2E_FAKE_SERVICES=1` *(from spec 06)*); CLI scripts in `scripts/` build their
 clients directly and never import `server-only` modules (`env.ts`, `db/client.ts`, `auth/auth.ts`).
 Route handlers exist only where a non-form client calls HTTP (auth, Blob upload, extraction steps,
 document download, the offline queue); everything else is a colocated Server Action.
@@ -43,8 +44,8 @@ and UI text in Italian; code, identifiers and comments in English. The series la
 
 Secrets only in `.env.local`, `.env.turso-prod` (both gitignored) and Vercel; `.env.example` lists
 every variable a developer or a deployment sets (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
-`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGNUP_ENABLED`, `ANTHROPIC_API_KEY`,
-`BLOB_READ_WRITE_TOKEN`), with development defaults and empty secrets; the test-only switches
+`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGNUP_ENABLED`; `ANTHROPIC_API_KEY`,
+`BLOB_READ_WRITE_TOKEN` *(from spec 06)*), with development defaults and empty secrets; the test-only switches
 (`E2E_FAKE_SERVICES`, `NEXT_PUBLIC_E2E_FAKE_SERVICES`, `E2E_BLOB_DIR`, `E2E_EXTRACTOR_DELAY_MS`) are
 set only by `playwright.config.ts` (and, for a local verification with the fakes, on the command
 line of that run, never in `.env.local`), and `VERCEL_ENV` only by Vercel. `src/lib/env-schema.ts` is the
@@ -54,7 +55,7 @@ app, except `process.env.NODE_ENV` and the `NEXT_PUBLIC_*` variables read litera
 through the chat: the owner types them. **Nothing of the owner's data in a tracked file, commit or
 PR** (WORKFLOW § 1.6, public repo, no exception): no real bill, POD, PDR, invoice number, customer
 code, address, supplier of the owner or amount. Bill fixtures are synthetic and generated
-(`pnpm fixture:bills`); test numbers are invented and round. GME prices (PUN) never enter a tracked
+(`pnpm fixture:bills` *(from spec 06)*); test numbers are invented and round. GME prices (PUN) never enter a tracked
 file (licence: private use only).
 
 ### 2.4 Isolation per user (security invariant)
@@ -63,7 +64,8 @@ Every repository function has the signature `(db: Db, userId: string, …)` and 
 `WHERE` and join, updates and deletes included. `userId` comes only from `requireUser()` /
 `getSessionUser()`, never from client input. An id that belongs to another user behaves as
 missing (`NOT_FOUND`, page 404), never 403. `src/lib/db/repositories/scope.test.ts` fails on any
-exported repository function with another signature; the one declared exception is
+exported repository function with another signature and on any exported `const`/`let`/`var` (a
+repository exports only `function` declarations and types); the one declared exception is
 `reference-prices.ts` (market data, no user rows). Every new read or write of user data ships the
 pair of tests «own resource passes / someone else's is refused».
 
@@ -83,12 +85,14 @@ arithmetic at UTC midnight in `src/lib/domain/dates.ts`; instants (`created_at`)
 SQLite/libSQL foreign keys are **off by default and per connection**, and a PRAGMA does not survive
 between HTTP requests to remote Turso. So the app tables declare foreign keys **without ON DELETE
 CASCADE**, services delete children explicitly in one `db.batch([...])` (child before parent), and
-local databases (development, tests, Playwright) keep foreign keys ON (the local driver opens every
-connection with them on; `prepareLocalDatabase` sets them too, and `create-db.test.ts` reads them on
-several connections at once) so that a forgotten child delete fails locally. Every table with `user_id` is also deleted in
+local databases (development, tests, Playwright) keep foreign keys ON so that a forgotten child
+delete fails locally. What keeps them on is the local driver, which opens every connection with
+them on (`@libsql/client` 0.18.0); the PRAGMA in `prepareLocalDatabase` reaches only the connection
+that runs it, and `create-db.test.ts` reads the setting on several connections at once, so a driver
+upgrade that turns them off goes red. Every table with `user_id` is also deleted in
 `src/lib/services/user-data.ts` (`deleteAllUserData`, run by account deletion). Files on Blob are
-deleted **after** their rows (an orphan file is recoverable with `pnpm documents:prune`; a row
-without its file is not). Better Auth's own tables keep their cascade towards `users`.
+deleted **after** their rows (an orphan file is recoverable with `pnpm documents:prune` *(from spec
+06)*; a row without its file is not). Better Auth's own tables keep their cascade towards `users`.
 
 ### 2.7 Comments
 
@@ -111,14 +115,14 @@ commodity (net of VAT) and total (VAT included) per unit. Vocabulary in `src/lib
 Turso/libSQL through `@libsql/client` (Node entry; `file:local.db` in development) and Drizzle.
 `createDb({ url, authToken? })` in `src/lib/db/create-db.ts` builds a client (scripts and tests use
 it; it is not `server-only`); `src/lib/db/client.ts` is the server singleton on `globalThis`;
-`prepareLocalDatabase(client, url)` switches a `file:` database to WAL and does nothing on a remote
-one. The local driver keeps a **pool of connections** per client: a per-connection PRAGMA reaches
+`prepareLocalDatabase(client, url)` switches a `file:` database to WAL (and turns foreign keys on
+for the connection that runs it, § 2.6) and does nothing on a remote one. The local driver keeps a **pool of connections** per client: a per-connection PRAGMA reaches
 only the connection that ran it, so per-connection settings go through `createClient` options (the
 busy timeout is `timeout: 5000` for `file:` URLs). Schema: `src/lib/db/schema/auth.ts` (Better Auth,
 written by hand), `app.ts` (app tables), barrel `index.ts`.
 Schema changes only through `pnpm db:generate` + a committed migration in `drizzle/`; never
 `drizzle-kit push`. Production migrations run from the owner's machine **before** the merge that
-needs them (`pnpm db:migrate:prod`, reads `.env.turso-prod`). Multi-statement writes use
+needs them (`pnpm db:migrate:prod` *(from spec 05)*, reads `.env.turso-prod`). Multi-statement writes use
 `db.batch([...])` (an implicit transaction), never interactive transactions (5 s lock on Turso).
 Tests use a fresh temp **file** per test with the real migrations (`createTestDb()`), never
 `:memory:` (it silently empties after a failed transaction).
@@ -137,6 +141,8 @@ not only the UI. Sessions last 180 days; the rate limiter stores its counters in
 runs in production only. `src/proxy.ts` is an optimistic redirect (cookie presence), not a guard:
 the `(app)` layout calls `getSessionUser()` and every Server Action and route handler starts with
 `requireUser()`. The only list of public pages is `PUBLIC_PATHS` in `src/lib/auth/public-paths.ts`.
+Next 16 (2026-10-24): the redirect lives in `src/proxy.ts` (not `middleware.ts`) and runs on Node;
+`cookies()` and `headers()` are async; `cacheComponents` stays off.
 
 ## 6. Claude *(from spec 06 — stub; guide `doc/guide/estrazione.md`)*
 
@@ -177,9 +183,11 @@ precached by hand; the offline queue is drained by the pages.
   and `createTestUser(db, overrides?)`, both in `src/lib/db/testing/create-test-db.ts`.
 - `src/lib/db/repositories/scope.test.ts` reads the source of every repository and fails on an
   exported function whose parameters do not start with `(db: Db, userId: string` (whitespace
-  ignored) or on an `export const` arrow; the only exempt file is `reference-prices.ts`.
+  ignored) or on any exported `const`/`let`/`var` (a typed or wrapped arrow hides its parameters);
+  the only exempt file is `reference-prices.ts`.
 - Anthropic and Blob are never called in tests: fake client for the extractor, disk store and
-  fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`).
+  fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`) *(from
+  spec 06)*.
 - Every test in a spec names the mutation that proves it load-bearing; a test that cannot go red is
   not a test.
 - Playwright on a production build (:3100 open signup, :3101 closed), seed users
@@ -217,6 +225,11 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
   `busy_timeout` 0. Per-connection settings go through `createClient` options (`timeout`).
 - 2026-10-24 — Better Auth 1.7.12 compares the Drizzle schema with its own at startup and throws on a
   required column it never writes: the `accounts.issuer` that 1.7.0–1.7.2 needed must **not** exist.
+  After a Better Auth upgrade, run `create-auth.test.ts`: if the error names a column, fix
+  `src/lib/db/schema/auth.ts` to it, `pnpm db:generate`, commit the migration, date the change here.
+- 2026-10-24 — `biome migrate` 2.6.2 rewrites `"rules": { "recommended": true }` as `"preset":
+  "none"`, which silently turns the recommended rules off: `biome.json` says `"preset":
+  "recommended"` (a `useOptionalChain` warning disappears under `none`).
 - 2026-10-24 — Biome 2.6 formats and lints Markdown: `biome.json` turns it off
   (`markdown.formatter/linter.enabled: false`), or `lint:fix` rewrites every document.
 - 2026-10-24 — `create-next-app@16.4.3` no longer writes `postcss.config.mjs` (it wires

@@ -40,8 +40,10 @@ test.describe('accesso', () => {
     await page.getByRole('button', { name: 'Esci' }).click();
     await expect(page).toHaveURL('/accedi');
 
-    await signIn(page, '/accedi?next=/', email, PASSWORD);
-    await expect(page).toHaveURL('/');
+    // A destination other than '/', the fallback of safeNextPath: only then does landing on it
+    // prove that the sign-in page passed next through.
+    await signIn(page, '/accedi?next=%2F%3Fda%3Dnext', email, PASSWORD);
+    await expect(page).toHaveURL('/?da=next');
     await expect(page.getByRole('heading', { name: 'Ciao, Capibara' })).toBeVisible();
   });
 

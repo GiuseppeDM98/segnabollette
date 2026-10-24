@@ -140,16 +140,16 @@ Of the tour, the status entry keeps only its outcome: done and closed, or what i
 The rules above are the standard. This section is the local translation of obligations 4 and 5 — it
 changes from repo to repo and is the only part to rewrite when the tooling changes.
 
-### The commands (installed by spec 01 unless the column says otherwise; a later spec's row is real once that spec is implemented)
+### The commands (installed on 2026-10-24 unless the column names a later spec; that spec's row is real once it is implemented)
 
 | Purpose | Command | Since |
 | --- | --- | --- |
-| Types | `pnpm typecheck` (`tsc --noEmit`) | 01 |
-| Lint + format | `pnpm lint` (`biome check .`; `pnpm lint:fix` to write) | 01 |
-| Unit tests | `pnpm test` (Vitest, `TZ=Europe/Rome` set by `vitest.config.ts`) | 01 |
-| Build | `pnpm build` (`next build --webpack`, kept for the service worker) | 01 |
-| Browser tests | `pnpm test:e2e` (Playwright on a production build on :3100, `file:e2e.db`, fake Blob and Anthropic behind `E2E_FAKE_SERVICES=1`) | 01 |
-| Database | `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:studio`, `pnpm db:seed` (the two seed users); `pnpm db:migrate:prod` (production, reads `.env.turso-prod`) | 01 / 02 / 05 |
+| Types | `pnpm typecheck` (`tsc --noEmit`) | 2026-10-24 |
+| Lint + format | `pnpm lint` (`biome check .`; `pnpm lint:fix` to write) | 2026-10-24 |
+| Unit tests | `pnpm test` (Vitest, `TZ=Europe/Rome` set by `vitest.config.ts`) | 2026-10-24 |
+| Build | `pnpm build` (`next build --webpack`, kept for the service worker) | 2026-10-24 |
+| Browser tests | `pnpm test:e2e` (Playwright on a production build on :3100, `file:e2e.db`; fake Blob and Anthropic behind `E2E_FAKE_SERVICES=1` from spec 06, which until then only turns the rate limit off) | 2026-10-24 |
+| Database | `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:studio`, `pnpm db:seed` (the two seed users); `pnpm db:migrate:prod` (production, reads `.env.turso-prod`) | 2026-10-24 / 05 |
 | Market references | `pnpm riferimenti:update` (ARERA, writes `data/riferimenti/*.json`), `pnpm riferimenti:pun -- <AnnoYYYY.zip> [--prod]` (GME zip downloaded by hand; writes `local.db`, or production with `--prod`, which reads `.env.turso-prod`) | 08 |
 | Blob housekeeping | `pnpm documents:prune` (dry run; `-- --delete` removes orphan files; `-- --prod` targets production through `.env.turso-prod`) | 06 |
 | Fixtures | `pnpm fixture:bills` (rewrites the synthetic bill PDFs in `tests/fixtures/bills/`) | 06 |
@@ -181,8 +181,8 @@ one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.
 
 - `pnpm dev` on :3000 with `.env.local` (`SIGNUP_ENABLED="true"` locally). `pnpm db:seed` creates
   two seed users, `seed-a@example.test` and `seed-b@example.test`, password `seed-password-1`,
-  with invented houses, supplies and bills (round numbers, decoy words). The throwaway Playwright
-  script of a verification logs in with `POST /api/auth/sign-in/email` (with an `Origin` header)
+  with invented houses, supplies and bills (from spec 02; round numbers, decoy words). The
+  throwaway Playwright script of a verification logs in with `POST /api/auth/sign-in/email` (with an `Origin` header)
   and saves `playwright/.auth/<user>.json` (gitignored), then opens the page already
   authenticated. Isolation checks use the pair: seed A's resource (must open) and seed B's
   resource (must be refused) with the same request.

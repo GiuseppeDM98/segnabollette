@@ -11,8 +11,8 @@
 > `claude-config/prompts/07_LETTURA_ADVERSARIALE_SPEC.md` (un lettore per spec e uno trasversale):
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
-> `08_CREA_RITIRO_SPEC.md`). **La 01 è implementata (2026-10-24)**; prossimo passo: la sua PR e il
-> merge, poi il suo ritiro con `PROMPT-RITIRO.md` (branch `docs/v1-ritiro-01`), poi la 02.
+> `08_CREA_RITIRO_SPEC.md`). **La 01 è in esercizio (PR #3) e ritirata il 2026-10-24**; prossimo
+> passo: la 02.
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -282,8 +282,8 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 
 | Spec | Titolo | Branch | Dipende da | Stato |
 |---|---|---|---|---|
-| 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | implementata il 2026-10-24, branch `feature/01-scaffold-auth` |
-| 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 | scritta 2026-10-24; riletta 2026-10-24 |
+| 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | in esercizio il 2026-10-24, PR #3; ritirata il 2026-10-24 |
+| 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | scritta 2026-10-24; riletta 2026-10-24 |
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 | scritta 2026-10-24; riletta 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 | scritta 2026-10-24; riletta 2026-10-24 |
 | 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -297,7 +297,7 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La prima da incollare è il prompt in fondo alla 01.
+La 01 è ritirata (2026-10-24): la prossima da incollare è il prompt in fondo alla 02.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 

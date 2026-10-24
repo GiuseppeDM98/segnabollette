@@ -2,7 +2,7 @@
 
 > 2026-10-24 – 2026-10-24
 
-**Accesso**
+**Impostazioni**
 
 - Added accounts with email and password: sign up, sign in and sign out, with sessions that last six months so the app rarely asks you to log in again.
 - Added closable registration: each installation decides whether new accounts are accepted, and when it is closed the sign-up page says so and the server refuses new accounts too.
