@@ -9,8 +9,9 @@
 > segnaprezzi (letto in sola lettura, HEAD `561d960`) e la documentazione dei servizi, citata con la
 > data di lettura. **Lettura adversariale: fatta il 2026-10-24** con il prompt
 > `claude-config/prompts/07_LETTURA_ADVERSARIALE_SPEC.md` (un lettore per spec e uno trasversale):
-> 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). Prossimo passo,
-> in una sessione a sé e prima della 01: `08_CREA_RITIRO_SPEC.md` genera `doc/v1/PROMPT-RITIRO.md`.
+> 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
+> ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
+> `08_CREA_RITIRO_SPEC.md`). Prossimo passo: la 01.
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -350,9 +351,9 @@ questa tabella e OGNI spec viva che lo cita (testo e prompt in fondo).
    che vivono prima del deploy: PR mergiata su `main` E il collaudo di § 7 annotato in CLAUDE.md;
    la 05 rifà in produzione le misure di chiusura di 01–04. Dalla 05 la misura in produzione si
    fa dopo il merge e il suo esito entra nel commit della sessione successiva (D-41).
-6. **Ritiro**: una spec in esercizio si ritira con `doc/v1/PROMPT-RITIRO.md` (da generare con
-   `claude-config/prompts/08_CREA_RITIRO_SPEC.md` in una sessione a sé, dopo la lettura
-   adversariale e prima della spec 01): verifica criterio per criterio, travaso in AGENTS.md /
+6. **Ritiro**: una spec in esercizio si ritira con `doc/v1/PROMPT-RITIRO.md` (generato il
+   2026-10-24 con `claude-config/prompts/08_CREA_RITIRO_SPEC.md`, in una sessione a sé fra la
+   lettura adversariale e la spec 01): verifica criterio per criterio, travaso in AGENTS.md /
    `doc/guide/` / CLAUDE.md, `git rm` della spec; l'indice resta finché vive una spec; l'ultimo
    ritiro porta via la cartella.
 7. **Dati dell'owner**: nessuna bolletta vera, nessun POD/PDR, numero di fattura, codice cliente,
