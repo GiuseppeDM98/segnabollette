@@ -29,11 +29,12 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: planning session — repo bootstrapped, the v1 series written (`doc/v1/`,
-  nine specs, order and state in `00-INDICE.md` § 5).
-  **Next**: the adversarial reading of the whole series
-  (`claude-config/prompts/07_LETTURA_ADVERSARIALE_SPEC.md`), then `PROMPT-RITIRO.md` (prompt 08, in
-  a session of its own), then spec 01. Still open: none.
+- **Latest (2026-10-24)**: adversarial reading of the whole v1 series done (nine readers and a
+  cross-spec one): 236 findings fixed in place in the specs and the index, 21 owner decisions
+  D-41…D-61 (`doc/v1/00-INDICE.md` § 3), new session rule for production verifications after the
+  merge (WORKFLOW.md § 3).
+  **Next**: `doc/v1/PROMPT-RITIRO.md` with `claude-config/prompts/08_CREA_RITIRO_SPEC.md`, in a
+  session of its own; then spec 01. Still open: none.
 
 ## Architecture Snapshot (as specified; nothing exists yet)
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →

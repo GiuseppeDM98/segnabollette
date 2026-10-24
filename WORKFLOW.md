@@ -155,8 +155,8 @@ changes from repo to repo and is the only part to rewrite when the tooling chang
 | Build | `pnpm build` (`next build --webpack`, kept for the service worker) | 01 |
 | Browser tests | `pnpm test:e2e` (Playwright on a production build on :3100, `file:e2e.db`, fake Blob and Anthropic behind `E2E_FAKE_SERVICES=1`) | 01 |
 | Database | `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:studio`, `pnpm db:seed` (the two seed users); `pnpm db:migrate:prod` (production, reads `.env.turso-prod`) | 01 / 02 / 05 |
-| Market references | `pnpm riferimenti:update` (ARERA, writes `data/riferimenti/*.json`), `pnpm riferimenti:pun -- <AnnoYYYY.zip>` (GME zip downloaded by hand, writes the database named by `TURSO_DATABASE_URL`) | 08 |
-| Blob housekeeping | `pnpm documents:prune` (dry run; `-- --delete` removes orphan files) | 06 |
+| Market references | `pnpm riferimenti:update` (ARERA, writes `data/riferimenti/*.json`), `pnpm riferimenti:pun -- <AnnoYYYY.zip> [--prod]` (GME zip downloaded by hand; writes `local.db`, or production with `--prod`, which reads `.env.turso-prod`) | 08 |
+| Blob housekeeping | `pnpm documents:prune` (dry run; `-- --delete` removes orphan files; `-- --prod` targets production through `.env.turso-prod`) | 06 |
 | Fixtures | `pnpm fixture:bills` (rewrites the synthetic bill PDFs in `tests/fixtures/bills/`) | 06 |
 | Icons | `pnpm icons` | 09 |
 
@@ -170,15 +170,17 @@ one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.
 - **Database**: `TURSO_DATABASE_URL="file:local.db"` in `.env.local` is the development database;
   unit and repository tests use a fresh temp **file** per test with the real migrations
   (`createTestDb()`, never `:memory:` — AGENTS.md § Gotchas); Playwright uses `file:e2e.db`
-  rebuilt by its global setup. Production Turso is reached only with the variables of
-  `.env.turso-prod` (gitignored, spec 05) exported into the shell, and only for migrations and
-  `riferimenti:pun`.
+  rebuilt by its global setup. Production Turso is reached only through `.env.turso-prod`
+  (gitignored, spec 05), read by `pnpm db:migrate:prod` and by the scripts that take `--prod`
+  (`riferimenti:pun`, `documents:prune`); never by exporting variables into the shell. Without
+  `--prod` those scripts refuse a database URL that does not start with `file:`.
 - **Blob**: development uses its own private store (`segnabollette-files-dev`, spec 05), never the
   production one; tests and Playwright never touch Blob (fake store behind the container).
 - **Anthropic**: tests and Playwright never call it (fake extractor behind the container, fixture
   extractions in `tests/fixtures/extractions/`). A real extraction happens only in a guided
-  verification, after the owner's OK, with its estimated cost stated first (≈ 0,25 $ per bill
-  with `claude-opus-5-5`).
+  verification, after the owner's OK, with its estimated cost stated first (≈ 0,30 $ per bill
+  with `claude-opus-5-5`); in the app an extraction starts only from the «Estrai» button, which
+  shows the estimate.
 
 ### Obligation 5 — how to hand the owner an app already authenticated
 
@@ -195,8 +197,10 @@ one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.
 
 ### Inspecting real data state
 
-`pnpm db:studio` on `local.db`; a throwaway `tsx` script against `src/lib/db/client.ts`; in
-production `turso db shell segnabollette` (spec 05). Blob: `vercel blob list --prefix users/`
+`pnpm db:studio` on `local.db`; a throwaway `tsx` script with `createDb({ url: 'file:local.db' })`
+(never `src/lib/db/client.ts`, which is server-only); in
+production a throwaway `tsx` script with `loadProductionTarget()` and `createDb`, `SELECT` only,
+printing counts and ids, never the owner's names or emails (spec 05). Blob: `vercel blob list --prefix users/`
 on the store of the environment in question. Never judge an outcome from the page alone when a
 row can be read.
 
@@ -204,7 +208,9 @@ row can be read.
 
 `main` is the default and the integration branch **and production** (a merged PR deploys, spec 05).
 One branch per spec (`feature/NN-slug`, named in the spec header), one squashed commit, one PR to
-`main`. No `develop`, no preview deployments (verification runs locally).
+`main`; the monthly ARERA refresh (spec 08) uses `feature/riferimenti-<YYYY-MM>`. No `develop`, no
+preview deployments: the ignored build step of `vercel.json` skips every non-production build
+(verification runs locally, and in production after the merge).
 
 ### Where things are recorded
 
@@ -215,6 +221,13 @@ One branch per spec (`feature/NN-slug`, named in the spec header), one squashed 
   repo · `doc/guide/<tema>.md` if it is a domain lesson · WORKFLOW.md if it is a session rule ·
   CLAUDE.md if it is project status · a comment on the right line if it is the why of a line).
   Every item is written to its destination before the file is deleted.
+- **A verification in production happens after the merge** (2026-10-24, specs 05–09): the session
+  makes its one commit and its PR **before** the merge (status «implementata»); after the merge,
+  in the same session, the owner and the agent run the production verification; its outcome, the
+  gotchas it taught and the status «in esercizio» stay in `SESSION_NOTES.md`, which in this case
+  survives the session (untracked), and enter the commit of the **next** session, which starts by
+  writing them. The last spec of a series closes with a short documentation-only session. The
+  rule «one commit per session» stays intact.
 - **The outcome of a verification** goes in `CLAUDE.md § Current Status → Latest`, one line, and
   replaces the previous entry; the session's signals (test counts, E2E runs, skipped phases) go in
   the commit message. During the v1 series the same status is written in the spec's `Stato` line
