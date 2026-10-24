@@ -4,9 +4,10 @@ Track your household utility bills and prices — electricity, gas, water, inter
 waste tax — and see whether your offer is a good one. Multi-user with closable registration,
 self-hosted on Vercel + Turso, installable on your phone as a PWA.
 
-> **Status (2026-10-24)**: the scaffold, access (sign-up, sign-in, closable registration), the data
-> model and the calculation engine exist, with no pages for bills yet; the rest of the v1 is specified in [`doc/v1/`](doc/v1/) and is being
-> implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
+> **Status (2026-10-24)**: access (sign-up, sign-in, closable registration), houses and supplies,
+> bills typed by hand, self readings and settings work locally, on the data model and the
+> calculation engine; charts, deployment, extraction and the rest of the v1 are specified in
+> [`doc/v1/`](doc/v1/) and are being implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
 
 ## What it does
 

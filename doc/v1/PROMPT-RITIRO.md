@@ -4,7 +4,8 @@
 > le misure e lascia il corpo com'è; il ritiro dell'ultima spec porta via questo file con la cartella.
 >
 > Misure del 2026-10-24, dopo la lettura adversariale e prima della spec 01: nove spec vive (01 → 09,
-> in quest'ordine, `00-INDICE.md § 5`), nessuna ritirata, nessun codice. In questo repo «README §
+> in quest'ordine, `00-INDICE.md § 5`), nessuna ritirata, nessun codice. Dopo il ritiro della 03
+> (2026-10-24): sei spec vive (04 → 09), 01–03 ritirate (PR #3, #5, #7). In questo repo «README §
 > Documentazione» è `README.md § Documentation`. Branch di un ritiro: `docs/v1-ritiro-<NN>` da `main`
 > aggiornato (la forma dei branch di soli documenti: `docs/v1-lettura-adversariale`, e
 > `docs/v1-chiusura` nella § 8 della 09).
@@ -69,8 +70,12 @@ LETTURE OLTRE AL PROMPT STANDARD (WORKFLOW.md, AGENTS.md, CLAUDE.md, COMMENTS.md
 DEVELOPMENT_GUIDELINES.md, la guida del dominio): README § Documentazione · l'indice
 della serie per intero · la spec INTERA, compresa l'intestazione con lo stato scritto
 dalla sessione che l'ha implementata e le divergenze dichiarate lì · `git log
---format="%h %s" -- <SPEC>` · i precedenti da imitare: nessun ritiro in questo repo al
-2026-10-24 (`git log -i --grep=ritir --grep=retire` vuoto: il primo si aggiunge qui); da
+--format="%h %s" -- <SPEC>` · i precedenti da imitare: in questo repo (`git log -i --grep=ritir --grep=retire`) `704288c`
+(2026-10-24, la 01: quattro difetti corretti, la guardia degli scope dei repository irrobustita),
+`04ff2ca` (2026-10-24, la 02: due test portanti aggiunti, `calcoli.md` allineata al codice) e il
+ritiro della 03 (2026-10-24, `git log --grep="retire spec 03"`: il primo che ha cambiato il
+comportamento dell'app — due divergenze del modulo corrette su decisione dell'owner, tre prove
+mancanti aggiunte e viste rosse con la mutazione, `app.md` riallineata al codice); da
 net-worth-tracker, serie `doc/mobile/`, letti con `git -C ../net-worth-tracker show --stat <hash>`
 e il messaggio intero: `bdef4fed` (2026-10-16, MOB-08: l'ultimo ritiro con la serie viva e
 l'ultimo che ha corretto codice — sei difetti, ciascuno col suo test; non imitarne l'ampiezza: lì
@@ -111,7 +116,7 @@ ORDINE DI LAVORO
    spec sorelle, con le forme che la serie usa («la 05», «della 05», «(05)», «→ **05**»,
    «| 05 |», «05, 06», «05–09»):
    `grep -n -E "\b(spec|la|della|dalla|alla|nella|sulla|dalle?|fino alla) <NN>\b|\b<NN>-[a-z]|\*\*<NN>\*\*|\(<NN>\)|\| <NN> \||<NN>–0[0-9]|0[0-9]–<NN>\b|, <NN>\b|\b<NN>, |<NN>\+" doc/v1/*.md | grep -v "^<SPEC>"`
-   (il 2026-10-24: 31 esiti per la 05; gli intervalli che la contengono senza nominarla, come
+   (37 esiti per la 05 dopo il ritiro della 03, 2026-10-24; gli intervalli che la contengono senza nominarla, come
    la 02 in «01–04», si leggono a occhio); il titolo a parole (la riga 1 della spec dopo «NN —
    »): `git grep -n -i "<titolo>" -- ':!<SPEC>'`; gli orfani numerici nel codice,
    `git grep -n -E "\b(D|T|C|P)-[0-9]+\b|\bspec [0-9]{2}\b|doc/v1" -- src scripts tests drizzle data public '*.config.*' vercel.json package.json .env.example`:
@@ -121,8 +126,8 @@ ORDINE DI LAVORO
    P-N e i numeri delle spec restano vivi nell'indice e nelle spec sorelle finché vive
    l'indice (lì un D-N nato dalla spec ritirata resta, si ripunta solo il rimando alla spec), e
    nei documenti del repo fuori dalla cartella
-   (`git grep -n -E "\b(D|T|C|P)-[0-9]+\b|spec [0-9]{2}\b|doc/v1" -- ':!doc/v1'`: 38 righe il
-   2026-10-24 — AGENTS.md 13, CLAUDE.md 11, WORKFLOW.md 9, README.md 5), dove però ogni
+   (`git grep -n -E "\b(D|T|C|P)-[0-9]+\b|spec [0-9]{2}\b|doc/v1" -- ':!doc/v1'`: 38 righe dopo
+   il ritiro della 03, 2026-10-24 — AGENTS.md 17, CLAUDE.md 9, WORKFLOW.md 7, README.md 5), dove però ogni
    rimando alla spec ritirata si riscrive (un «*(from spec NN)*» di AGENTS.md diventa la data,
    una riga di WORKFLOW.md § 3 perde «spec NN» e tiene il perché). Tre categorie, tre trattamenti: CODICE,
    TEST e COMMENTI → riscritti in loco, veri e autosufficienti senza il documento, con
@@ -199,8 +204,9 @@ Unicode senza CR (`node -e "console.log([...require('fs').readFileSync('CLAUDE.m
 mai `wc -c`); `AGENTS.md` 213 righe (`wc -l AGENTS.md`), obiettivo 600 e tetto 1000;
 `doc/guide/<tema>.md` ≤ 500 righe ciascuna, con il tetto di nascita della spec che la crea —
 `calcoli.md` 300 (02), `app.md` 300 (03), `deploy.md` 200 (05), `estrazione.md` 400 (06),
-`riferimenti.md` 250 (08), `pwa.md` 250 (09): al 2026-10-24 nessuna esiste, quindi la più vicina
-al tetto si trova a ogni ritiro con `wc -l doc/guide/*.md`; `Draft Release Temp.md` ≤ 60.000
+`riferimenti.md` 250 (08), `pwa.md` 250 (09); la più vicina al tetto si trova a ogni ritiro con
+`wc -l doc/guide/*.md`. Dopo il ritiro della 03 (2026-10-24): `CLAUDE.md` 10.177 caratteri e 141
+righe, `AGENTS.md` 309 righe, `app.md` 223 e `calcoli.md` 209, `WORKFLOW.md` 240 e `README.md` 89; `Draft Release Temp.md` ≤ 60.000
 caratteri (WORKFLOW.md § 3; nasce alla prima fine sessione); `WORKFLOW.md` 245 righe e
 `README.md` 63 righe, senza tetto. Se sfori, NON tagliare in chiusura: dimmelo e proponi lo scorporo
 come sessione a parte.

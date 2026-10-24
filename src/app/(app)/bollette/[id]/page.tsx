@@ -249,6 +249,7 @@ export default async function BillPage({ params }: { params: Promise<{ id: strin
               {readings.map((reading) => (
                 <li
                   key={reading.id}
+                  data-testid="bill-reading-row"
                   className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-rule px-3 py-2 last:border-b-0"
                 >
                   <span className="figures text-sm font-bold">{formatDate(reading.readOn)}</span>

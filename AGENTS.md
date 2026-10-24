@@ -201,7 +201,8 @@ precached by hand; the offline queue is drained by the pages.
   fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`) *(from
   spec 06)*.
 - Every test in a spec names the mutation that proves it load-bearing; a test that cannot go red is
-  not a test.
+  not a test. A mutation must still type-check: under Playwright the `webServer` build fails on a
+  type error, and the red then proves nothing (2026-10-24, `{x && false && (…)}` in a page).
 - Quantities are `real` (`0.1 + 0.2` is not `0.3`): assertions on a computed quantity use
   `toBeCloseTo`, assertions on money (integer cents and micro-euros) use `toBe` (2026-10-24).
 - Playwright on a production build (:3100 open signup, :3101 closed), seed users
@@ -290,6 +291,11 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
 - 2026-10-24 — Playwright: the body of a Server Action's response is gone once the page has
   reacted to it («No data found for resource»); a test reads it inside `page.route` with
   `route.fetch` + `route.fulfill` (`tests/e2e/isolamento.spec.ts`).
+- 2026-10-24 — Next: a Server Component cannot call a function exported by a `'use client'` file
+  («Attempted to call … from the server»), so a builder both sides need lives in a pure module
+  (`src/components/bills/line-templates.ts`); a Client Component receives as a function only a
+  Server Action (also `.bind`), never a closure written in the page; a `'use server'` file
+  exports only async functions, so action schemas live in `schemas.ts` beside it.
 - 2026-10-24 — Windows, Git Bash: an argument `/` given to `node` arrives as
   `C:/Program Files/Git/` (set `MSYS_NO_PATHCONV=1`); stopping the agent's background task of
   `pnpm start` leaves the `node` child listening, so the port stays busy until that process is killed.

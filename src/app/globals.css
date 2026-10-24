@@ -3,7 +3,7 @@
  * book cloth for the shell, print ink for figures, violet stamp ink for states. DESIGN.md is the
  * reference for every value here.
  *
- * Tailwind's default palette is reset (`--color-*: initial`): a class such as `text-gray-500`
+ * Tailwind's default palette is reset (`--color-*: initial`): a class of that palette
  * generates nothing, only these tokens exist. Dark mode redefines the same variables under
  * [data-theme='dark'] and, when the theme cookie says `system`, under the OS dark preference;
  * components never use Tailwind's `dark:` variant, which would ignore the cookie.

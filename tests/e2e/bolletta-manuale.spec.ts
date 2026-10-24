@@ -1,7 +1,7 @@
 /**
- * A hand-typed bill end to end, with a user of its own («Casa Capibara»): required amounts,
- * subtotals, gas with C and PCS, a flat fee, an overlapping bill that replaces the first, edit
- * and delete.
+ * A hand-typed bill end to end, with a user of its own («Casa Capibara»): required amounts, the
+ * live summary and its warnings, subtotals, gas with C and PCS, a flat fee marked estimated, an
+ * overlapping bill that replaces the first, edit and delete.
  */
 import { expect, type Page, test } from '@playwright/test';
 import {
@@ -41,7 +41,17 @@ test('bolletta a mano: nuova, scheda, sovrapposizione, modifica, eliminazione', 
     for (let index = 0; index < 6; index += 1) await expect(amounts.nth(index)).toHaveValue('');
     await expect(page.getByTestId('bill-total')).toHaveValue('');
 
+    const bands = page.getByTestId('bill-line').first().getByLabel('Fascia').locator('option');
+    await expect(bands).toHaveText(['—', 'F1', 'F2', 'F3', 'F23', 'unica']);
+
     await fillNewBill(page, electricityId, ELECTRICITY_AMOUNTS.slice(0, 5), '26,40');
+    const summary = page.getByRole('region', { name: 'Riepilogo' });
+    await expect(summary).toContainText('Materia prima');
+    await expect(summary).toContainText('10,00');
+    await expect(page.getByTestId('computed-total')).toContainText('24,00');
+    await expect(page.getByTestId('arithmetic-warnings')).toContainText(
+      /Le voci sommano 24,00\s€, il totale stampato è 26,40\s€/,
+    );
     await page.getByRole('button', { name: 'Salva bolletta' }).click();
 
     const vatLine = page.getByTestId('bill-line').nth(5);
@@ -80,14 +90,22 @@ test('bolletta a mano: nuova, scheda, sovrapposizione, modifica, eliminazione', 
     await expect(page.getByText('0,0385', { exact: true })).toBeVisible();
   });
 
-  await test.step('internet con canone e IVA', async () => {
+  await test.step('internet con canone e IVA, stimata e con il totale che non torna', async () => {
     const telecomId = await createSupply(page, HOUSE, {
       kind: 'Internet e telefono',
       label: 'Internet capibara',
     });
-    await enterBill(page, telecomId, { ...JANUARY, amounts: ['20', '4,4'], total: '24,40' });
+    await fillNewBill(page, telecomId, ['20', '4,4'], '25');
+    await page.getByLabel('Consumi stimati').check();
+    await page.getByRole('button', { name: 'Salva bolletta' }).click();
+    await expect(page).toHaveURL(SAVED_BILL_URL);
     await expect(page.getByText('Canone', { exact: true })).toBeVisible();
     await expect(page.getByTestId('line-group')).toHaveCount(2);
+    await expect(page.getByTestId('line-group').filter({ hasText: 'IVA' })).toHaveCount(1);
+    await expect(page.getByText('stimata', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('arithmetic-warnings')).toContainText(
+      /Le voci sommano 24,40\s€, il totale stampato è 25,00\s€/,
+    );
   });
 
   const secondId =
