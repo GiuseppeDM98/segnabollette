@@ -113,6 +113,26 @@ export async function listBillIdsOfSupplies(
   return rows.map((row) => row.id);
 }
 
+/** The confirmed bills of the supplies, newest billing period first, then the latest entered. */
+export async function listConfirmedBillsOfSupplies(
+  db: Db,
+  userId: string,
+  supplyIds: string[],
+): Promise<BillRow[]> {
+  if (supplyIds.length === 0) return [];
+  return db
+    .select()
+    .from(bills)
+    .where(
+      and(
+        eq(bills.userId, userId),
+        inArray(bills.supplyId, supplyIds),
+        eq(bills.status, 'confirmed'),
+      ),
+    )
+    .orderBy(desc(bills.periodEnd), desc(bills.createdAt));
+}
+
 /**
  * Every bill of the supply (any status: the engine filters) with its lines and its own readings,
  * in the engine's shape. Two queries: bills joined to lines, then the readings of those bills.

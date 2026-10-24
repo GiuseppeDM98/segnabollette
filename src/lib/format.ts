@@ -1,10 +1,23 @@
 /** The one place that formats and reads numbers and dates for people (Italian conventions). */
-import type { ConsumptionUnit, IsoDate, MonthKey, QuantityUnit } from '@/lib/domain/types';
+import type {
+  ConsumptionUnit,
+  IsoDate,
+  LineCategory,
+  LineComponent,
+  MonthKey,
+  QuantityUnit,
+  ReadingRegister,
+  SupplyKind,
+} from '@/lib/domain/types';
 
 const euro = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
 const unitPrice = new Intl.NumberFormat('it-IT', {
   minimumFractionDigits: 4,
   maximumFractionDigits: 4,
+});
+const linePrice = new Intl.NumberFormat('it-IT', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 6,
 });
 const quantity = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 3 });
 const day = new Intl.DateTimeFormat('it-IT', {
@@ -38,6 +51,19 @@ export function formatUnitPrice(micros: number, unit: ConsumptionUnit): string {
   return `${unitPrice.format(micros / 1_000_000)} €/${UNIT_LABELS[unit]}`;
 }
 
+/** "Per unit" reads in the singular: €/anno, not €/anni. */
+const PER_UNIT_LABELS: Record<QuantityUnit, string> = {
+  ...UNIT_LABELS,
+  day: 'giorno',
+  month: 'mese',
+  year: 'anno',
+};
+
+/** A bill line's printed unit price, at the precision it was typed (up to micro-euros). */
+export function formatLinePrice(micros: number, unit: QuantityUnit): string {
+  return `${linePrice.format(micros / 1_000_000)} €/${PER_UNIT_LABELS[unit]}`;
+}
+
 export function formatQuantity(value: number, unit: QuantityUnit): string {
   return `${quantity.format(value)} ${UNIT_LABELS[unit]}`;
 }
@@ -63,3 +89,65 @@ export function parseDecimalInput(text: string): number | null {
   const value = Number(normalized);
   return Number.isFinite(value) ? value : null;
 }
+
+/**
+ * A number as a form field shows it: rounded to `maxFractionDigits` (the field's precision), then
+ * the shortest text that reads back as the same number, with the Italian decimal comma and no
+ * thousands separators or trailing zeros (1234.5 → '1234,5', 30/365 at 20 digits → itself).
+ */
+export function formatDecimalInput(value: number, maxFractionDigits: number): string {
+  return String(Number(value.toFixed(maxFractionDigits))).replace('.', ',');
+}
+
+// WARNING: these maps follow the lists in src/lib/domain/types.ts; a new value there needs its
+// label here (the Record types make the compiler say so).
+export const CATEGORY_LABELS: Record<LineCategory, string> = {
+  commodity: 'Materia prima',
+  sale: 'Altre spese di vendita',
+  network: 'Rete e contatore',
+  system: 'Oneri di sistema',
+  excise: 'Accise e imposte',
+  vat: 'IVA',
+  other: 'Altre partite',
+  feed_in: 'Energia ceduta',
+  outside: 'Fuori bolletta',
+};
+
+export const COMPONENT_LABELS: Record<LineComponent, string> = {
+  variable: 'a consumo',
+  fixed: 'fissa',
+  power: 'a potenza',
+  lump: 'importo unico',
+};
+
+/** A supply's name in lists: with more than one house, two «Luce» need their house to differ. */
+export function formatSupplyLabel(label: string, houseName: string, houseCount: number): string {
+  return houseCount > 1 ? `${label} · ${houseName}` : label;
+}
+
+export const KIND_LABELS: Record<SupplyKind, string> = {
+  electricity: 'Luce',
+  gas: 'Gas',
+  water: 'Acqua',
+  telecom: 'Internet e telefono',
+  waste: 'TARI',
+};
+
+export const REGISTER_LABELS: Record<ReadingRegister, string> = {
+  single: 'Lettura',
+  F1: 'F1',
+  F2: 'F2',
+  F3: 'F3',
+  feed_in: 'Immessa',
+  production: 'Produzione',
+};
+
+// Only the supply identifier is stored, never a customer code beyond it: for internet and the
+// waste tax the field is optional and may stay empty.
+export const IDENTIFIER_HINTS: Record<SupplyKind, string> = {
+  electricity: 'POD (es. IT001E…)',
+  gas: 'PDR (14 cifre)',
+  water: 'Codice utenza',
+  telecom: 'Numero di linea o codice cliente (facoltativo)',
+  waste: 'Codice contribuente (facoltativo)',
+};

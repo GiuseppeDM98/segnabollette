@@ -164,12 +164,15 @@ The schema has no nullable fields (sentinels). An extraction starts only when th
 recorded (and summed across retries) on every call that returned usage. Nothing reaches the bill
 tables without the owner's confirmation in the review.
 
-## 7. UI *(from spec 03 — stub; guide `doc/guide/app.md`, visual system DESIGN.md)*
+## 7. UI *(stub; guide `doc/guide/app.md`, visual system DESIGN.md, voice PRODUCT.md)*
 
 Italian only, no i18n library. Tokens from DESIGN.md in `src/app/globals.css`; no literal colours in
-components (the manifest is the one documented exception). Theme from the `theme` cookie
-(`system|light|dark`). Recharts only through `src/components/charts/recharts.ts`; every chart has a
-data-table alternative. `data-testid` on what Playwright drives.
+components (the manifest is the one documented exception). `@theme` opens with `--color-*: initial`:
+the default Tailwind palette does not exist and the `dark:` variant is never used (a dark value is a
+token). Theme from the `theme` cookie (`system|light|dark`). Pages turn a foreign id into a 404
+(`orNotFound`); Server Actions follow one shape (`doc/guide/app.md` § 3); deletions confirm in
+`ConfirmDialog`, never `window.confirm`. Recharts only through `src/components/charts/recharts.ts`
+*(from spec 04)*; every chart has a data-table alternative. `data-testid` on what Playwright drives.
 
 ## 8. Deploy, Blob and PWA *(from specs 05, 06, 09 — stubs; guides `doc/guide/deploy.md`, `doc/guide/pwa.md`)*
 
@@ -204,15 +207,16 @@ precached by hand; the offline queue is drained by the pages.
 - Playwright on a production build (:3100 open signup, :3101 closed), seed users
   `seed-a@example.test` / `seed-b@example.test`, login through `POST /api/auth/sign-in/email` with
   an `Origin` header; projects `mobile` (390×844) and `desktop`, `closed`, and `pwa` (from spec 09);
-  axe on every page from spec 03; decoy words differ per test file. The `webServer` command rebuilds
+  axe (`tests/e2e/a11y.spec.ts`, WCAG 2.1 A/AA) on every page, light and dark; decoy words differ per
+  test file (the list is in `doc/guide/app.md` § 8). The `webServer` command rebuilds
   `e2e.db` (`scripts/e2e-reset-db.mjs`), builds, and starts both servers on the same build
   (`scripts/e2e-servers.mjs`: 3101 first, then 3100); `tests/e2e/global-setup.ts` seeds the two users
   and saves their sessions in `playwright/.auth/seed-<a|b>.json`.
 - Seed users A and B are read-only for Playwright: they serve the tests that only read (dashboard,
   isolation reads, a11y) and are never modified, signed out or deleted by a test. Every test that
   writes data (bills, readings, extractions, batches, offline queue, sign-out, account deletion)
-  signs up its own user with `signUpTestUser(page, prefix)` from `tests/e2e/helpers.ts` (from spec
-  03) and creates its house and supplies through the UI, so that the `mobile` and `desktop` runs and
+  signs up its own user with `signUpTestUser(page, prefix)` from `tests/e2e/helpers.ts` and creates
+  its house and supplies through the UI, so that the `mobile` and `desktop` runs and
   the order of the files never matter. In an isolation pair every write is made by users signed up
   in the test; a seed user may only read (as the intruder, or as the owner of a resource that is
   only read).
@@ -278,6 +282,17 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
   run it through `runBatch` (`src/lib/services/batch.ts`), which skips an empty list. Likewise
   `insert().values([])` throws «values() must be called with at least one value» (drizzle-orm
   0.45.4): a service that may have nothing to insert skips the insert query.
+- 2026-10-24 — zod 4: `.pick()` / `.omit()` throw on an object schema with a `refine`
+  (`BillInputSchema`), and the build fails: an action schema that needs a few of its fields is a
+  plain `z.object` of its own (`src/app/(app)/bollette/schemas.ts`).
+- 2026-10-24 — Biome formats `pnpm-lock.yaml` and the committed lock is in its format: after
+  `pnpm add`, run `pnpm exec biome format --write pnpm-lock.yaml` or `pnpm lint` is red.
+- 2026-10-24 — Playwright: the body of a Server Action's response is gone once the page has
+  reacted to it («No data found for resource»); a test reads it inside `page.route` with
+  `route.fetch` + `route.fulfill` (`tests/e2e/isolamento.spec.ts`).
+- 2026-10-24 — Windows, Git Bash: an argument `/` given to `node` arrives as
+  `C:/Program Files/Git/` (set `MSYS_NO_PATHCONV=1`); stopping the agent's background task of
+  `pnpm start` leaves the `node` child listening, so the port stays busy until that process is killed.
 
 ## 12. Definition of done (per session)
 

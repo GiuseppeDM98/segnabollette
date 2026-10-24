@@ -10,17 +10,21 @@ export default async function SignUpPage() {
   await connection();
   if (!env.SIGNUP_ENABLED) {
     return (
-      <main className="mx-auto max-w-sm p-4">
-        <h1 className="mb-4 text-2xl font-semibold">Le iscrizioni sono chiuse</h1>
-        <p className="mb-4">Questa installazione di Segnabollette non accetta nuovi account.</p>
-        <Link href="/accedi">Accedi</Link>
-      </main>
+      <>
+        <h1 className="mb-4 text-lg font-bold">Le iscrizioni sono chiuse</h1>
+        <p className="mb-4 text-ink-soft">
+          Questa installazione di Segnabollette non accetta nuovi account.
+        </p>
+        <Link href="/accedi" className="font-semibold text-link">
+          Accedi
+        </Link>
+      </>
     );
   }
   return (
-    <main className="mx-auto max-w-sm p-4">
-      <h1 className="mb-4 text-2xl font-semibold">Crea un account</h1>
+    <>
+      <h1 className="mb-4 text-lg font-bold">Crea un account</h1>
       <SignUpForm />
-    </main>
+    </>
   );
 }

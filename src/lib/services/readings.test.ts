@@ -10,7 +10,14 @@ import {
 } from '@/lib/db/testing/fixtures';
 import { addDays } from '@/lib/domain/dates';
 import { confirmBill } from './bills';
-import { createSelfReadings, deleteReading, listReadings } from './readings';
+import { createHouse } from './houses-supplies';
+import {
+  createSelfReadings,
+  deleteReading,
+  latestReadings,
+  listReadings,
+  suggestedRegisters,
+} from './readings';
 
 const TODAY = '2026-10-24';
 
@@ -129,10 +136,145 @@ describe('readings — isolation between users', () => {
     expect((await snapshotUserRows(db, userId)).meterReadings).toEqual([]);
   });
 
+  it('names the house of the supply once there is a second house', async () => {
+    const { db, userId } = await twoUsers();
+    expect((await listReadings(db, userId, {}))[0]?.supplyLabel).toBe('Luce');
+
+    await createHouse(db, userId, { name: 'Casa Gabbiano' });
+
+    expect((await listReadings(db, userId, {}))[0]?.supplyLabel).toBe('Luce · Casa Pellicano');
+  });
+
   it('lists nothing for the supply of someone else', async () => {
     const { db, userId, supplyId, intruderId } = await twoUsers();
 
     expect(await listReadings(db, userId, { supplyId })).toHaveLength(1);
     expect(await listReadings(db, intruderId, { supplyId })).toEqual([]);
+  });
+});
+
+describe('suggestedRegisters', () => {
+  const bandReadings = (readOn: string, base: number) =>
+    (['F1', 'F2', 'F3'] as const).map((register, index) => ({
+      readOn,
+      register,
+      value: base + index * 100,
+      source: 'bill_actual' as const,
+    }));
+
+  it('asks for F1, F2 and F3 when a confirmed bill has banded readings', async () => {
+    const { db, userId, supplyId } = await setup();
+    await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, { readings: bandReadings('2026-09-30', 1000) }),
+      { source: 'manual' },
+    );
+
+    expect(await suggestedRegisters(db, userId, supplyId)).toEqual(['F1', 'F2', 'F3']);
+  });
+
+  it('keeps the bands when the banded bill is older and the latest one has no readings', async () => {
+    const { db, userId, supplyId } = await setup();
+    const august = { periodStart: '2026-08-01', periodEnd: '2026-08-31' };
+    await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, { readings: bandReadings('2026-08-31', 1000) }, august),
+      { source: 'manual' },
+    );
+    await confirmBill(db, userId, billInput(supplyId), { source: 'manual' });
+
+    expect(await suggestedRegisters(db, userId, supplyId)).toEqual(['F1', 'F2', 'F3']);
+  });
+
+  it('asks for a single value without readings, for gas, and adds the panels registers', async () => {
+    const { db, userId, supplyId } = await setup();
+    const { supplyId: gasId } = await createHouseWithSupply(db, userId, {
+      kind: 'gas',
+      label: 'Gas',
+    });
+    const { supplyId: panelsId } = await createHouseWithSupply(db, userId, {
+      label: 'Luce con pannelli',
+      hasPhotovoltaic: true,
+    });
+
+    expect(await suggestedRegisters(db, userId, supplyId)).toEqual(['single']);
+    expect(await suggestedRegisters(db, userId, gasId)).toEqual(['single']);
+    expect(await suggestedRegisters(db, userId, panelsId)).toEqual([
+      'single',
+      'feed_in',
+      'production',
+    ]);
+  });
+
+  it('refuses a flat-fee supply', async () => {
+    const { db, userId } = await setup();
+    const { supplyId } = await createHouseWithSupply(db, userId, {
+      kind: 'telecom',
+      label: 'Internet',
+    });
+
+    await expectDomainError(suggestedRegisters(db, userId, supplyId), 'VALIDATION');
+  });
+
+  it('answers for the own supply and refuses the supply of someone else', async () => {
+    const { db, userId, supplyId } = await setup();
+    const intruder = await createTestUser(db);
+
+    expect(await suggestedRegisters(db, userId, supplyId)).toEqual(['single']);
+    await expectDomainError(suggestedRegisters(db, intruder.id, supplyId), 'NOT_FOUND');
+  });
+});
+
+describe('latestReadings', () => {
+  const january = { periodStart: '2025-01-01', periodEnd: '2025-01-31' };
+  const february = { periodStart: '2025-02-01', periodEnd: '2025-02-28' };
+  const f1 = (readOn: string, value: number) => ({
+    readOn,
+    register: 'F1' as const,
+    value,
+    source: 'bill_actual' as const,
+  });
+
+  it('gives the most recent reading per register, ignoring a replaced bill', async () => {
+    const { db, userId, supplyId } = await setup();
+    await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, { readings: [f1('2025-01-31', 100)] }, january),
+      { source: 'manual' },
+    );
+    await createSelfReadings(
+      db,
+      userId,
+      { supplyId, readOn: '2025-02-15', values: [{ register: 'F1', value: 120 }] },
+      { today: TODAY },
+    );
+    // A February bill read F1 later, then a second February bill replaced it.
+    await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, { readings: [f1('2025-02-28', 130)] }, february),
+      { source: 'manual' },
+    );
+    await confirmBill(db, userId, billInput(supplyId, { overlapDecision: 'replace' }, february), {
+      source: 'manual',
+    });
+
+    expect(await latestReadings(db, userId, supplyId)).toEqual({
+      F1: { value: 120, readOn: '2025-02-15' },
+    });
+  });
+
+  it('answers for the own supply and refuses the supply of someone else', async () => {
+    const { db, userId, supplyId } = await setup();
+    await createSelfReadings(db, userId, selfReading(supplyId), { today: TODAY });
+    const intruder = await createTestUser(db);
+
+    expect(await latestReadings(db, userId, supplyId)).toEqual({
+      single: { value: 1000, readOn: TODAY },
+    });
+    await expectDomainError(latestReadings(db, intruder.id, supplyId), 'NOT_FOUND');
   });
 });

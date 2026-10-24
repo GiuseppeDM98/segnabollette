@@ -1,26 +1,250 @@
+/*
+ * Segnabollette design tokens: the savings passbook. Pale security-tinted paper, bottle-green
+ * book cloth for the shell, print ink for figures, violet stamp ink for states. DESIGN.md is the
+ * reference for every value here.
+ *
+ * Tailwind's default palette is reset (`--color-*: initial`): a class such as `text-gray-500`
+ * generates nothing, only these tokens exist. Dark mode redefines the same variables under
+ * [data-theme='dark'] and, when the theme cookie says `system`, under the OS dark preference;
+ * components never use Tailwind's `dark:` variant, which would ignore the cookie.
+ *
+ * WARNING: the light and the dark blocks list the same variables. A new token goes into
+ * @theme and into both dark blocks (the forced one and the system one), and DESIGN.md.
+ */
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --color-*: initial;
+  --font-*: initial;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-franklin), "Libre Franklin", system-ui, sans-serif;
+  --font-print: var(--font-courier), "Courier Prime", ui-monospace, monospace;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  /* Paper, ink and cloth */
+  --color-bg: #eef1ed;
+  --color-surface: #fbfcfa;
+  --color-surface-sunk: #e4e9e4;
+  --color-ink: #16181a;
+  --color-ink-soft: #4b524e;
+  --color-ink-muted: #5f6964;
+  --color-rule: #cfd8d2;
+  --color-rule-strong: #7a8a83;
+  --color-brand: #24443c;
+  --color-on-brand: #eef1ec;
+  --color-on-brand-soft: #b9c7c0;
+  --color-action: #24443c;
+  --color-action-hover: #1a332d;
+  --color-on-action: #f5f7f4;
+  --color-link: #24443c;
+  --color-stamp: #5b3f8c;
+  --color-stamp-wash: #ece7f4;
+  --color-danger: #a8281e;
+  --color-danger-wash: #f7e6e3;
+  --color-on-danger: #ffffff;
+  --color-focus: #5b3f8c;
+  --color-selection: #d9cfee;
+
+  /* Chart series: one job each (DESIGN.md § Charts). Validated with the dataviz palette checks
+     on the surface colour of each theme. */
+  --color-cat-commodity: #2a78d6;
+  --color-cat-sale: #eb6834;
+  --color-cat-network: #1baf7a;
+  --color-cat-system: #eda100;
+  --color-cat-excise: #e87ba4;
+  --color-cat-vat: #008300;
+  --color-cat-other: #6250d6;
+  --color-cat-flat: #e34948;
+  --color-cat-feed-in: #7a8a83;
+  --color-band-f1: #184f95;
+  --color-band-f2: #2a78d6;
+  --color-band-f3: #86b6ef;
+  --color-band-f23: #5598e7;
+  --color-band-single: #1baf7a;
+  --color-readings: #eb6834;
+  --color-pv-self: #008300;
+  --color-pv-feed-in: #eda100;
+  --color-price-commodity: #2a78d6;
+  --color-price-total: #eb6834;
+  --color-yoy-current: #2a78d6;
+  --color-yoy-previous: #8f9a94;
+  --color-reference-wholesale: #1baf7a;
+  --color-reference-arera: #eda100;
+
+  --animate-stamp: stamp 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes stamp {
+    from {
+      transform: rotate(var(--stamp-tilt, -6deg)) scale(1.08);
+      opacity: 0;
+    }
+    to {
+      transform: rotate(var(--stamp-tilt, -6deg)) scale(1);
+      opacity: 1;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* The closed book: cloth-dark ground, paper-light ink. */
+@layer base {
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --color-bg: #0f1a17;
+    --color-surface: #16241f;
+    --color-surface-sunk: #1d2e28;
+    --color-ink: #e6ece8;
+    --color-ink-soft: #b3c0b9;
+    --color-ink-muted: #8fa098;
+    --color-rule: #2c3d36;
+    --color-rule-strong: #6f8279;
+    --color-brand: #1f3d34;
+    --color-on-brand: #e6ece8;
+    --color-on-brand-soft: #a9bdb4;
+    --color-action: #8cc5ab;
+    --color-action-hover: #a3d4bd;
+    --color-on-action: #0f1a17;
+    --color-link: #9fd3bb;
+    --color-stamp: #b9a2e6;
+    --color-stamp-wash: #2a2340;
+    --color-danger: #f08a7e;
+    --color-danger-wash: #3a1f1c;
+    --color-on-danger: #0f1a17;
+    --color-focus: #b9a2e6;
+    --color-selection: #3d3360;
+    --color-cat-commodity: #3987e5;
+    --color-cat-sale: #d95926;
+    --color-cat-network: #199e70;
+    --color-cat-system: #c98500;
+    --color-cat-excise: #d55181;
+    --color-cat-vat: #008300;
+    --color-cat-other: #9085e9;
+    --color-cat-flat: #e66767;
+    --color-cat-feed-in: #6f8279;
+    --color-band-f1: #86b6ef;
+    --color-band-f2: #3987e5;
+    --color-band-f3: #1c5cab;
+    --color-band-f23: #2a78d6;
+    --color-band-single: #199e70;
+    --color-readings: #d95926;
+    --color-pv-self: #008300;
+    --color-pv-feed-in: #c98500;
+    --color-price-commodity: #3987e5;
+    --color-price-total: #d95926;
+    --color-yoy-current: #3987e5;
+    --color-yoy-previous: #6f8279;
+    --color-reference-wholesale: #199e70;
+    --color-reference-arera: #c98500;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-theme="system"] {
+      color-scheme: dark;
+      --color-bg: #0f1a17;
+      --color-surface: #16241f;
+      --color-surface-sunk: #1d2e28;
+      --color-ink: #e6ece8;
+      --color-ink-soft: #b3c0b9;
+      --color-ink-muted: #8fa098;
+      --color-rule: #2c3d36;
+      --color-rule-strong: #6f8279;
+      --color-brand: #1f3d34;
+      --color-on-brand: #e6ece8;
+      --color-on-brand-soft: #a9bdb4;
+      --color-action: #8cc5ab;
+      --color-action-hover: #a3d4bd;
+      --color-on-action: #0f1a17;
+      --color-link: #9fd3bb;
+      --color-stamp: #b9a2e6;
+      --color-stamp-wash: #2a2340;
+      --color-danger: #f08a7e;
+      --color-danger-wash: #3a1f1c;
+      --color-on-danger: #0f1a17;
+      --color-focus: #b9a2e6;
+      --color-selection: #3d3360;
+      --color-cat-commodity: #3987e5;
+      --color-cat-sale: #d95926;
+      --color-cat-network: #199e70;
+      --color-cat-system: #c98500;
+      --color-cat-excise: #d55181;
+      --color-cat-vat: #008300;
+      --color-cat-other: #9085e9;
+      --color-cat-flat: #e66767;
+      --color-cat-feed-in: #6f8279;
+      --color-band-f1: #86b6ef;
+      --color-band-f2: #3987e5;
+      --color-band-f3: #1c5cab;
+      --color-band-f23: #2a78d6;
+      --color-band-single: #199e70;
+      --color-readings: #d95926;
+      --color-pv-self: #008300;
+      --color-pv-feed-in: #c98500;
+      --color-price-commodity: #3987e5;
+      --color-price-total: #d95926;
+      --color-yoy-current: #3987e5;
+      --color-yoy-previous: #6f8279;
+      --color-reference-wholesale: #199e70;
+      --color-reference-arera: #c98500;
+    }
+  }
+
+  html {
+    color-scheme: light;
+    background: var(--color-bg);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    caret-color: var(--color-stamp);
+    accent-color: var(--color-action);
+    scrollbar-color: var(--color-rule-strong) transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-selection);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+
+  /* Phone browsers zoom into a field typed below 16 px. */
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
+
+/* Book cloth: a faint diagonal weave on the shell surfaces only. */
+@utility cloth {
+  background-color: var(--color-brand);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(255 255 255 / 0.035) 0 2px,
+    transparent 2px 4px
+  );
+  color: var(--color-on-brand);
+}
+
+/* Figures as the passbook printer sets them: same-width digits that line up in columns. */
+@utility figures {
+  font-family: var(--font-print);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }

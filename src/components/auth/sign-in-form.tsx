@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
+import { buttonClass, inputClass, labelClass } from '@/components/ui/styles';
 import { authClient } from '@/lib/auth/auth-client';
 
 const TOO_MANY_ATTEMPTS = 'Troppi tentativi. Riprova fra qualche minuto.';
@@ -38,32 +39,38 @@ export function SignInForm({
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1">
+    <form onSubmit={submit} className="flex flex-col gap-4">
+      <label className={`${labelClass} flex flex-col gap-1`}>
         Email
-        <input name="email" type="email" autoComplete="email" required className="border p-2" />
+        <input name="email" type="email" autoComplete="email" required className={inputClass} />
       </label>
-      <label className="flex flex-col gap-1">
+      <label className={`${labelClass} flex flex-col gap-1`}>
         Password
         <input
           name="password"
           type="password"
           autoComplete="current-password"
           required
-          className="border p-2"
+          className={inputClass}
         />
       </label>
       {errorMessage && (
-        <p role="alert" className="text-red-700">
+        <p
+          role="alert"
+          className="rounded-sm border border-danger bg-danger-wash px-3 py-2 font-semibold text-danger"
+        >
           {errorMessage}
         </p>
       )}
-      <button type="submit" disabled={isPending} className="border p-2">
+      <button type="submit" disabled={isPending} className={buttonClass('primary')}>
         Accedi
       </button>
       {signupEnabled && (
         <p>
-          Non hai un account? <Link href="/registrati">Registrati</Link>
+          Non hai un account?{' '}
+          <Link href="/registrati" className="font-semibold text-link">
+            Registrati
+          </Link>
         </p>
       )}
     </form>

@@ -12,6 +12,7 @@ import { nanoid } from 'nanoid';
 import type { Db } from '@/lib/db/create-db';
 import type { BillLineRow, BillRow } from '@/lib/db/repositories/bills';
 import * as billsRepository from '@/lib/db/repositories/bills';
+import * as housesRepository from '@/lib/db/repositories/houses';
 import type { ReadingRow } from '@/lib/db/repositories/readings';
 import * as readingsRepository from '@/lib/db/repositories/readings';
 import type { SupplyRow } from '@/lib/db/repositories/supplies';
@@ -27,7 +28,7 @@ import {
   type SupplyKind,
 } from '@/lib/domain/types';
 import { DomainError } from '@/lib/errors';
-import { UNIT_LABELS } from '@/lib/format';
+import { formatSupplyLabel, UNIT_LABELS } from '@/lib/format';
 import { runBatch } from './batch';
 
 const PAGE_SIZE = 50;
@@ -226,12 +227,84 @@ export async function listBills(
     offset: (options.page - 1) * PAGE_SIZE,
   });
   const supplies = await suppliesRepository.listSupplies(db, userId, { includeArchived: true });
+  const houses = await housesRepository.listHouses(db, userId);
+  const houseNameById = new Map(houses.map((house) => [house.id, house.name]));
   const supplyById = new Map(supplies.map((supply) => [supply.id, supply]));
   // A bill without its supply row cannot exist (supplies are deleted with their bills); it would
   // be skipped rather than shown without a label.
   const bills = rows.slice(0, PAGE_SIZE).flatMap((bill) => {
     const supply = supplyById.get(bill.supplyId);
-    return supply ? [{ ...bill, supplyLabel: supply.label, supplyKind: supply.kind }] : [];
+    if (!supply) return [];
+    const houseName = houseNameById.get(supply.houseId) ?? '';
+    const supplyLabel = formatSupplyLabel(supply.label, houseName, houses.length);
+    return [{ ...bill, supplyLabel, supplyKind: supply.kind }];
   });
   return { bills, hasNextPage: rows.length > PAGE_SIZE };
+}
+
+/**
+ * The latest confirmed bill of each supply (by billing period end), for the home page. A supply
+ * without confirmed bills, or that is not the user's, maps to null.
+ */
+export async function listLatestBills(
+  db: Db,
+  userId: string,
+  supplyIds: string[],
+): Promise<Record<string, BillRow | null>> {
+  const rows = await billsRepository.listConfirmedBillsOfSupplies(db, userId, supplyIds);
+  const latest: Record<string, BillRow | null> = Object.fromEntries(
+    supplyIds.map((supplyId) => [supplyId, null]),
+  );
+  // Rows come newest first: the first one seen for a supply is its latest.
+  for (const row of rows) latest[row.supplyId] ??= row;
+  return latest;
+}
+
+/** A stored bill back in the shape the bill form edits; the overlap decision is asked again. */
+export function billInputFromDetail(detail: {
+  bill: BillRow;
+  lines: BillLineRow[];
+  readings: ReadingRow[];
+}): BillInput {
+  const { bill } = detail;
+  return {
+    supplyId: bill.supplyId,
+    periodStart: bill.periodStart,
+    periodEnd: bill.periodEnd,
+    issueDate: bill.issueDate,
+    dueDate: bill.dueDate,
+    supplierName: bill.supplierName,
+    offerName: bill.offerName,
+    totalCents: bill.totalCents,
+    amountDueCents: bill.amountDueCents,
+    conversionFactor: bill.conversionFactor,
+    calorificValueGj: bill.calorificValueGj,
+    isEstimated: bill.isEstimated,
+    lines: [...detail.lines]
+      .sort((a, b) => a.position - b.position)
+      .map((line) => ({
+        description: line.description,
+        category: line.category,
+        component: line.component,
+        periodStart: line.periodStart,
+        periodEnd: line.periodEnd,
+        quantity: line.quantity,
+        quantityUnit: line.quantityUnit,
+        unitPriceMicros: line.unitPriceMicros,
+        amountCents: line.amountCents,
+        band: line.band,
+        isRecalculation: line.isRecalculation,
+        isEstimated: line.isEstimated,
+        vatRateBp: line.vatRateBp,
+      })),
+    // A reading printed on a bill is always bill_actual or bill_estimated: self readings have no
+    // bill. The narrowing keeps the BillInput type without inventing a source.
+    readings: detail.readings.map((reading) => ({
+      readOn: reading.readOn,
+      register: reading.register,
+      value: reading.value,
+      source: reading.source === 'bill_estimated' ? 'bill_estimated' : 'bill_actual',
+    })),
+    overlapDecision: null,
+  };
 }

@@ -3,7 +3,9 @@
  *
  * WARNING: a value added to one of these lists must also be handled in:
  * src/lib/engine/types.ts (emptyCosts) and src/lib/engine/supply-months.ts (cost buckets,
- * consumption units).
+ * consumption units); src/lib/format.ts (CATEGORY_LABELS, COMPONENT_LABELS, KIND_LABELS,
+ * REGISTER_LABELS, IDENTIFIER_HINTS); src/components/bills/line-templates.ts (the per-kind
+ * line templates).
  */
 export const SUPPLY_KINDS = ['electricity', 'gas', 'water', 'telecom', 'waste'] as const;
 export type SupplyKind = (typeof SUPPLY_KINDS)[number];

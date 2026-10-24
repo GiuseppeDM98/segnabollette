@@ -287,7 +287,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 |---|---|---|---|---|
 | 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | in esercizio il 2026-10-24, PR #3; ritirata il 2026-10-24 |
 | 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #5; ritirata il 2026-10-24 |
-| 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | scritta 2026-10-24; riletta 2026-10-24 |
+| 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | implementata il 2026-10-24, branch `feature/03-design-manual-entry` |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 | scritta 2026-10-24; riletta 2026-10-24 |
 | 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 | scritta 2026-10-24; riletta 2026-10-24 |
 | 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -300,7 +300,8 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01 e la 02 sono ritirate (2026-10-24): la prossima da incollare è il prompt in fondo alla 03.
+La 01 e la 02 sono ritirate (2026-10-24); la 03 è implementata (2026-10-24): dopo il merge della sua
+PR la prossima da incollare è il prompt in fondo alla 04.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 
