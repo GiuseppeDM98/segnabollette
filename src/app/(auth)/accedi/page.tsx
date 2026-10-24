@@ -9,12 +9,12 @@ export default async function SignInPage({
 }) {
   const { next } = await searchParams;
   return (
-    <main className="mx-auto max-w-sm p-4">
-      <h1 className="mb-4 text-2xl font-semibold">Accedi</h1>
+    <>
+      <h1 className="mb-4 text-lg font-bold">Accedi</h1>
       <SignInForm
         nextPath={safeNextPath(typeof next === 'string' ? next : null)}
         signupEnabled={env.SIGNUP_ENABLED}
       />
-    </main>
+    </>
   );
 }

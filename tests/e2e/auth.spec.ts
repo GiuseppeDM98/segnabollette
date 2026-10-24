@@ -6,7 +6,7 @@
  */
 import { expect, type Page, test } from '@playwright/test';
 
-const PASSWORD = 'password-capibara-1';
+const PASSWORD = 'password-lontra-1';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -24,19 +24,22 @@ test.describe('accesso', () => {
 
   test('registra un utente nuovo e arriva sulla Casa', async ({ page }) => {
     await page.goto('/registrati');
-    await page.getByLabel('Nome').fill('Capibara');
+    await page.getByLabel('Nome').fill('Lontra');
     await page.getByLabel('Email').fill(email);
     await page.getByLabel('Password').fill(PASSWORD);
     await page.getByRole('button', { name: 'Crea account' }).click();
 
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('heading', { name: 'Ciao, Capibara' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Comincia creando la tua casa' })).toBeVisible();
   });
 
   test('esce e rientra tornando a next', async ({ page }) => {
     await signIn(page, '/accedi?next=/', email, PASSWORD);
     await expect(page).toHaveURL('/');
 
+    // «Esci» lives in Impostazioni.
+    await page.goto('/impostazioni');
+    await page.locator('body[data-hydrated]').waitFor({ state: 'attached' });
     await page.getByRole('button', { name: 'Esci' }).click();
     await expect(page).toHaveURL('/accedi');
 
@@ -44,7 +47,7 @@ test.describe('accesso', () => {
     // prove that the sign-in page passed next through.
     await signIn(page, '/accedi?next=%2F%3Fda%3Dnext', email, PASSWORD);
     await expect(page).toHaveURL('/?da=next');
-    await expect(page.getByRole('heading', { name: 'Ciao, Capibara' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Comincia creando la tua casa' })).toBeVisible();
   });
 
   test('con la password sbagliata mostra un errore che non dice quale campo', async ({ page }) => {
@@ -76,7 +79,7 @@ test.describe('accesso', () => {
 
   test('registrare di nuovo la stessa email dà il messaggio generico', async ({ page }) => {
     await page.goto('/registrati');
-    await page.getByLabel('Nome').fill('Capibara');
+    await page.getByLabel('Nome').fill('Lontra');
     await page.getByLabel('Email').fill(email);
     await page.getByLabel('Password').fill(PASSWORD);
     await page.getByRole('button', { name: 'Crea account' }).click();

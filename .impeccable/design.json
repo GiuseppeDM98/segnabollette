@@ -1,0 +1,1851 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T15:01:34.926Z",
+  "title": "Design System: Segnabollette",
+  "extensions": {
+    "status": "Tokens and components recorded from the shipped manual-entry build (src/app/globals.css, src/components/ui/styles.ts, src/components/ui/*, src/components/shell/app-shell.tsx and the app screens), 2026-10-24.",
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Security Paper",
+        "canonical": "#eef1ed",
+        "cssVar": "--color-bg",
+        "theme": "light",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242524",
+          "#414340",
+          "#60625f",
+          "#818380",
+          "#a4a6a3",
+          "#c8cac7",
+          "#eeefed"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Clean Leaf",
+        "canonical": "#fbfcfa",
+        "cssVar": "--color-surface",
+        "theme": "light",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252524",
+          "#424241",
+          "#616160",
+          "#828381",
+          "#a4a5a4",
+          "#c9c9c8",
+          "#eeeeee"
+        ]
+      },
+      "surface-sunk": {
+        "role": "neutral",
+        "displayName": "Sunk Leaf",
+        "canonical": "#e4e9e4",
+        "cssVar": "--color-surface-sunk",
+        "theme": "light",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#242624",
+          "#404340",
+          "#5e625e",
+          "#7f847f",
+          "#a3a6a3",
+          "#c7cac7",
+          "#edefed"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Print Ink",
+        "canonical": "#16181a",
+        "cssVar": "--color-ink",
+        "theme": "light",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#242526",
+          "#404244",
+          "#5f6164",
+          "#808385",
+          "#a3a5a7",
+          "#c8c9cb",
+          "#edeef0"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "#4b524e",
+        "cssVar": "--color-ink-soft",
+        "theme": "light",
+        "tonalRamp": [
+          "#0a0c0a",
+          "#222624",
+          "#3e4340",
+          "#5c635f",
+          "#7d8480",
+          "#a1a7a3",
+          "#c6cac8",
+          "#ecefed"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Faded Ink",
+        "canonical": "#5f6964",
+        "cssVar": "--color-ink-muted",
+        "theme": "light",
+        "tonalRamp": [
+          "#090c0a",
+          "#212624",
+          "#3d4440",
+          "#5b645f",
+          "#7b8580",
+          "#9fa7a3",
+          "#c4cbc8",
+          "#ebf0ed"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Office Rule",
+        "canonical": "#cfd8d2",
+        "cssVar": "--color-rule",
+        "theme": "light",
+        "tonalRamp": [
+          "#090c0a",
+          "#222624",
+          "#3e4440",
+          "#5c635f",
+          "#7d847f",
+          "#a0a7a3",
+          "#c5cbc7",
+          "#ecefed"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule",
+        "canonical": "#7a8a83",
+        "cssVar": "--color-rule-strong",
+        "theme": "light",
+        "tonalRamp": [
+          "#080c0a",
+          "#1f2724",
+          "#3a4540",
+          "#57655f",
+          "#788680",
+          "#9ca8a3",
+          "#c2ccc7",
+          "#e9f0ed"
+        ]
+      },
+      "brand": {
+        "role": "primary",
+        "displayName": "Bottle-Green Book Cloth",
+        "canonical": "#24443c",
+        "cssVar": "--color-brand",
+        "theme": "light",
+        "tonalRamp": [
+          "#040e0b",
+          "#182925",
+          "#304741",
+          "#4b6860",
+          "#6b8a81",
+          "#92aca4",
+          "#bacfc8",
+          "#e3f2ee"
+        ]
+      },
+      "on-brand": {
+        "role": "primary",
+        "displayName": "Ink on Cloth",
+        "canonical": "#eef1ec",
+        "cssVar": "--color-on-brand",
+        "theme": "light",
+        "tonalRamp": [
+          "#0b0b0a",
+          "#242523",
+          "#414340",
+          "#60625e",
+          "#81837f",
+          "#a4a6a2",
+          "#c8cac7",
+          "#eeefed"
+        ]
+      },
+      "on-brand-soft": {
+        "role": "primary",
+        "displayName": "Soft Ink on Cloth",
+        "canonical": "#b9c7c0",
+        "cssVar": "--color-on-brand-soft",
+        "theme": "light",
+        "tonalRamp": [
+          "#080c0a",
+          "#202724",
+          "#3c4440",
+          "#59645f",
+          "#7a8680",
+          "#9ea8a3",
+          "#c3cbc7",
+          "#eaf0ed"
+        ]
+      },
+      "action": {
+        "role": "primary",
+        "displayName": "Action",
+        "canonical": "#24443c",
+        "cssVar": "--color-action",
+        "theme": "light",
+        "tonalRamp": [
+          "#040e0b",
+          "#182925",
+          "#304741",
+          "#4b6860",
+          "#6b8a81",
+          "#92aca4",
+          "#bacfc8",
+          "#e3f2ee"
+        ]
+      },
+      "action-hover": {
+        "role": "primary",
+        "displayName": "Action Hover",
+        "canonical": "#1a332d",
+        "cssVar": "--color-action-hover",
+        "theme": "light",
+        "tonalRamp": [
+          "#050d0b",
+          "#1b2825",
+          "#344742",
+          "#4f6761",
+          "#708982",
+          "#95aaa5",
+          "#bdcec9",
+          "#e5f2ee"
+        ]
+      },
+      "on-action": {
+        "role": "primary",
+        "displayName": "Ink on Action",
+        "canonical": "#f5f7f4",
+        "cssVar": "--color-on-action",
+        "theme": "light",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242524",
+          "#414241",
+          "#60625f",
+          "#818380",
+          "#a4a5a3",
+          "#c8c9c8",
+          "#eeefed"
+        ]
+      },
+      "link": {
+        "role": "primary",
+        "displayName": "Link",
+        "canonical": "#24443c",
+        "cssVar": "--color-link",
+        "theme": "light",
+        "tonalRamp": [
+          "#040e0b",
+          "#182925",
+          "#304741",
+          "#4b6860",
+          "#6b8a81",
+          "#92aca4",
+          "#bacfc8",
+          "#e3f2ee"
+        ]
+      },
+      "stamp": {
+        "role": "secondary",
+        "displayName": "Violet Stamp Ink",
+        "canonical": "#5b3f8c",
+        "cssVar": "--color-stamp",
+        "theme": "light",
+        "tonalRamp": [
+          "#0e051e",
+          "#2a1b43",
+          "#48356c",
+          "#695199",
+          "#8b72bd",
+          "#ac99d8",
+          "#cec0f3",
+          "#f2e8ff"
+        ]
+      },
+      "stamp-wash": {
+        "role": "secondary",
+        "displayName": "Stamp Wash",
+        "canonical": "#ece7f4",
+        "cssVar": "--color-stamp-wash",
+        "theme": "light",
+        "tonalRamp": [
+          "#0c0a0e",
+          "#262429",
+          "#434048",
+          "#635f69",
+          "#84808b",
+          "#a7a3ac",
+          "#cac8cf",
+          "#efedf3"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Ledger Red",
+        "canonical": "#a8281e",
+        "cssVar": "--color-danger",
+        "theme": "light",
+        "tonalRamp": [
+          "#210000",
+          "#4a0804",
+          "#761d15",
+          "#a63429",
+          "#cd584a",
+          "#e98577",
+          "#ffb1a5",
+          "#ffded4"
+        ]
+      },
+      "danger-wash": {
+        "role": "tertiary",
+        "displayName": "Danger Wash",
+        "canonical": "#f7e6e3",
+        "cssVar": "--color-danger-wash",
+        "theme": "light",
+        "tonalRamp": [
+          "#0e0a09",
+          "#2a2322",
+          "#493f3e",
+          "#6b5e5b",
+          "#8d7f7c",
+          "#aea2a0",
+          "#d0c7c5",
+          "#f4edeb"
+        ]
+      },
+      "on-danger": {
+        "role": "tertiary",
+        "displayName": "Ink on Danger",
+        "canonical": "#ffffff",
+        "cssVar": "--color-on-danger",
+        "theme": "light",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "focus": {
+        "role": "secondary",
+        "displayName": "Focus Ring",
+        "canonical": "#5b3f8c",
+        "cssVar": "--color-focus",
+        "theme": "light",
+        "tonalRamp": [
+          "#0e051e",
+          "#2a1b43",
+          "#48356c",
+          "#695199",
+          "#8b72bd",
+          "#ac99d8",
+          "#cec0f3",
+          "#f2e8ff"
+        ]
+      },
+      "selection": {
+        "role": "secondary",
+        "displayName": "Selection",
+        "canonical": "#d9cfee",
+        "cssVar": "--color-selection",
+        "theme": "light",
+        "tonalRamp": [
+          "#0c0912",
+          "#272230",
+          "#453e51",
+          "#655c75",
+          "#867d97",
+          "#a8a1b7",
+          "#cbc6d8",
+          "#f0ecf9"
+        ]
+      },
+      "cat-commodity": {
+        "role": "chart",
+        "displayName": "Cat Commodity",
+        "canonical": "#2a78d6",
+        "cssVar": "--color-cat-commodity",
+        "theme": "light",
+        "tonalRamp": [
+          "#000927",
+          "#002351",
+          "#054081",
+          "#1860b3",
+          "#3e83d9",
+          "#70a7f0",
+          "#a0ccff",
+          "#d1f1ff"
+        ]
+      },
+      "cat-sale": {
+        "role": "chart",
+        "displayName": "Cat Sale",
+        "canonical": "#eb6834",
+        "cssVar": "--color-cat-sale",
+        "theme": "light",
+        "tonalRamp": [
+          "#210000",
+          "#4a0800",
+          "#771e00",
+          "#a73500",
+          "#cf592a",
+          "#ea8763",
+          "#ffb396",
+          "#ffdfc9"
+        ]
+      },
+      "cat-network": {
+        "role": "chart",
+        "displayName": "Cat Network",
+        "canonical": "#1baf7a",
+        "cssVar": "--color-cat-network",
+        "theme": "light",
+        "tonalRamp": [
+          "#001204",
+          "#003018",
+          "#005230",
+          "#00774a",
+          "#129a6a",
+          "#61ba91",
+          "#98dab9",
+          "#ccfce3"
+        ]
+      },
+      "cat-system": {
+        "role": "chart",
+        "displayName": "Cat System",
+        "canonical": "#eda100",
+        "cssVar": "--color-cat-system",
+        "theme": "light",
+        "tonalRamp": [
+          "#1a0500",
+          "#3e1a00",
+          "#663400",
+          "#905000",
+          "#b47200",
+          "#d19944",
+          "#edc183",
+          "#ffe9bd"
+        ]
+      },
+      "cat-excise": {
+        "role": "chart",
+        "displayName": "Cat Excise",
+        "canonical": "#e87ba4",
+        "cssVar": "--color-cat-excise",
+        "theme": "light",
+        "tonalRamp": [
+          "#1c000b",
+          "#420f25",
+          "#6c2542",
+          "#983c62",
+          "#be5e83",
+          "#db88a5",
+          "#f6b3c9",
+          "#ffdfef"
+        ]
+      },
+      "cat-vat": {
+        "role": "chart",
+        "displayName": "Cat Vat",
+        "canonical": "#008300",
+        "cssVar": "--color-cat-vat",
+        "theme": "light",
+        "tonalRamp": [
+          "#001200",
+          "#003000",
+          "#005200",
+          "#067705",
+          "#3a9a35",
+          "#70ba6a",
+          "#a1db9c",
+          "#d2fcce"
+        ]
+      },
+      "cat-other": {
+        "role": "chart",
+        "displayName": "Cat Other",
+        "canonical": "#6250d6",
+        "cssVar": "--color-cat-other",
+        "theme": "light",
+        "tonalRamp": [
+          "#0a012c",
+          "#221559",
+          "#3c2e8c",
+          "#5949c2",
+          "#786de9",
+          "#9a97fe",
+          "#bfbfff",
+          "#e6e8ff"
+        ]
+      },
+      "cat-flat": {
+        "role": "chart",
+        "displayName": "Cat Flat",
+        "canonical": "#e34948",
+        "cssVar": "--color-cat-flat",
+        "theme": "light",
+        "tonalRamp": [
+          "#240000",
+          "#4e0005",
+          "#7d0d15",
+          "#af2329",
+          "#d74c4a",
+          "#f27e77",
+          "#ffaca4",
+          "#ffdad4"
+        ]
+      },
+      "cat-feed-in": {
+        "role": "chart",
+        "displayName": "Cat Feed In",
+        "canonical": "#7a8a83",
+        "cssVar": "--color-cat-feed-in",
+        "theme": "light",
+        "tonalRamp": [
+          "#080c0a",
+          "#1f2724",
+          "#3a4540",
+          "#57655f",
+          "#788680",
+          "#9ca8a3",
+          "#c2ccc7",
+          "#e9f0ed"
+        ]
+      },
+      "band-f1": {
+        "role": "chart",
+        "displayName": "Band F1",
+        "canonical": "#184f95",
+        "cssVar": "--color-band-f1",
+        "theme": "light",
+        "tonalRamp": [
+          "#000a21",
+          "#092448",
+          "#1c4274",
+          "#3161a3",
+          "#5284c8",
+          "#7da7e1",
+          "#aaccfa",
+          "#d8f1ff"
+        ]
+      },
+      "band-f2": {
+        "role": "chart",
+        "displayName": "Band F2",
+        "canonical": "#2a78d6",
+        "cssVar": "--color-band-f2",
+        "theme": "light",
+        "tonalRamp": [
+          "#000927",
+          "#002351",
+          "#054081",
+          "#1860b3",
+          "#3e83d9",
+          "#70a7f0",
+          "#a0ccff",
+          "#d1f1ff"
+        ]
+      },
+      "band-f3": {
+        "role": "chart",
+        "displayName": "Band F3",
+        "canonical": "#86b6ef",
+        "cssVar": "--color-band-f3",
+        "theme": "light",
+        "tonalRamp": [
+          "#010b1c",
+          "#0f2640",
+          "#244368",
+          "#3b6392",
+          "#5b85b7",
+          "#85a8d2",
+          "#b0ccee",
+          "#dcf1ff"
+        ]
+      },
+      "band-f23": {
+        "role": "chart",
+        "displayName": "Band F23",
+        "canonical": "#5598e7",
+        "cssVar": "--color-band-f23",
+        "theme": "light",
+        "tonalRamp": [
+          "#000a22",
+          "#02254a",
+          "#124277",
+          "#2662a6",
+          "#4885cb",
+          "#77a8e4",
+          "#a5cdfd",
+          "#d5f1ff"
+        ]
+      },
+      "band-single": {
+        "role": "chart",
+        "displayName": "Band Single",
+        "canonical": "#1baf7a",
+        "cssVar": "--color-band-single",
+        "theme": "light",
+        "tonalRamp": [
+          "#001204",
+          "#003018",
+          "#005230",
+          "#00774a",
+          "#129a6a",
+          "#61ba91",
+          "#98dab9",
+          "#ccfce3"
+        ]
+      },
+      "readings": {
+        "role": "chart",
+        "displayName": "Readings",
+        "canonical": "#eb6834",
+        "cssVar": "--color-readings",
+        "theme": "light",
+        "tonalRamp": [
+          "#210000",
+          "#4a0800",
+          "#771e00",
+          "#a73500",
+          "#cf592a",
+          "#ea8763",
+          "#ffb396",
+          "#ffdfc9"
+        ]
+      },
+      "pv-self": {
+        "role": "chart",
+        "displayName": "Pv Self",
+        "canonical": "#008300",
+        "cssVar": "--color-pv-self",
+        "theme": "light",
+        "tonalRamp": [
+          "#001200",
+          "#003000",
+          "#005200",
+          "#067705",
+          "#3a9a35",
+          "#70ba6a",
+          "#a1db9c",
+          "#d2fcce"
+        ]
+      },
+      "pv-feed-in": {
+        "role": "chart",
+        "displayName": "Pv Feed In",
+        "canonical": "#eda100",
+        "cssVar": "--color-pv-feed-in",
+        "theme": "light",
+        "tonalRamp": [
+          "#1a0500",
+          "#3e1a00",
+          "#663400",
+          "#905000",
+          "#b47200",
+          "#d19944",
+          "#edc183",
+          "#ffe9bd"
+        ]
+      },
+      "price-commodity": {
+        "role": "chart",
+        "displayName": "Price Commodity",
+        "canonical": "#2a78d6",
+        "cssVar": "--color-price-commodity",
+        "theme": "light",
+        "tonalRamp": [
+          "#000927",
+          "#002351",
+          "#054081",
+          "#1860b3",
+          "#3e83d9",
+          "#70a7f0",
+          "#a0ccff",
+          "#d1f1ff"
+        ]
+      },
+      "price-total": {
+        "role": "chart",
+        "displayName": "Price Total",
+        "canonical": "#eb6834",
+        "cssVar": "--color-price-total",
+        "theme": "light",
+        "tonalRamp": [
+          "#210000",
+          "#4a0800",
+          "#771e00",
+          "#a73500",
+          "#cf592a",
+          "#ea8763",
+          "#ffb396",
+          "#ffdfc9"
+        ]
+      },
+      "yoy-current": {
+        "role": "chart",
+        "displayName": "Yoy Current",
+        "canonical": "#2a78d6",
+        "cssVar": "--color-yoy-current",
+        "theme": "light",
+        "tonalRamp": [
+          "#000927",
+          "#002351",
+          "#054081",
+          "#1860b3",
+          "#3e83d9",
+          "#70a7f0",
+          "#a0ccff",
+          "#d1f1ff"
+        ]
+      },
+      "yoy-previous": {
+        "role": "chart",
+        "displayName": "Yoy Previous",
+        "canonical": "#8f9a94",
+        "cssVar": "--color-yoy-previous",
+        "theme": "light",
+        "tonalRamp": [
+          "#090c0a",
+          "#212624",
+          "#3d4440",
+          "#5a645f",
+          "#7b8580",
+          "#9fa7a3",
+          "#c4cbc7",
+          "#ebf0ed"
+        ]
+      },
+      "reference-wholesale": {
+        "role": "chart",
+        "displayName": "Reference Wholesale",
+        "canonical": "#1baf7a",
+        "cssVar": "--color-reference-wholesale",
+        "theme": "light",
+        "tonalRamp": [
+          "#001204",
+          "#003018",
+          "#005230",
+          "#00774a",
+          "#129a6a",
+          "#61ba91",
+          "#98dab9",
+          "#ccfce3"
+        ]
+      },
+      "reference-arera": {
+        "role": "chart",
+        "displayName": "Reference Arera",
+        "canonical": "#eda100",
+        "cssVar": "--color-reference-arera",
+        "theme": "light",
+        "tonalRamp": [
+          "#1a0500",
+          "#3e1a00",
+          "#663400",
+          "#905000",
+          "#b47200",
+          "#d19944",
+          "#edc183",
+          "#ffe9bd"
+        ]
+      },
+      "bg-dark": {
+        "role": "neutral",
+        "displayName": "Security Paper (dark)",
+        "canonical": "#0f1a17",
+        "cssVar": "--color-bg",
+        "theme": "dark",
+        "tonalRamp": [
+          "#080c0b",
+          "#202725",
+          "#3b4442",
+          "#586461",
+          "#798682",
+          "#9da8a5",
+          "#c3cbc9",
+          "#eaf0ee"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Clean Leaf (dark)",
+        "canonical": "#16241f",
+        "cssVar": "--color-surface",
+        "theme": "dark",
+        "tonalRamp": [
+          "#080c0b",
+          "#1f2724",
+          "#3a4541",
+          "#57655f",
+          "#778680",
+          "#9ca8a3",
+          "#c2ccc8",
+          "#e9f0ed"
+        ]
+      },
+      "surface-sunk-dark": {
+        "role": "neutral",
+        "displayName": "Sunk Leaf (dark)",
+        "canonical": "#1d2e28",
+        "cssVar": "--color-surface-sunk",
+        "theme": "dark",
+        "tonalRamp": [
+          "#070d0a",
+          "#1e2724",
+          "#384540",
+          "#55665f",
+          "#758780",
+          "#9aa9a3",
+          "#c0ccc8",
+          "#e8f1ed"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Print Ink (dark)",
+        "canonical": "#e6ece8",
+        "cssVar": "--color-ink",
+        "theme": "dark",
+        "tonalRamp": [
+          "#0a0c0b",
+          "#232624",
+          "#3f4341",
+          "#5e635f",
+          "#7f8480",
+          "#a2a6a3",
+          "#c7cac8",
+          "#edefed"
+        ]
+      },
+      "ink-soft-dark": {
+        "role": "neutral",
+        "displayName": "Soft Ink (dark)",
+        "canonical": "#b3c0b9",
+        "cssVar": "--color-ink-soft",
+        "theme": "dark",
+        "tonalRamp": [
+          "#090c0a",
+          "#212724",
+          "#3c4440",
+          "#5a645f",
+          "#7a857f",
+          "#9ea8a3",
+          "#c4cbc7",
+          "#eaf0ed"
+        ]
+      },
+      "ink-muted-dark": {
+        "role": "neutral",
+        "displayName": "Faded Ink (dark)",
+        "canonical": "#8fa098",
+        "cssVar": "--color-ink-muted",
+        "theme": "dark",
+        "tonalRamp": [
+          "#080c0a",
+          "#1f2724",
+          "#3a4540",
+          "#57655e",
+          "#77867f",
+          "#9ca9a2",
+          "#c2ccc7",
+          "#e9f1ed"
+        ]
+      },
+      "rule-dark": {
+        "role": "neutral",
+        "displayName": "Office Rule (dark)",
+        "canonical": "#2c3d36",
+        "cssVar": "--color-rule",
+        "theme": "dark",
+        "tonalRamp": [
+          "#070d0a",
+          "#1e2724",
+          "#394540",
+          "#55665f",
+          "#768780",
+          "#9aa9a3",
+          "#c1ccc7",
+          "#e8f1ed"
+        ]
+      },
+      "rule-strong-dark": {
+        "role": "neutral",
+        "displayName": "Strong Rule (dark)",
+        "canonical": "#6f8279",
+        "cssVar": "--color-rule-strong",
+        "theme": "dark",
+        "tonalRamp": [
+          "#070d0a",
+          "#1e2723",
+          "#39453f",
+          "#55665e",
+          "#76877f",
+          "#9aa9a2",
+          "#c1ccc7",
+          "#e8f1ed"
+        ]
+      },
+      "brand-dark": {
+        "role": "primary",
+        "displayName": "Bottle-Green Book Cloth (dark)",
+        "canonical": "#1f3d34",
+        "cssVar": "--color-brand",
+        "theme": "dark",
+        "tonalRamp": [
+          "#050d0a",
+          "#192924",
+          "#324740",
+          "#4c685f",
+          "#6d8a80",
+          "#93aba3",
+          "#bbcec7",
+          "#e4f2ed"
+        ]
+      },
+      "on-brand-dark": {
+        "role": "primary",
+        "displayName": "Ink on Cloth (dark)",
+        "canonical": "#e6ece8",
+        "cssVar": "--color-on-brand",
+        "theme": "dark",
+        "tonalRamp": [
+          "#0a0c0b",
+          "#232624",
+          "#3f4341",
+          "#5e635f",
+          "#7f8480",
+          "#a2a6a3",
+          "#c7cac8",
+          "#edefed"
+        ]
+      },
+      "on-brand-soft-dark": {
+        "role": "primary",
+        "displayName": "Soft Ink on Cloth (dark)",
+        "canonical": "#a9bdb4",
+        "cssVar": "--color-on-brand-soft",
+        "theme": "dark",
+        "tonalRamp": [
+          "#070d0a",
+          "#1e2723",
+          "#394540",
+          "#55665e",
+          "#76877f",
+          "#9aa9a2",
+          "#c1ccc7",
+          "#e8f1ed"
+        ]
+      },
+      "action-dark": {
+        "role": "primary",
+        "displayName": "Action (dark)",
+        "canonical": "#8cc5ab",
+        "cssVar": "--color-action",
+        "theme": "dark",
+        "tonalRamp": [
+          "#010f08",
+          "#0f2b20",
+          "#244b3b",
+          "#3b6d58",
+          "#5d8f79",
+          "#87b09d",
+          "#b2d2c2",
+          "#ddf5e9"
+        ]
+      },
+      "action-hover-dark": {
+        "role": "primary",
+        "displayName": "Action Hover (dark)",
+        "canonical": "#a3d4bd",
+        "cssVar": "--color-action-hover",
+        "theme": "dark",
+        "tonalRamp": [
+          "#020e08",
+          "#132b21",
+          "#2a4a3c",
+          "#426b59",
+          "#638d7a",
+          "#8bae9e",
+          "#b5d1c3",
+          "#e0f4ea"
+        ]
+      },
+      "on-action-dark": {
+        "role": "primary",
+        "displayName": "Ink on Action (dark)",
+        "canonical": "#0f1a17",
+        "cssVar": "--color-on-action",
+        "theme": "dark",
+        "tonalRamp": [
+          "#080c0b",
+          "#202725",
+          "#3b4442",
+          "#586461",
+          "#798682",
+          "#9da8a5",
+          "#c3cbc9",
+          "#eaf0ee"
+        ]
+      },
+      "link-dark": {
+        "role": "primary",
+        "displayName": "Link (dark)",
+        "canonical": "#9fd3bb",
+        "cssVar": "--color-link",
+        "theme": "dark",
+        "tonalRamp": [
+          "#020f08",
+          "#122b20",
+          "#284a3c",
+          "#406c59",
+          "#618e7a",
+          "#8aaf9e",
+          "#b4d1c3",
+          "#dff5ea"
+        ]
+      },
+      "stamp-dark": {
+        "role": "secondary",
+        "displayName": "Violet Stamp Ink (dark)",
+        "canonical": "#b9a2e6",
+        "cssVar": "--color-stamp",
+        "theme": "dark",
+        "tonalRamp": [
+          "#0e071a",
+          "#291e3d",
+          "#483864",
+          "#69558d",
+          "#8a76b1",
+          "#ac9bcd",
+          "#cec1ea",
+          "#f2e9ff"
+        ]
+      },
+      "stamp-wash-dark": {
+        "role": "secondary",
+        "displayName": "Stamp Wash (dark)",
+        "canonical": "#2a2340",
+        "cssVar": "--color-stamp-wash",
+        "theme": "dark",
+        "tonalRamp": [
+          "#0c0914",
+          "#262233",
+          "#433e55",
+          "#625c7b",
+          "#837d9d",
+          "#a6a1bc",
+          "#cac6dc",
+          "#efecfc"
+        ]
+      },
+      "danger-dark": {
+        "role": "tertiary",
+        "displayName": "Ledger Red (dark)",
+        "canonical": "#f08a7e",
+        "cssVar": "--color-danger",
+        "theme": "dark",
+        "tonalRamp": [
+          "#1d0201",
+          "#421310",
+          "#6c2a24",
+          "#98433b",
+          "#be655b",
+          "#da8e84",
+          "#f6b7af",
+          "#ffe2db"
+        ]
+      },
+      "danger-wash-dark": {
+        "role": "tertiary",
+        "displayName": "Danger Wash (dark)",
+        "canonical": "#3a1f1c",
+        "cssVar": "--color-danger-wash",
+        "theme": "dark",
+        "tonalRamp": [
+          "#120807",
+          "#30201e",
+          "#523c39",
+          "#765955",
+          "#997a76",
+          "#b99e9a",
+          "#d9c3c0",
+          "#faeae8"
+        ]
+      },
+      "on-danger-dark": {
+        "role": "tertiary",
+        "displayName": "Ink on Danger (dark)",
+        "canonical": "#0f1a17",
+        "cssVar": "--color-on-danger",
+        "theme": "dark",
+        "tonalRamp": [
+          "#080c0b",
+          "#202725",
+          "#3b4442",
+          "#586461",
+          "#798682",
+          "#9da8a5",
+          "#c3cbc9",
+          "#eaf0ee"
+        ]
+      },
+      "focus-dark": {
+        "role": "secondary",
+        "displayName": "Focus Ring (dark)",
+        "canonical": "#b9a2e6",
+        "cssVar": "--color-focus",
+        "theme": "dark",
+        "tonalRamp": [
+          "#0e071a",
+          "#291e3d",
+          "#483864",
+          "#69558d",
+          "#8a76b1",
+          "#ac9bcd",
+          "#cec1ea",
+          "#f2e9ff"
+        ]
+      },
+      "selection-dark": {
+        "role": "secondary",
+        "displayName": "Selection (dark)",
+        "canonical": "#3d3360",
+        "cssVar": "--color-selection",
+        "theme": "dark",
+        "tonalRamp": [
+          "#0c0817",
+          "#262139",
+          "#433c5e",
+          "#625a86",
+          "#837ba9",
+          "#a59fc7",
+          "#c9c4e5",
+          "#eeebff"
+        ]
+      },
+      "cat-commodity-dark": {
+        "role": "chart",
+        "displayName": "Cat Commodity (dark)",
+        "canonical": "#3987e5",
+        "cssVar": "--color-cat-commodity",
+        "theme": "dark",
+        "tonalRamp": [
+          "#000926",
+          "#002351",
+          "#044180",
+          "#1660b2",
+          "#3d83d8",
+          "#6fa8f0",
+          "#a0ccff",
+          "#d1f2ff"
+        ]
+      },
+      "cat-sale-dark": {
+        "role": "chart",
+        "displayName": "Cat Sale (dark)",
+        "canonical": "#d95926",
+        "cssVar": "--color-cat-sale",
+        "theme": "dark",
+        "tonalRamp": [
+          "#210000",
+          "#4a0900",
+          "#771f00",
+          "#a73600",
+          "#ce5a2e",
+          "#e98764",
+          "#ffb397",
+          "#ffdfca"
+        ]
+      },
+      "cat-network-dark": {
+        "role": "chart",
+        "displayName": "Cat Network (dark)",
+        "canonical": "#199e70",
+        "cssVar": "--color-cat-network",
+        "theme": "dark",
+        "tonalRamp": [
+          "#001105",
+          "#00301a",
+          "#005133",
+          "#00754e",
+          "#29986e",
+          "#68b894",
+          "#9cd9bb",
+          "#cffae4"
+        ]
+      },
+      "cat-system-dark": {
+        "role": "chart",
+        "displayName": "Cat System (dark)",
+        "canonical": "#c98500",
+        "cssVar": "--color-cat-system",
+        "theme": "dark",
+        "tonalRamp": [
+          "#190500",
+          "#3c1c00",
+          "#633600",
+          "#8c5200",
+          "#b17400",
+          "#ce9a54",
+          "#ebc18c",
+          "#ffe9c3"
+        ]
+      },
+      "cat-excise-dark": {
+        "role": "chart",
+        "displayName": "Cat Excise (dark)",
+        "canonical": "#d55181",
+        "cssVar": "--color-cat-excise",
+        "theme": "dark",
+        "tonalRamp": [
+          "#200009",
+          "#480422",
+          "#74193e",
+          "#a32e5c",
+          "#ca537d",
+          "#e681a0",
+          "#ffaec5",
+          "#ffdbec"
+        ]
+      },
+      "cat-vat-dark": {
+        "role": "chart",
+        "displayName": "Cat Vat (dark)",
+        "canonical": "#008300",
+        "cssVar": "--color-cat-vat",
+        "theme": "dark",
+        "tonalRamp": [
+          "#001200",
+          "#003000",
+          "#005200",
+          "#067705",
+          "#3a9a35",
+          "#70ba6a",
+          "#a1db9c",
+          "#d2fcce"
+        ]
+      },
+      "cat-other-dark": {
+        "role": "chart",
+        "displayName": "Cat Other (dark)",
+        "canonical": "#9085e9",
+        "cssVar": "--color-cat-other",
+        "theme": "dark",
+        "tonalRamp": [
+          "#0b0523",
+          "#241c4b",
+          "#403678",
+          "#5e52a8",
+          "#7e74cd",
+          "#a09ae6",
+          "#c5c1fe",
+          "#ebe9ff"
+        ]
+      },
+      "cat-flat-dark": {
+        "role": "chart",
+        "displayName": "Cat Flat (dark)",
+        "canonical": "#e66767",
+        "cssVar": "--color-cat-flat",
+        "theme": "dark",
+        "tonalRamp": [
+          "#200001",
+          "#48090e",
+          "#741f23",
+          "#a43539",
+          "#cb5959",
+          "#e68683",
+          "#ffb1ae",
+          "#ffdeda"
+        ]
+      },
+      "cat-feed-in-dark": {
+        "role": "chart",
+        "displayName": "Cat Feed In (dark)",
+        "canonical": "#6f8279",
+        "cssVar": "--color-cat-feed-in",
+        "theme": "dark",
+        "tonalRamp": [
+          "#070d0a",
+          "#1e2723",
+          "#39453f",
+          "#55665e",
+          "#76877f",
+          "#9aa9a2",
+          "#c1ccc7",
+          "#e8f1ed"
+        ]
+      },
+      "band-f1-dark": {
+        "role": "chart",
+        "displayName": "Band F1 (dark)",
+        "canonical": "#86b6ef",
+        "cssVar": "--color-band-f1",
+        "theme": "dark",
+        "tonalRamp": [
+          "#010b1c",
+          "#0f2640",
+          "#244368",
+          "#3b6392",
+          "#5b85b7",
+          "#85a8d2",
+          "#b0ccee",
+          "#dcf1ff"
+        ]
+      },
+      "band-f2-dark": {
+        "role": "chart",
+        "displayName": "Band F2 (dark)",
+        "canonical": "#3987e5",
+        "cssVar": "--color-band-f2",
+        "theme": "dark",
+        "tonalRamp": [
+          "#000926",
+          "#002351",
+          "#044180",
+          "#1660b2",
+          "#3d83d8",
+          "#6fa8f0",
+          "#a0ccff",
+          "#d1f2ff"
+        ]
+      },
+      "band-f3-dark": {
+        "role": "chart",
+        "displayName": "Band F3 (dark)",
+        "canonical": "#1c5cab",
+        "cssVar": "--color-band-f3",
+        "theme": "dark",
+        "tonalRamp": [
+          "#000a23",
+          "#04244c",
+          "#154179",
+          "#2961a9",
+          "#4b83cf",
+          "#78a7e7",
+          "#a6ccff",
+          "#d5f1ff"
+        ]
+      },
+      "band-f23-dark": {
+        "role": "chart",
+        "displayName": "Band F23 (dark)",
+        "canonical": "#2a78d6",
+        "cssVar": "--color-band-f23",
+        "theme": "dark",
+        "tonalRamp": [
+          "#000927",
+          "#002351",
+          "#054081",
+          "#1860b3",
+          "#3e83d9",
+          "#70a7f0",
+          "#a0ccff",
+          "#d1f1ff"
+        ]
+      },
+      "band-single-dark": {
+        "role": "chart",
+        "displayName": "Band Single (dark)",
+        "canonical": "#199e70",
+        "cssVar": "--color-band-single",
+        "theme": "dark",
+        "tonalRamp": [
+          "#001105",
+          "#00301a",
+          "#005133",
+          "#00754e",
+          "#29986e",
+          "#68b894",
+          "#9cd9bb",
+          "#cffae4"
+        ]
+      },
+      "readings-dark": {
+        "role": "chart",
+        "displayName": "Readings (dark)",
+        "canonical": "#d95926",
+        "cssVar": "--color-readings",
+        "theme": "dark",
+        "tonalRamp": [
+          "#210000",
+          "#4a0900",
+          "#771f00",
+          "#a73600",
+          "#ce5a2e",
+          "#e98764",
+          "#ffb397",
+          "#ffdfca"
+        ]
+      },
+      "pv-self-dark": {
+        "role": "chart",
+        "displayName": "Pv Self (dark)",
+        "canonical": "#008300",
+        "cssVar": "--color-pv-self",
+        "theme": "dark",
+        "tonalRamp": [
+          "#001200",
+          "#003000",
+          "#005200",
+          "#067705",
+          "#3a9a35",
+          "#70ba6a",
+          "#a1db9c",
+          "#d2fcce"
+        ]
+      },
+      "pv-feed-in-dark": {
+        "role": "chart",
+        "displayName": "Pv Feed In (dark)",
+        "canonical": "#c98500",
+        "cssVar": "--color-pv-feed-in",
+        "theme": "dark",
+        "tonalRamp": [
+          "#190500",
+          "#3c1c00",
+          "#633600",
+          "#8c5200",
+          "#b17400",
+          "#ce9a54",
+          "#ebc18c",
+          "#ffe9c3"
+        ]
+      },
+      "price-commodity-dark": {
+        "role": "chart",
+        "displayName": "Price Commodity (dark)",
+        "canonical": "#3987e5",
+        "cssVar": "--color-price-commodity",
+        "theme": "dark",
+        "tonalRamp": [
+          "#000926",
+          "#002351",
+          "#044180",
+          "#1660b2",
+          "#3d83d8",
+          "#6fa8f0",
+          "#a0ccff",
+          "#d1f2ff"
+        ]
+      },
+      "price-total-dark": {
+        "role": "chart",
+        "displayName": "Price Total (dark)",
+        "canonical": "#d95926",
+        "cssVar": "--color-price-total",
+        "theme": "dark",
+        "tonalRamp": [
+          "#210000",
+          "#4a0900",
+          "#771f00",
+          "#a73600",
+          "#ce5a2e",
+          "#e98764",
+          "#ffb397",
+          "#ffdfca"
+        ]
+      },
+      "yoy-current-dark": {
+        "role": "chart",
+        "displayName": "Yoy Current (dark)",
+        "canonical": "#3987e5",
+        "cssVar": "--color-yoy-current",
+        "theme": "dark",
+        "tonalRamp": [
+          "#000926",
+          "#002351",
+          "#044180",
+          "#1660b2",
+          "#3d83d8",
+          "#6fa8f0",
+          "#a0ccff",
+          "#d1f2ff"
+        ]
+      },
+      "yoy-previous-dark": {
+        "role": "chart",
+        "displayName": "Yoy Previous (dark)",
+        "canonical": "#6f8279",
+        "cssVar": "--color-yoy-previous",
+        "theme": "dark",
+        "tonalRamp": [
+          "#070d0a",
+          "#1e2723",
+          "#39453f",
+          "#55665e",
+          "#76877f",
+          "#9aa9a2",
+          "#c1ccc7",
+          "#e8f1ed"
+        ]
+      },
+      "reference-wholesale-dark": {
+        "role": "chart",
+        "displayName": "Reference Wholesale (dark)",
+        "canonical": "#199e70",
+        "cssVar": "--color-reference-wholesale",
+        "theme": "dark",
+        "tonalRamp": [
+          "#001105",
+          "#00301a",
+          "#005133",
+          "#00754e",
+          "#29986e",
+          "#68b894",
+          "#9cd9bb",
+          "#cffae4"
+        ]
+      },
+      "reference-arera-dark": {
+        "role": "chart",
+        "displayName": "Reference Arera (dark)",
+        "canonical": "#c98500",
+        "cssVar": "--color-reference-arera",
+        "theme": "dark",
+        "tonalRamp": [
+          "#190500",
+          "#3c1c00",
+          "#633600",
+          "#8c5200",
+          "#b17400",
+          "#ce9a54",
+          "#ebc18c",
+          "#ffe9c3"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "cover-title": {
+        "displayName": "Cover title",
+        "purpose": "The house name on the cloth cover band; the largest text in the app (24 px)."
+      },
+      "heading": {
+        "displayName": "Heading",
+        "purpose": "Page title and dialog title (18 px); section headings and legends step down to 16 px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Labels (600), entry text, button labels and sidebar items (700)."
+      },
+      "body-small": {
+        "displayName": "Body small",
+        "purpose": "Supplier and period under an entry; helper text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase tracked 11 px: column headers and stamps. Never a kicker above a heading."
+      },
+      "input": {
+        "displayName": "Input",
+        "purpose": "Every input, select and textarea at 16 px so phones do not zoom."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Courier Prime via the figures utility: dates, quantities, readings, identifiers."
+      },
+      "figure-amount": {
+        "displayName": "Figure amount",
+        "purpose": "Courier Prime 700 amounts, flush right."
+      },
+      "nav-label": {
+        "displayName": "Nav label",
+        "purpose": "Bottom-bar item labels: 11 px 700, sentence case, no tracking."
+      }
+    },
+    "shadows": [],
+    "textures": [
+      {
+        "name": "cloth-weave",
+        "value": "repeating-linear-gradient(45deg, rgb(255 255 255 / 0.035) 0 2px, transparent 2px 4px)",
+        "purpose": "Book-cloth weave over --color-brand on shell surfaces only (cloth utility)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "stamp",
+        "value": "stamp 160ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "purpose": "The one authored motion: a stamp lands (rotate(var(--stamp-tilt, -6deg)), scale 1.08 to 1, opacity 0 to 1). Applied only under motion-safe; with reduced motion the stamp appears already tilted."
+      }
+    ],
+    "focus": {
+      "value": "outline: 2px solid var(--color-focus); outline-offset: 2px",
+      "purpose": "Global :focus-visible ring on paper.",
+      "onCloth": {
+        "value": "outline-color: var(--color-on-brand)",
+        "purpose": "Nav items, the sidebar logo link and the house selector on cloth: the violet ring is 1.3:1 against light cloth."
+      }
+    },
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "390px",
+        "purpose": "Design width; cloth bottom bar."
+      },
+      {
+        "name": "sm",
+        "value": "640px",
+        "purpose": "Supply actions on Casa align with the description column."
+      },
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Bill form lines turn from cards into a table."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Cloth sidebar replaces the bottom bar."
+      }
+    ],
+    "themes": {
+      "mechanism": "html[data-theme] from the theme cookie (system | light | dark). Dark tokens under [data-theme=\"dark\"] and under @media (prefers-color-scheme: dark) [data-theme=\"system\"]. Never the Tailwind dark: variant.",
+      "manifest": {
+        "light": {
+          "background": "#eef1ed",
+          "theme": "#24443c"
+        },
+        "dark": {
+          "background": "#0f1a17",
+          "theme": "#1f3d34"
+        }
+      }
+    },
+    "icons": {
+      "grid": 24,
+      "strokeWidth": 1.75,
+      "linecap": "round",
+      "linejoin": "round",
+      "color": "currentColor",
+      "ariaHidden": true,
+      "defaultSize": "20px",
+      "source": "src/components/icons/"
+    },
+    "radii": [
+      {
+        "name": "xs",
+        "value": "2px",
+        "tailwind": "rounded-xs",
+        "purpose": "Controls: buttons, inputs, selects, stamps, sidebar items, the house selector."
+      },
+      {
+        "name": "sm",
+        "value": "4px",
+        "tailwind": "rounded-sm",
+        "purpose": "Containers: panels, error and warning boxes, line cards, the dialog."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action of a form or page.",
+      "html": "<button class=\"ds-btn-primary\">Salva</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:2px;font-family:var(--font-sans);font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;border:0;background:var(--color-action);color:var(--color-on-action)}.ds-btn-primary:hover{background:var(--color-action-hover)}.ds-btn-primary:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-btn-primary:disabled{opacity:.6;cursor:not-allowed}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined companion action.",
+      "html": "<button class=\"ds-btn-secondary\">Autolettura</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:2px;font-family:var(--font-sans);font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;border:1.5px solid var(--color-action);background:var(--color-surface);color:var(--color-action)}.ds-btn-secondary:hover{background:var(--color-surface-sunk)}.ds-btn-secondary:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-btn-secondary:disabled{opacity:.6;cursor:not-allowed}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Final confirmation of a destructive act; no hover change.",
+      "html": "<button class=\"ds-btn-danger\">Elimina bolletta</button>",
+      "css": ".ds-btn-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:2px;font-family:var(--font-sans);font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;border:0;background:var(--color-danger);color:var(--color-on-danger)}.ds-btn-danger:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-btn-danger:disabled{opacity:.6;cursor:not-allowed}"
+    },
+    {
+      "name": "Danger Outline Button",
+      "kind": "button",
+      "refersTo": "button-danger-outline",
+      "description": "Opens a destructive confirmation.",
+      "html": "<button class=\"ds-btn-danger-outline\">Elimina</button>",
+      "css": ".ds-btn-danger-outline{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:2px;font-family:var(--font-sans);font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;border:1.5px solid var(--color-danger);background:var(--color-surface);color:var(--color-danger)}.ds-btn-danger-outline:hover{background:var(--color-danger-wash)}.ds-btn-danger-outline:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-btn-danger-outline:disabled{opacity:.6;cursor:not-allowed}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Row-level action inside tables and line cards, underlined, at least 44 px wide.",
+      "html": "<button class=\"ds-btn-quiet\">Modifica</button>",
+      "css": ".ds-btn-quiet{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:2px;font-family:var(--font-sans);font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;border:0;background:transparent;padding:0 8px;min-width:44px;color:var(--color-action);text-decoration:underline}.ds-btn-quiet:hover{background:var(--color-surface-sunk)}.ds-btn-quiet:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-btn-quiet:disabled{opacity:.6;cursor:not-allowed}"
+    },
+    {
+      "name": "Fields",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Label above, 44 px field on paper with a strong rule; figure fields in Courier, right-aligned; hint and error under.",
+      "html": "<div class=\"ds-fields\"><div><label class=\"ds-label\" for=\"ds-f1\">Fornitore</label><input id=\"ds-f1\" class=\"ds-input\" value=\"Fenicottero Energia\"><span class=\"ds-hint\">come stampato sulla bolletta</span></div><div><label class=\"ds-label\" for=\"ds-f2\">Totale (€)</label><input id=\"ds-f2\" class=\"ds-input ds-figure\" inputmode=\"decimal\" value=\"48,00\" aria-invalid=\"true\"><span class=\"ds-error\">Inserisci un importo.</span></div></div>",
+      "css": ".ds-fields{display:grid;gap:16px;font-family:var(--font-sans);font-size:15px;color:var(--color-ink)}.ds-label{display:block;margin-bottom:4px;font-weight:600}.ds-input{display:block;width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--color-rule-strong);border-radius:2px;background:var(--color-surface);color:var(--color-ink);font-family:var(--font-sans);font-size:16px}.ds-input:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-input[aria-invalid=true]{border-color:var(--color-danger)}.ds-input:disabled{background:var(--color-surface-sunk)}.ds-figure{font-family:var(--font-print);font-variant-numeric:tabular-nums;letter-spacing:0;text-align:right}.ds-hint,.ds-error{display:block;margin-top:4px;font-size:12px}.ds-hint{color:var(--color-ink-muted)}.ds-error{font-weight:600;color:var(--color-danger)}"
+    },
+    {
+      "name": "Entry Lines",
+      "kind": "custom",
+      "refersTo": "entry-line",
+      "description": "Column header in action ink over a 2 px rule, then passbook entries: period, what it is, the amount flush right, states as stamps. Capped at 768 px from 1024 px.",
+      "html": "<div class=\"ds-ledger\"><div class=\"ds-grid ds-head\"><span>Periodo</span><span>Fornitura</span><span class=\"ds-r\">Euro</span></div><ul class=\"ds-list\"><li><a class=\"ds-grid ds-line\" href=\"#\"><span class=\"ds-date\"><small>01/09/2026</small>30/09/2026</span><span class=\"ds-what\">Luce di casa</span><span class=\"ds-amt\">48,00</span></a></li><li><a class=\"ds-grid ds-line\" href=\"#\"><span class=\"ds-date\"><small>01/09/2026</small>30/09/2026</span><span class=\"ds-what\">Gas di casa<span><em class=\"ds-stamp\">stimata</em></span></span><span class=\"ds-amt\">62,00</span></a></li></ul></div>",
+      "css": ".ds-ledger{max-width:768px;font-family:var(--font-sans);font-size:15px;color:var(--color-ink)}.ds-grid{display:grid;grid-template-columns:96px minmax(0,1fr) auto;column-gap:12px}.ds-head{padding:0 12px 6px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--color-action);border-bottom:2px solid var(--color-action)}.ds-r{text-align:right}.ds-list{margin:0;padding:0;list-style:none;background:var(--color-surface);border-left:1px solid var(--color-rule);border-right:1px solid var(--color-rule)}.ds-list li{border-bottom:1px solid var(--color-rule)}.ds-line{padding:12px;color:var(--color-ink);text-decoration:none}.ds-line:hover{background:var(--color-surface-sunk)}.ds-line:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-date{font-family:var(--font-print);font-variant-numeric:tabular-nums;font-size:14px;font-weight:700;line-height:1.375}.ds-date small{display:block;font-size:12px;font-weight:400;color:var(--color-ink-soft)}.ds-what{display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-weight:600}.ds-amt{font-family:var(--font-print);font-variant-numeric:tabular-nums;font-weight:700;text-align:right}.ds-stamp{display:inline-block;flex-shrink:0;padding:2px 6px;border:2px solid var(--color-stamp);border-radius:2px;color:var(--color-stamp);font-family:var(--font-sans);font-size:11px;font-weight:800;line-height:1;letter-spacing:.1em;text-transform:uppercase;transform:rotate(var(--stamp-tilt,-6deg))}@media (prefers-reduced-motion:no-preference){.ds-stamp{animation:ds-stamp 160ms cubic-bezier(.16,1,.3,1) both}}@keyframes ds-stamp{from{transform:rotate(var(--stamp-tilt,-6deg)) scale(1.08);opacity:0}to{transform:rotate(var(--stamp-tilt,-6deg)) scale(1);opacity:1}}"
+    },
+    {
+      "name": "Stamp",
+      "kind": "chip",
+      "refersTo": "stamp",
+      "description": "A state printed on a line in violet stamp ink: stimata, sostituita, archiviata.",
+      "html": "<span class=\"ds-stamps\"><span class=\"ds-stamp\">stimata</span><span class=\"ds-stamp\">sostituita</span><span class=\"ds-stamp\">archiviata</span></span>",
+      "css": ".ds-stamps{display:flex;gap:12px;padding:8px}.ds-stamp{display:inline-block;flex-shrink:0;padding:2px 6px;border:2px solid var(--color-stamp);border-radius:2px;color:var(--color-stamp);font-family:var(--font-sans);font-size:11px;font-weight:800;line-height:1;letter-spacing:.1em;text-transform:uppercase;transform:rotate(var(--stamp-tilt,-6deg))}@media (prefers-reduced-motion:no-preference){.ds-stamp{animation:ds-stamp 160ms cubic-bezier(.16,1,.3,1) both}}@keyframes ds-stamp{from{transform:rotate(var(--stamp-tilt,-6deg)) scale(1.08);opacity:0}to{transform:rotate(var(--stamp-tilt,-6deg)) scale(1);opacity:1}}"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Clean leaf with a hairline rule and 4 px corners; here the bill facts with totals under a rule.",
+      "html": "<dl class=\"ds-panel\"><dt>Fornitore</dt><dd>Fenicottero Energia</dd><dt>Periodo</dt><dd><span class=\"ds-fig\">01/09/2026</span> – <span class=\"ds-fig\">30/09/2026</span></dd><dt class=\"ds-tot\">Totale bolletta</dt><dd class=\"ds-tot ds-fig\">48,00 €</dd></dl>",
+      "css": ".ds-panel{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;margin:0;padding:16px;border:1px solid var(--color-rule);border-radius:4px;background:var(--color-surface);font-family:var(--font-sans);font-size:15px;color:var(--color-ink)}.ds-panel dt{color:var(--color-ink-soft)}.ds-panel dd{margin:0}.ds-panel .ds-tot{padding-top:8px;border-top:1px solid var(--color-rule);font-weight:600;color:var(--color-ink)}.ds-fig{font-family:var(--font-print);font-variant-numeric:tabular-nums;font-weight:700}"
+    },
+    {
+      "name": "Confirmation Dialog",
+      "kind": "custom",
+      "refersTo": "dialog",
+      "description": "Native modal dialog saying what a delete removes; secondary cancel, danger confirm.",
+      "html": "<div class=\"ds-dialog\" role=\"dialog\" aria-labelledby=\"ds-dt\"><h2 id=\"ds-dt\">Eliminare la bolletta?</h2><p>Luce di casa, settembre 2026, <span class=\"ds-fig\">48,00 €</span>.</p><div class=\"ds-acts\"><button class=\"ds-b ds-b2\">Annulla</button><button class=\"ds-b ds-bd\">Elimina bolletta</button></div></div>",
+      "css": ".ds-dialog{display:flex;flex-direction:column;gap:12px;width:min(26rem,calc(100% - 2rem));padding:16px;border:1px solid var(--color-rule-strong);border-radius:4px;background:var(--color-surface);color:var(--color-ink);font-family:var(--font-sans);font-size:15px}.ds-dialog h2{margin:0;font-size:18px;font-weight:700}.ds-dialog p{margin:0}.ds-fig{font-family:var(--font-print);font-weight:700}.ds-acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:4px}.ds-b{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border-radius:2px;font-family:var(--font-sans);font-size:15px;font-weight:700;text-decoration:none;cursor:pointer}.ds-b:focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}.ds-b2{border:1.5px solid var(--color-action);background:var(--color-surface);color:var(--color-action)}.ds-b2:hover{background:var(--color-surface-sunk)}.ds-bd{border:0;background:var(--color-danger);color:var(--color-on-danger)}"
+    },
+    {
+      "name": "Bottom Bar",
+      "kind": "nav",
+      "refersTo": "nav-bar",
+      "description": "Cloth bottom bar below 1024 px: five items, active in on-brand ink with a top tick; focus drawn in on-brand.",
+      "html": "<nav class=\"ds-nav\"><a aria-current=\"page\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.5 11 12 4l8.5 7\"/><path d=\"M5.5 9.5V20h13V9.5\"/><path d=\"M10 20v-5.5h4V20\"/></svg>Casa</a><a href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z\"/><path d=\"M9 8h6M9 12h6M9 16h3\"/></svg>Bollette</a><a href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"5\" width=\"17\" height=\"14\" rx=\"2\"/><path d=\"M7 10h2.5M11 10h2.5M15 10h2\"/><path d=\"M7 14.5h10\"/></svg>Letture</a><a href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 5.5h16v4H4z\"/><path d=\"M4 14.5h16v4H4z\"/><path d=\"M7 7.5h.01M7 16.5h.01\"/></svg>Forniture</a><a href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 7h9M17 7h3M4 17h3M11 17h9\"/><circle cx=\"15\" cy=\"7\" r=\"2\"/><circle cx=\"9\" cy=\"17\" r=\"2\"/></svg>Impostazioni</a></nav>",
+      "css": ".ds-nav{display:grid;grid-template-columns:repeat(5,1fr);background-color:var(--color-brand);background-image:repeating-linear-gradient(45deg,rgb(255 255 255 / .035) 0 2px,transparent 2px 4px);color:var(--color-on-brand)}.ds-nav a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:64px;font-family:var(--font-sans);font-size:11px;line-height:16px;font-weight:700;color:var(--color-on-brand-soft);text-decoration:none}.ds-nav a[aria-current=page]{color:var(--color-on-brand)}.ds-nav a[aria-current=page]::before{content:\"\";position:absolute;top:0;width:32px;height:2px;background:var(--color-on-brand)}.ds-nav a:focus-visible{outline:2px solid var(--color-on-brand);outline-offset:2px}"
+    },
+    {
+      "name": "Sidebar",
+      "kind": "nav",
+      "refersTo": "side-bar",
+      "description": "Cloth sidebar from 1024 px: logo and name, then 44 px rows; the active row has a tick on the edge facing the page.",
+      "html": "<nav class=\"ds-side\"><a class=\"ds-brand\" href=\"#\">Segnabollette</a><a class=\"ds-item\" aria-current=\"page\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.5 11 12 4l8.5 7\"/><path d=\"M5.5 9.5V20h13V9.5\"/><path d=\"M10 20v-5.5h4V20\"/></svg>Casa</a><a class=\"ds-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z\"/><path d=\"M9 8h6M9 12h6M9 16h3\"/></svg>Bollette</a><a class=\"ds-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"5\" width=\"17\" height=\"14\" rx=\"2\"/><path d=\"M7 10h2.5M11 10h2.5M15 10h2\"/><path d=\"M7 14.5h10\"/></svg>Letture</a></nav>",
+      "css": ".ds-side{display:flex;flex-direction:column;gap:4px;width:224px;padding:20px 12px;background-color:var(--color-brand);background-image:repeating-linear-gradient(45deg,rgb(255 255 255 / .035) 0 2px,transparent 2px 4px);color:var(--color-on-brand);font-family:var(--font-sans);font-size:15px}.ds-brand{margin-bottom:20px;padding:0 8px;font-size:16px;font-weight:800;color:var(--color-on-brand);text-decoration:none}.ds-item{position:relative;display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:2px;font-weight:700;color:var(--color-on-brand-soft);text-decoration:none}.ds-item:hover,.ds-item[aria-current=page]{color:var(--color-on-brand)}.ds-item[aria-current=page]::after{content:\"\";position:absolute;top:8px;right:0;bottom:8px;width:2px;background:var(--color-on-brand)}.ds-side a:focus-visible{outline:2px solid var(--color-on-brand);outline-offset:2px}"
+    },
+    {
+      "name": "Cover Band",
+      "kind": "custom",
+      "refersTo": "cover-band",
+      "description": "Cloth cover of the house on Casa: the name and nothing else.",
+      "html": "<header class=\"ds-cover\"><h1>Casa Fenicottero</h1></header>",
+      "css": ".ds-cover{background-color:var(--color-brand);background-image:repeating-linear-gradient(45deg,rgb(255 255 255 / .035) 0 2px,transparent 2px 4px);color:var(--color-on-brand);padding:24px 16px 16px}.ds-cover h1{margin:0;padding:4px 0;font-family:var(--font-sans);font-size:24px;line-height:32px;font-weight:800}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Libretto di risparmio",
+    "overview": "Each house is a passbook. Every bill is one printed entry line: the date and the amount set by the\npassbook printer in fixed columns, what it is written in plain sans-serif between them, the amount\nflush right. A state (estimated, replaced, archived) is a rubber stamp on the line, in violet stamp\nink, never a coloured badge. The shell (bottom bar, sidebar, the house's cover band, the sign-in\nband) is bottle-green book cloth with a faint woven texture; the page is pale green-grey security\npaper. The dark theme is the closed book: cloth-dark ground, paper-light ink — designed, not\ninverted.\n\nDensity is that of a bank statement read on a phone: compact lines, figures in aligned columns,\nhierarchy by weight, tracking and rules rather than by size. Nothing competes with the numbers:\nno shadows, no hero figures, no illustration. The one authored motion is the stamp landing.",
+    "keyCharacteristics": [
+      "Security-tinted paper page, bottle-green cloth shell, near-black print ink.",
+      "Courier Prime for figures only; Libre Franklin for everything else.",
+      "Hairline office rules; 2 px corners on controls, 4 px on panels; no shadows.",
+      "Violet stamp ink reserved for states and non-blocking warnings; danger red reserved for errors and destructive actions.",
+      "Light and dark both designed from the same token names."
+    ],
+    "rules": [
+      {
+        "name": "The Tokens Only Rule",
+        "body": "Tailwind's default palette is reset (`--color-*: initial`); only the tokens above and in Charts exist. No literal colour in a component, ever (the logo SVG is the one asset with baked-in values, equal to the tokens).",
+        "section": "colors"
+      },
+      {
+        "name": "The Closed Book Rule",
+        "body": "Dark comes only from redefining the same variables under `[data-theme='dark']` and, for the `system` cookie, under `prefers-color-scheme: dark`. Never use Tailwind's `dark:` variant: it ignores the theme cookie. A new token goes into `@theme` and into both dark blocks, and into this file.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stamp Ink Rule",
+        "body": "Violet is for states and non-blocking warnings only: the three stamps, arithmetic warnings, the overlap choice, a reading that looks wrong (and the focus ring that shares its ink). A violet button, heading or icon is a defect.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Means Danger Rule",
+        "body": "`danger` marks errors and destructive actions, nothing else; a warning that does not block is stamp ink, not red.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Job Rule",
+        "body": "A chart token means one thing. Reusing `cat-commodity` for an unrelated series because \"blue looks nice\" breaks the reading across charts.",
+        "section": "charts"
+      },
+      {
+        "name": "The Printer Rule",
+        "body": "Courier Prime sets figures only — dates, amounts, quantities, readings, identifiers. Never a sentence, a label, a heading or a button.",
+        "section": "typography"
+      },
+      {
+        "name": "The Eleven Pixel Floor",
+        "body": "No functional text below 11 px (`text-2xs`).",
+        "section": "typography"
+      },
+      {
+        "name": "The No Giant Numbers Rule",
+        "body": "Rank by weight, tracking and rules, not by size. No balance hero, no figure above 24 px; an amount is as large as the line it prints on.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Page Rule",
+        "body": "No `box-shadow`, no blur, no glow. If something needs to stand apart, give it a rule or a different paper tone.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Motion Rule",
+        "body": "The stamp press is the only authored motion. No page transitions, no hover lifts, no animated counters.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** use only the tokens in this file; add a new one to `@theme`, to both dark blocks and here.",
+      "**Do** build controls from the shared classes (`buttonClass`, `inputClass`, `figureInputClass`, `panelClass`, `columnHeaderClass`) rather than restating their utilities.",
+      "**Do** set every date, amount, quantity, reading and identifier with the `figures` utility, and align amounts flush right.",
+      "**Do** put the shell on cloth (`cloth` utility) and the content on paper, and draw focus in `on-brand` on cloth.",
+      "**Do** keep text contrast at or above 4.5:1 in both themes, and give every chart direct labels or its data table.",
+      "**Do** use 2 px corners on controls and 4 px on containers, and 1 px rules (the column-header underline, outlined buttons and stamps excepted).",
+      "**Do** confirm a destructive act in the app's own dialog, saying what it removes.",
+      "**Do** use the manifest colours #eef1ed / #24443c (light) and #0f1a17 / #1f3d34 (dark)."
+    ],
+    "donts": [
+      "**Don't** make it look like a supplier's app: no energetic green/orange branding, no light bulbs, no flames as brand, no happy-family photos.",
+      "**Don't** make it a grey 2000s back office: no flat grey everywhere, no dense tables without hierarchy.",
+      "**Don't** go cream-and-serif: the paper is cool green-grey and the type is sans plus Courier.",
+      "**Don't** build white rounded cards with a blue balance hero.",
+      "**Don't** put kicker or eyebrow labels above headings.",
+      "**Don't** put coloured side borders thicker than 1 px on panels, lines or warnings (the 2 px active tick of a nav item is the shell's own mark, not a side border).",
+      "**Don't** use shadows, Tailwind's `dark:` variant, or literal colours in components.",
+      "**Don't** use violet for anything but states and non-blocking warnings, or red for anything but errors and destructive actions.",
+      "**Don't** set prose, labels or buttons in Courier Prime, or any functional text below 11 px.",
+      "**Don't** use real personal data in examples: invented figures and generic names only (Casa Fenicottero, Fenicottero Energia)."
+    ]
+  }
+}

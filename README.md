@@ -15,6 +15,10 @@ self-hosted on Vercel + Turso, installable on your phone as a PWA.
   prices, fixed shares, network and system charges, taxes, VAT, recalculations and estimates, and
   you confirm everything in a review screen before it is stored. The file stays in your private
   storage and reopens from the bill.
+- **Houses, supplies and self readings.** Group your supplies by house (electricity, gas, water,
+  internet and phone, TARI). A bill typed by hand starts from the lines of its utility, with the
+  amounts left empty for you to fill; between two bills you note the meter yourself (F1, F2 and F3
+  when the meter is banded), and a value lower than the last one asks you to confirm.
 - **Recalculations where they belong.** Italian bills re-bill past months; each line keeps its own
   period, so an adjustment printed in September corrects August.
 - **Charts per supply and per house.** Consumption per month (kWh per band, Smc, m³), the price of
@@ -65,6 +69,8 @@ E2E run needs `pnpm exec playwright install chromium`.
 | [`CLAUDE.md`](CLAUDE.md) | Index — what each piece is and where it lives; what does not exist yet |
 | [`AGENTS.md`](AGENTS.md) | Repo-wide conventions, isolation, money and dates, testing, gotchas |
 | [`doc/guide/calcoli.md`](doc/guide/calcoli.md) | The data model and the calculation engine: competence, bands, estimates, unit prices |
+| [`doc/guide/app.md`](doc/guide/app.md) | Pages, Server Actions, the bill form, self-readings, theme, end-to-end test rules |
+| [`DESIGN.md`](DESIGN.md), [`PRODUCT.md`](PRODUCT.md) | The visual system (tokens, type, components) and the product voice |
 | [`WORKFLOW.md`](WORKFLOW.md) | Session rules and the guided-verification protocol |
 | [`doc/v1/00-INDICE.md`](doc/v1/00-INDICE.md) | The v1 series: decisions, order, shared contracts, one spec per session |
 | [`COMMENTS.md`](COMMENTS.md), [`DEVELOPMENT_GUIDELINES.md`](DEVELOPMENT_GUIDELINES.md) | Binding code and comment guidelines |

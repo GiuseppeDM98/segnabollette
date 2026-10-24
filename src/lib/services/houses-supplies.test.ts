@@ -16,6 +16,9 @@ import {
   createSupply,
   deleteHouse,
   deleteSupply,
+  getDeletionSummary,
+  getSupplyDetail,
+  listHousesWithSupplies,
   renameHouse,
   updateSupply,
 } from './houses-supplies';
@@ -247,5 +250,77 @@ describe('houses and supplies — isolation between users', () => {
 
     await deleteSupply(db, intruderId, intruderHouse.supplyId);
     expect((await snapshotUserRows(db, intruderId)).supplies).toEqual([]);
+  });
+});
+
+describe('reading houses and supplies for the pages', () => {
+  it('lists houses by name with supplies by kind and label, archived last or left out', async () => {
+    const { db, userId } = await setup();
+    const { houseId: zebra } = await createHouse(db, userId, { name: 'Casa Zebra' });
+    await createHouse(db, userId, { name: 'Casa Airone' });
+    await createSupply(db, userId, { ...supplyInput(zebra), kind: 'gas', label: 'Gas' });
+    const { supplyId: waterId } = await createSupply(db, userId, {
+      ...supplyInput(zebra),
+      kind: 'water',
+      label: 'Acqua',
+    });
+    await createSupply(db, userId, supplyInput(zebra));
+    await archiveSupply(db, userId, waterId, { archived: true, now: 1000 });
+    const intruder = await createTestUser(db);
+    await createHouseWithSupply(db, intruder.id);
+
+    const all = await listHousesWithSupplies(db, userId, { includeArchived: true });
+    const active = await listHousesWithSupplies(db, userId, { includeArchived: false });
+
+    expect(all.map(({ house }) => house.name)).toEqual(['Casa Airone', 'Casa Zebra']);
+    expect(all[1]?.supplies.map((supply) => supply.label)).toEqual(['Luce', 'Gas', 'Acqua']);
+    expect(active[1]?.supplies.map((supply) => supply.label)).toEqual(['Luce', 'Gas']);
+  });
+
+  it('gives the own supply with its house and refuses the supply of someone else', async () => {
+    const { db, userId } = await setup();
+    const own = await createHouseWithSupply(db, userId);
+    const intruder = await createTestUser(db);
+
+    const detail = await getSupplyDetail(db, userId, own.supplyId);
+
+    expect(detail.supply.id).toBe(own.supplyId);
+    expect(detail.house.id).toBe(own.houseId);
+    await expectDomainError(getSupplyDetail(db, intruder.id, own.supplyId), 'NOT_FOUND');
+  });
+
+  it('counts what deleting a house removes and refuses the house of someone else', async () => {
+    const { db, userId } = await setup();
+    const { houseId, supplyId } = await createHouseWithSupply(db, userId);
+    await addBillsAndReadings(db, userId, supplyId);
+    const { supplyId: cellarId } = await createSupply(db, userId, {
+      ...supplyInput(houseId),
+      label: 'Luce cantina',
+    });
+    await confirmBill(
+      db,
+      userId,
+      billInput(cellarId, {
+        readings: [{ readOn: '2026-09-30', register: 'single', value: 500, source: 'bill_actual' }],
+      }),
+      MANUAL,
+    );
+    const intruder = await createTestUser(db);
+
+    expect(await getDeletionSummary(db, userId, { houseId })).toEqual({
+      supplies: 2,
+      bills: 3,
+      readings: 4,
+    });
+    expect(await getDeletionSummary(db, userId, { supplyId: cellarId })).toEqual({
+      supplies: 1,
+      bills: 1,
+      readings: 1,
+    });
+    await expectDomainError(getDeletionSummary(db, intruder.id, { houseId }), 'NOT_FOUND');
+    await expectDomainError(
+      getDeletionSummary(db, intruder.id, { supplyId: cellarId }),
+      'NOT_FOUND',
+    );
   });
 });

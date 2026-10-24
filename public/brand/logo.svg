@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Segnabollette">
+  <title>Segnabollette</title>
+  <!-- The passbook: cloth cover, the label window with printed entries, and the stamp. -->
+  <rect x="10" y="5" width="44" height="54" rx="4" fill="#24443c"/>
+  <rect x="15" y="5" width="2" height="54" fill="#1a332d"/>
+  <rect x="22" y="14" width="26" height="22" rx="1.5" fill="#eef1ec"/>
+  <rect x="26" y="19" width="18" height="2.5" rx="1" fill="#16181a"/>
+  <rect x="26" y="24.5" width="18" height="2.5" rx="1" fill="#16181a"/>
+  <rect x="26" y="30" width="11" height="2.5" rx="1" fill="#16181a"/>
+  <g transform="rotate(-12 41 46)">
+    <circle cx="41" cy="46" r="8.5" fill="none" stroke="#b9a2e6" stroke-width="2.5"/>
+    <path d="M37 46.2l2.8 2.8 5.2-5.6" fill="none" stroke="#b9a2e6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

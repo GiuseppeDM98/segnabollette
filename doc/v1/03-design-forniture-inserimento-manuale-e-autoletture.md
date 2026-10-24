@@ -1,7 +1,10 @@
 # 03 — Design, forniture, inserimento manuale e autoletture
 
-> **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 30 rilievi, 5 decisioni
-> (D-47, D-49, D-50, D-51, D-52). Pronta per l'implementazione.
+> **Stato**: implementata il 2026-10-24, branch `feature/03-design-manual-entry`; collaudo A–G
+> superato, giro guidato senza rilievi. Scostamento misurato: togliere `userId` da `getBill` non fa
+> fallire `isolamento.spec.ts` (lo ferma il controllo della fornitura in `getBillDetail`; la
+> mutazione la uccide Vitest, l'E2E cade togliendo entrambi i controlli). Scritta e riletta il
+> 2026-10-24 (30 rilievi, decisioni D-47, D-49, D-50, D-51, D-52).
 > **Branch**: `feature/03-design-manual-entry` da `main`. **Dipende da**: 02 (ritirata il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-5, D-7, D-13, D-24, D-28, D-29, D-38,
 > D-39, D-40, D-47, D-49, D-50, D-51, D-52; scelte T-13, T-14, T-16, T-24, T-32; contratti: crea

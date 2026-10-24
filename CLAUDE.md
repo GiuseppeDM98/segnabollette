@@ -29,14 +29,13 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: spec 02 (data model and calculation engine) in service with PR #5 and
-  retired on `docs/v1-ritiro-02` (text in
-  `git log -- doc/v1/02-modello-dei-dati-e-motore-dei-calcoli.md`); `doc/guide/calcoli.md` aligned
-  with the code. The retirement changed tests and comments only (no runtime code), so the guided
-  verification of 02 still holds; spec 05 redoes its closing measure in production. **Next**:
-  spec 03. Still open: none.
+- **Latest (2026-10-24)**: spec 03 (design, houses and supplies, manual entry, self-readings,
+  settings) implemented on `feature/03-design-manual-entry`; guided verification A–G passed, tour
+  closed with no findings. Documented in `doc/guide/app.md`, DESIGN.md and PRODUCT.md. **Next**:
+  the PR of this branch, then spec 04 (its session records spec 03's PR in the status lines).
+  Still open: none.
 
-## Architecture Snapshot (database, access, test harness, data model and engine exist; the rest as specified)
+## Architecture Snapshot (database, access, test harness, data model, engine and the manual-entry UI exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
   `src/lib/db/create-db.ts` (`createDb`, `prepareLocalDatabase`) + `client.ts` (server singleton),
   `schema/auth.ts` (Better Auth tables) and `schema/app.ts` (app tables), migrations in `drizzle/`;
@@ -49,6 +48,14 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   `src/lib/domain/*` (types, dates, money, `BillInputSchema`, checks), `src/lib/format.ts`.
 - **Engine** (exists): `src/lib/engine/*` — `buildSupplyMonths`, `buildHouseMonths`, `rolling12`,
   `yearOverYear`, pure; seed data in `scripts/seed-data.ts` (`buildSeedBills`).
+- **UI** (exists): `src/components/shell/app-shell.tsx` (client, bottom bar on phones, side bar on
+  desktops); pages `/`, `/forniture`, `/forniture/[id]`, `/bollette`, `/bollette/nuova`,
+  `/bollette/[id]`, `/bollette/[id]/modifica`, `/letture`, `/impostazioni` with colocated
+  `actions.ts` + `schemas.ts`; `src/app/(app)/page-helpers.ts` (`orNotFound` → 404);
+  `src/components/bills/bill-form.tsx` (`BillForm`, the one form of manual entry and review, over the
+  string draft of `bill-draft.ts` and the templates of `line-templates.ts`);
+  `src/components/readings/self-reading-form.tsx`; primitives in `src/components/ui/*`; icons in
+  `src/components/icons/*`; tokens in `src/app/globals.css`; logo `public/brand/logo.svg`.
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →
   `src/lib/db/repositories` (Drizzle only, `(db, userId, …)`); pure `src/lib/domain` (types, dates,
   money, bill input and checks) and `src/lib/engine` (monthly series). Gateways:
@@ -66,8 +73,9 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 - **Data model and engine** (exists since 2026-10-24): bills by competence (recalculations land in their month), bands
   from the bill's readings, two unit prices, readings after the last bill, photovoltaic
   self-consumption. → `doc/guide/calcoli.md`.
-- **Manual entry** (03): houses and supplies, the bill form (`BillForm`, shared with the review),
-  self-readings, settings with theme and account deletion; DESIGN.md and PRODUCT.md. →
+- **Manual entry** (exists since 2026-10-24): houses and supplies, the bill form (`BillForm`, shared
+  with the review; new bills start with empty amounts), overlaps that add or replace, self-readings
+  with banded registers and a warning on a lower value, settings with theme and account deletion. →
   `doc/guide/app.md`.
 - **Dashboard** (04): consumption per month, unit price over time, costs by category, year over
   year (Recharts).
@@ -84,8 +92,9 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 Vitest for pure modules, repositories and services (`createTestDb()`: temp-file libSQL with the
 real migrations, foreign keys on); `scope.test.ts` guards the `(db, userId, …)` signature of every
 repository. Playwright on a production build, :3100 open signup and :3101 closed, `file:e2e.db`,
-two read-only seed users with invented houses, supplies and bills (`pnpm db:seed`). Later:
-synthetic bill fixtures, fake Blob and extractor, axe (03). Never the real services. Commands:
+two read-only seed users with invented houses, supplies and bills (`pnpm db:seed`); writing tests
+sign up their own user (`tests/e2e/helpers.ts`); axe on every page, light and dark. Later:
+synthetic bill fixtures, fake Blob and extractor. Never the real services. Commands:
 WORKFLOW.md § 3.
 
 ## Data & Integrations
@@ -97,9 +106,8 @@ use, never redistributed).
 None.
 
 ## Not yet present (do not assume it exists)
-- DESIGN.md and PRODUCT.md: born in spec 03 with the impeccable skill, never hand-written after.
 - SETUP.md: born in spec 05.
-- `doc/guide/*` beyond `calcoli.md`: each guide is born with its spec (app 03, deploy 05,
+- `doc/guide/*` beyond `calcoli.md` and `app.md`: each guide is born with its spec (deploy 05,
   estrazione 06, riferimenti 08, pwa 09).
 - Password reset and email verification: no outbound email.
 - Water bills: never tried on a real bill (the owner's water is in the condominium fees); the first
@@ -125,6 +133,8 @@ None.
 - `COMMENTS.md`, `DEVELOPMENT_GUIDELINES.md` — binding for every line of code.
 
 ## Design Context
-Not yet: DESIGN.md and PRODUCT.md are written by the impeccable skill in spec 03. Until then: theme
-follows the system (light and dark both designed), mobile-first (390 px), Italian UI, figures as
-legible as a bank statement.
+**PRODUCT.md** (who, voice, what to avoid) and **DESIGN.md** (the «Libretto di risparmio» world:
+pale paper ground, bottle-green cloth, violet stamps for states; tokens light and dark, chart
+tokens, type, components) are the visual authority, written and kept by the impeccable skill —
+never hand-edited. Theme follows the system (light and dark both designed), mobile-first (390 px),
+Italian UI, figures as legible as a bank statement.

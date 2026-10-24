@@ -10,7 +10,15 @@ import {
   expectDomainError,
   snapshotUserRows,
 } from '@/lib/db/testing/fixtures';
-import { confirmBill, deleteBill, getBillDetail, listBills } from './bills';
+import {
+  billInputFromDetail,
+  confirmBill,
+  deleteBill,
+  getBillDetail,
+  listBills,
+  listLatestBills,
+} from './bills';
+import { createHouse } from './houses-supplies';
 
 const MANUAL = { source: 'manual' } as const;
 const SEPTEMBER = { periodStart: '2026-09-01', periodEnd: '2026-09-30' };
@@ -292,6 +300,17 @@ describe('bills — isolation between users', () => {
     expect(await billRow(db, billId)).toBeUndefined();
   });
 
+  it('names the house of the supply once there is a second house', async () => {
+    const { db, userId } = await twoUsers();
+    expect((await listBills(db, userId, { page: 1 })).bills[0]?.supplyLabel).toBe('Luce');
+
+    await createHouse(db, userId, { name: 'Casa Gabbiano' });
+
+    expect((await listBills(db, userId, { page: 1 })).bills[0]?.supplyLabel).toBe(
+      'Luce · Casa Pellicano',
+    );
+  });
+
   it('lists nothing for the supply of someone else', async () => {
     const { db, userId, supplyId, intruderId } = await twoUsers();
 
@@ -375,5 +394,66 @@ describe('bills — replaced bills', () => {
     await confirmBill(db, userId, billInput(supplyId), { source: 'manual', billId });
 
     expect(await billRow(db, billId)).toMatchObject({ source: 'extraction' });
+  });
+});
+
+describe('listLatestBills', () => {
+  it('gives the latest confirmed bill per supply, skipping a replaced one that ends later', async () => {
+    const { db, userId, supplyId } = await setup();
+    const january = { periodStart: '2025-01-01', periodEnd: '2025-01-31' };
+    const februaryToMarch = { periodStart: '2025-02-01', periodEnd: '2025-03-31' };
+    const february = { periodStart: '2025-02-01', periodEnd: '2025-02-28' };
+    await confirmBill(db, userId, billInput(supplyId, {}, january), MANUAL);
+    const { billId: replacedId } = await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, {}, februaryToMarch),
+      MANUAL,
+    );
+    const { billId: latestId } = await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, { overlapDecision: 'replace' }, february),
+      MANUAL,
+    );
+    const intruder = await createTestUser(db);
+    const { supplyId: intruderSupplyId } = await createHouseWithSupply(db, intruder.id);
+    await confirmBill(db, intruder.id, billInput(intruderSupplyId), MANUAL);
+
+    const latest = await listLatestBills(db, userId, [supplyId, intruderSupplyId]);
+
+    expect((await billRow(db, replacedId))?.status).toBe('replaced');
+    expect(latest[supplyId]?.id).toBe(latestId);
+    expect(latest[intruderSupplyId]).toBeNull();
+  });
+});
+
+describe('billInputFromDetail', () => {
+  it('gives back the confirmed input, lines in order and readings with their source', async () => {
+    const { db, userId, supplyId } = await setup();
+    const input = billInput(supplyId, {
+      totalCents: 2500,
+      lines: [
+        commodityLine(),
+        commodityLine({
+          description: 'Oneri di sistema',
+          category: 'system',
+          component: 'lump',
+          quantity: null,
+          quantityUnit: null,
+          unitPriceMicros: null,
+          amountCents: 500,
+        }),
+      ],
+      readings: [
+        { readOn: '2026-08-31', register: 'single', value: 1000, source: 'bill_actual' },
+        { readOn: '2026-09-30', register: 'single', value: 1200, source: 'bill_estimated' },
+      ],
+    });
+    const { billId } = await confirmBill(db, userId, input, MANUAL);
+
+    const roundTrip = billInputFromDetail(await getBillDetail(db, userId, billId));
+
+    expect(roundTrip).toEqual({ ...input, overlapDecision: null });
   });
 });

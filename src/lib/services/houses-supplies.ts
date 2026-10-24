@@ -7,10 +7,12 @@ import type { BatchItem } from 'drizzle-orm/batch';
 import { nanoid } from 'nanoid';
 import type { Db } from '@/lib/db/create-db';
 import * as billsRepository from '@/lib/db/repositories/bills';
+import type { HouseRow } from '@/lib/db/repositories/houses';
 import * as housesRepository from '@/lib/db/repositories/houses';
 import * as readingsRepository from '@/lib/db/repositories/readings';
+import type { SupplyRow } from '@/lib/db/repositories/supplies';
 import * as suppliesRepository from '@/lib/db/repositories/supplies';
-import { normalizeSupplyIdentifier, type SupplyKind } from '@/lib/domain/types';
+import { normalizeSupplyIdentifier, SUPPLY_KINDS, type SupplyKind } from '@/lib/domain/types';
 import { DomainError } from '@/lib/errors';
 import { runBatch } from './batch';
 
@@ -220,4 +222,78 @@ export async function deleteSupply(
   await getSupplyOrThrow(db, userId, supplyId);
   await runBatch(db, await deleteSuppliesQueries(db, userId, [supplyId]));
   return { documentPathnames: [] };
+}
+
+/** Archived supplies last, then by kind in the app's order (electricity first), then by label. */
+function compareSupplies(a: SupplyRow, b: SupplyRow): number {
+  const archived = Number(a.archivedAt !== null) - Number(b.archivedAt !== null);
+  if (archived !== 0) return archived;
+  const kind = SUPPLY_KINDS.indexOf(a.kind) - SUPPLY_KINDS.indexOf(b.kind);
+  if (kind !== 0) return kind;
+  return a.label.localeCompare(b.label, 'it');
+}
+
+/** Every house of the user by name, each with its supplies (archived ones only on request). */
+export async function listHousesWithSupplies(
+  db: Db,
+  userId: string,
+  options: { includeArchived: boolean },
+): Promise<Array<{ house: HouseRow; supplies: SupplyRow[] }>> {
+  const houses = await housesRepository.listHouses(db, userId);
+  const supplies = await suppliesRepository.listSupplies(db, userId, {
+    includeArchived: options.includeArchived,
+  });
+  return [...houses]
+    .sort((a, b) => a.name.localeCompare(b.name, 'it'))
+    .map((house) => ({
+      house,
+      supplies: supplies.filter((supply) => supply.houseId === house.id).sort(compareSupplies),
+    }));
+}
+
+export async function getSupplyDetail(
+  db: Db,
+  userId: string,
+  supplyId: string,
+): Promise<{ supply: SupplyRow; house: HouseRow }> {
+  const supply = await getSupplyOrThrow(db, userId, supplyId);
+  const house = await getHouseOrThrow(db, userId, supply.houseId);
+  return { supply, house };
+}
+
+async function listTargetSupplies(
+  db: Db,
+  userId: string,
+  target: { houseId: string } | { supplyId: string },
+): Promise<SupplyRow[]> {
+  if ('supplyId' in target) return [await getSupplyOrThrow(db, userId, target.supplyId)];
+  await getHouseOrThrow(db, userId, target.houseId);
+  return suppliesRepository.listSupplies(db, userId, {
+    houseId: target.houseId,
+    includeArchived: true,
+  });
+}
+
+/**
+ * What a delete would remove, for the confirmation dialog: supplies (archived included), bills
+ * in any status, and every reading (printed on a bill or self-read).
+ */
+export async function getDeletionSummary(
+  db: Db,
+  userId: string,
+  target: { houseId: string } | { supplyId: string },
+): Promise<{ supplies: number; bills: number; readings: number }> {
+  const supplyIds = (await listTargetSupplies(db, userId, target)).map((supply) => supply.id);
+  const billIds = await billsRepository.listBillIdsOfSupplies(db, userId, supplyIds);
+  const readingCounts = await Promise.all(
+    supplyIds.map(
+      async (supplyId) =>
+        (await readingsRepository.listEngineReadings(db, userId, supplyId)).length,
+    ),
+  );
+  return {
+    supplies: supplyIds.length,
+    bills: billIds.length,
+    readings: readingCounts.reduce((sum, count) => sum + count, 0),
+  };
 }
