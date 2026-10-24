@@ -24,17 +24,24 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 > the chat and the UI are in Italian; code and comments in English.
 
 ## Current Status
-- **Stack (decided 2026-10-24, nothing installed yet)**: Next.js 16 (App Router, `src/proxy.ts`,
+- **Stack (decided 2026-10-24)**: Next.js 16 (App Router, `src/proxy.ts`,
   `next build --webpack`), React 19, TypeScript 7, pnpm 11, Turso + Drizzle (`@libsql/client`),
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: the retirement prompt of the v1 series written,
-  `doc/v1/PROMPT-RITIRO.md` (from `claude-config/prompts/08_CREA_RITIRO_SPEC.md`, measured on the
-  repo before any code; each retirement updates its precedents and measures in place).
-  **Next**: spec 01, from the prompt at its end. Still open: none.
+- **Latest (2026-10-24)**: spec 01 implemented on `feature/01-scaffold-auth` — scaffold, database,
+  Better Auth with closable signup, test harness; guided verification done and closed (owner's
+  adjustments in the spec's Stato line, measures in AGENTS.md § 11). **Next**: PR and merge of 01,
+  then spec 02. Still open: none.
 
-## Architecture Snapshot (as specified; nothing exists yet)
+## Architecture Snapshot (database, access and test harness exist; the rest as specified)
+- **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
+  `src/lib/db/create-db.ts` (`createDb`, `prepareLocalDatabase`) + `client.ts` (server singleton),
+  `schema/auth.ts` (Better Auth tables, migration in `drizzle/`), `schema/app.ts` (empty until 02);
+  `src/lib/auth/*` (`createAuth` factory, `auth`, `getSessionUser`/`requireUser`, `PUBLIC_PATHS`,
+  `safeNextPath`); `src/proxy.ts` (optimistic redirect on cookie presence); pages `/accedi`,
+  `/registrati` and the placeholder `/` behind the `(app)` layout guard; `src/lib/container.ts`
+  (`getDb`); `src/lib/errors.ts`; `src/lib/services/user-data.ts` (`deleteAllUserData`, empty).
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →
   `src/lib/db/repositories` (Drizzle only, `(db, userId, …)`); pure `src/lib/domain` (types, dates,
   money, bill input and checks) and `src/lib/engine` (monthly series). Gateways:
@@ -47,8 +54,8 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   calendar days as `YYYY-MM-DD`.
 
 ## Key Features (planned; each line becomes real with its spec)
-- **Access** (01): Better Auth email + password, `SIGNUP_ENABLED` closed by default, per-user
-  isolation guarded by a test.
+- **Access** (01, exists): Better Auth email + password, `SIGNUP_ENABLED` closed by default,
+  per-user isolation guarded by a test.
 - **Data model and engine** (02): bills by competence (recalculations land in their month), bands
   from the bill's readings, two unit prices, readings after the last bill, photovoltaic
   self-consumption. → `doc/guide/calcoli.md`.
@@ -66,10 +73,12 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 - **PWA** (09): manifest, service worker, offline queue for bills and self-readings. →
   `doc/guide/pwa.md`.
 
-## Testing (as specified)
-Vitest for pure modules, repositories and services (temp-file libSQL with the real migrations,
-foreign keys on), synthetic generated bill fixtures, never the real services; Playwright on a
-production build with fake Blob and extractor, two seed users, axe. Commands: WORKFLOW.md § 3.
+## Testing (harness exists; the suites grow with each spec)
+Vitest for pure modules, repositories and services (`createTestDb()`: temp-file libSQL with the
+real migrations, foreign keys on); `scope.test.ts` guards the `(db, userId, …)` signature of every
+repository. Playwright on a production build, :3100 open signup and :3101 closed, `file:e2e.db`,
+two read-only seed users (`pnpm db:seed`). Later: synthetic bill fixtures, fake Blob and extractor,
+axe (03). Never the real services. Commands: WORKFLOW.md § 3.
 
 ## Data & Integrations
 Anthropic Messages API (`claude-opus-5-5`, key on the owner's personal Console organization) ·
@@ -77,10 +86,10 @@ Vercel Blob (private) · Turso · Vercel Hobby · ARERA open data (CC BY-SA 4.0)
 use, never redistributed).
 
 ## Known Issues (Active)
-None: no code yet.
+None.
 
 ## Not yet present (do not assume it exists)
-- Any code, `package.json`, migrations: the repo is documentation and specs until spec 01.
+- App tables: born in spec 02.
 - DESIGN.md and PRODUCT.md: born in spec 03 with the impeccable skill, never hand-written after.
 - SETUP.md: born in spec 05. `Draft Release Temp.md`: born at the first session end.
 - `doc/guide/*`: each guide is born with its spec (calcoli 02, app 03, deploy 05, estrazione 06,

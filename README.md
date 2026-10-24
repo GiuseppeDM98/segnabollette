@@ -4,8 +4,9 @@ Track your household utility bills and prices — electricity, gas, water, inter
 waste tax — and see whether your offer is a good one. Multi-user with closable registration,
 self-hosted on Vercel + Turso, installable on your phone as a PWA.
 
-> **Status (2026-10-24)**: planning done, no code yet. The v1 is specified in [`doc/v1/`](doc/v1/)
-> and is being implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
+> **Status (2026-10-24)**: the scaffold, the database and access (sign-up, sign-in, closable
+> registration) exist; the rest of the v1 is specified in [`doc/v1/`](doc/v1/) and is being
+> implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
 
 ## What it does
 
@@ -39,6 +40,23 @@ identifier (POD/PDR).
 Next.js 16 · React 19 · TypeScript · pnpm · Turso (libSQL) + Drizzle · Better Auth · zod · Biome ·
 Vitest · Playwright · Recharts · Tailwind 4 · Vercel Blob · `@anthropic-ai/sdk` · Serwist · Dexie ·
 Vercel (Hobby).
+
+## Local development
+
+Node ≥ 22 and pnpm 11 (`corepack enable`; on Windows, if that fails with EPERM, `corepack enable
+--install-directory <a folder on your PATH> pnpm`).
+
+```bash
+pnpm install
+cp .env.example .env.local   # then fill BETTER_AUTH_SECRET with: openssl rand -base64 32
+pnpm db:migrate              # creates local.db with the committed migrations
+pnpm db:seed                 # two invented users: seed-a@example.test / seed-b@example.test
+pnpm dev                     # http://localhost:3000
+```
+
+Before a commit: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`, then `pnpm test:e2e`
+(Playwright builds and starts its own servers on :3100 and :3101; stop `pnpm dev` first). The first
+E2E run needs `pnpm exec playwright install chromium`.
 
 ## Documentation
 

@@ -2,8 +2,8 @@
 
 > Read **WORKFLOW.md** first (session rules, guided verification). This file is the core of the
 > repo-wide rules; domain narratives go to `doc/guide/<tema>.md` as they are born (a stub stays
-> here). Written on 2026-10-24, before any code: every rule below holds from spec 01 on; a section
-> marked *(from spec NN)* describes what that spec installs and is updated by it.
+> here). Every rule below holds for all the code; a section marked *(from spec NN)* describes what
+> that spec installs and is updated by it.
 
 ## 1. What this repo is
 
@@ -83,8 +83,9 @@ arithmetic at UTC midnight in `src/lib/domain/dates.ts`; instants (`created_at`)
 SQLite/libSQL foreign keys are **off by default and per connection**, and a PRAGMA does not survive
 between HTTP requests to remote Turso. So the app tables declare foreign keys **without ON DELETE
 CASCADE**, services delete children explicitly in one `db.batch([...])` (child before parent), and
-local databases (development, tests, Playwright) turn `PRAGMA foreign_keys = ON` so that a forgotten
-child delete fails locally. Every table with `user_id` is also deleted in
+local databases (development, tests, Playwright) keep foreign keys ON (the local driver opens every
+connection with them on; `prepareLocalDatabase` sets them too, and `create-db.test.ts` reads them on
+several connections at once) so that a forgotten child delete fails locally. Every table with `user_id` is also deleted in
 `src/lib/services/user-data.ts` (`deleteAllUserData`, run by account deletion). Files on Blob are
 deleted **after** their rows (an orphan file is recoverable with `pnpm documents:prune`; a row
 without its file is not). Better Auth's own tables keep their cascade towards `users`.
@@ -105,9 +106,16 @@ quantity, unit price, amount, band, recalculation and estimate flags) and `meter
 recalculations land in their month; consumption = commodity quantity; the two unit prices are
 commodity (net of VAT) and total (VAT included) per unit. Vocabulary in `src/lib/domain/types.ts`.
 
-## 4. Database *(from spec 01)*
+## 4. Database
 
 Turso/libSQL through `@libsql/client` (Node entry; `file:local.db` in development) and Drizzle.
+`createDb({ url, authToken? })` in `src/lib/db/create-db.ts` builds a client (scripts and tests use
+it; it is not `server-only`); `src/lib/db/client.ts` is the server singleton on `globalThis`;
+`prepareLocalDatabase(client, url)` switches a `file:` database to WAL and does nothing on a remote
+one. The local driver keeps a **pool of connections** per client: a per-connection PRAGMA reaches
+only the connection that ran it, so per-connection settings go through `createClient` options (the
+busy timeout is `timeout: 5000` for `file:` URLs). Schema: `src/lib/db/schema/auth.ts` (Better Auth,
+written by hand), `app.ts` (app tables), barrel `index.ts`.
 Schema changes only through `pnpm db:generate` + a committed migration in `drizzle/`; never
 `drizzle-kit push`. Production migrations run from the owner's machine **before** the merge that
 needs them (`pnpm db:migrate:prod`, reads `.env.turso-prod`). Multi-statement writes use
@@ -115,11 +123,16 @@ needs them (`pnpm db:migrate:prod`, reads `.env.turso-prod`). Multi-statement wr
 Tests use a fresh temp **file** per test with the real migrations (`createTestDb()`), never
 `:memory:` (it silently empties after a failed transaction).
 
-## 5. Auth *(from spec 01)*
+## 5. Auth
 
 Better Auth (email + password, no email verification, no OAuth). `createAuth` in
-`src/lib/auth/create-auth.ts` is the factory (tests build one on a temp DB); `auth.ts` is the
-server instance. `SIGNUP_ENABLED` (closed when missing) feeds `disableSignUp`: the server refuses,
+`src/lib/auth/create-auth.ts` is the factory (tests and the seed build one on their own DB; it never
+reads `process.env`); `auth.ts` is the server instance; `/api/auth/[...all]` its route. Account
+deletion: `beforeDelete` runs `deleteAllUserData`, `afterDelete` runs `afterUserDeleted` (its error
+is logged, never fatal). Sign-up errors all show «Registrazione non riuscita. Riprova.» (no hint of
+which emails exist); sign-in shows «Email o password non corretti.», or «Troppi tentativi. Riprova fra
+qualche minuto.» on a 429. A page that reads `env.SIGNUP_ENABLED` calls `connection()` first, or Next
+prerenders it with the build-time value. `SIGNUP_ENABLED` (closed when missing) feeds `disableSignUp`: the server refuses,
 not only the UI. Sessions last 180 days; the rate limiter stores its counters in the database and
 runs in production only. `src/proxy.ts` is an optimistic redirect (cookie presence), not a guard:
 the `(app)` layout calls `getSessionUser()` and every Server Action and route handler starts with
@@ -160,7 +173,11 @@ precached by hand; the offline queue is drained by the pages.
 ## 9. Testing
 
 - Unit tests next to the module (`*.test.ts`), AAA, names as sentences. Every pure module has one.
-- Repositories and services against `createTestDb()` (temp file, real migrations, foreign keys on).
+- Repositories and services against `createTestDb()` (temp file, real migrations, foreign keys on)
+  and `createTestUser(db, overrides?)`, both in `src/lib/db/testing/create-test-db.ts`.
+- `src/lib/db/repositories/scope.test.ts` reads the source of every repository and fails on an
+  exported function whose parameters do not start with `(db: Db, userId: string` (whitespace
+  ignored) or on an `export const` arrow; the only exempt file is `reference-prices.ts`.
 - Anthropic and Blob are never called in tests: fake client for the extractor, disk store and
   fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`).
 - Every test in a spec names the mutation that proves it load-bearing; a test that cannot go red is
@@ -168,7 +185,10 @@ precached by hand; the offline queue is drained by the pages.
 - Playwright on a production build (:3100 open signup, :3101 closed), seed users
   `seed-a@example.test` / `seed-b@example.test`, login through `POST /api/auth/sign-in/email` with
   an `Origin` header; projects `mobile` (390×844) and `desktop`, `closed`, and `pwa` (from spec 09);
-  axe on every page from spec 03; decoy words differ per test file.
+  axe on every page from spec 03; decoy words differ per test file. The `webServer` command rebuilds
+  `e2e.db` (`scripts/e2e-reset-db.mjs`), builds, and starts both servers on the same build
+  (`scripts/e2e-servers.mjs`: 3101 first, then 3100); `tests/e2e/global-setup.ts` seeds the two users
+  and saves their sessions in `playwright/.auth/seed-<a|b>.json`.
 - Seed users A and B are read-only for Playwright: they serve the tests that only read (dashboard,
   isolation reads, a11y) and are never modified, signed out or deleted by a test. Every test that
   writes data (bills, readings, extractions, batches, offline queue, sign-out, account deletion)
@@ -178,20 +198,41 @@ precached by hand; the offline queue is drained by the pages.
   in the test; a seed user may only read (as the intruder, or as the owner of a resource that is
   only read).
 
-## 10. Commands *(installed by spec 01; see WORKFLOW.md § 3 for the table and the gate order)*
+## 10. Commands *(see WORKFLOW.md § 3 for the table and the gate order)*
 
-`pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build`, then `pnpm test:e2e`. Database:
-`db:generate`, `db:migrate`, `db:migrate:prod`, `db:studio`, `db:seed`. Later: `fixture:bills`,
-`documents:prune`, `riferimenti:update`, `riferimenti:pun`, `icons`.
+`pnpm typecheck`, `pnpm lint` (`lint:fix` writes), `pnpm test`, `pnpm build`, then `pnpm test:e2e`.
+Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrate:prod` (05),
+`fixture:bills`, `documents:prune` (06), `riferimenti:update`, `riferimenti:pun` (08), `icons` (09).
 
 ## 11. Gotchas (measured; add the date to every new one)
 
 - 2026-10-24 — libSQL `:memory:` is recreated empty after a failed transaction, and
   `file::memory:?cache=shared` shares one DB across clients: tests use a temp file (segnaprezzi).
-- 2026-10-24 — Foreign keys are off by default on Turso/libSQL and per connection: no cascade for
-  app data (§ 2.6).
-- 2026-10-24 — The Better Auth schema CLI lags the core: `accounts.issuer` must exist or signup
-  fails at runtime; the schema is written by hand.
+- 2026-10-24 — Foreign keys are per connection and off on remote Turso: no cascade for app data
+  (§ 2.6). The local driver of `@libsql/client` 0.18.0 opens every connection with them ON (0.17
+  opened them OFF).
+- 2026-10-24 — `@libsql/client` 0.18.0: a local client is a pool of up to 20 connections and
+  `execute` awaits one, so it is no longer synchronous and a PRAGMA lands on one connection only
+  (parallel reads of `foreign_keys` after an OFF gave `[1,1,0,1]`); new connections have
+  `busy_timeout` 0. Per-connection settings go through `createClient` options (`timeout`).
+- 2026-10-24 — Better Auth 1.7.12 compares the Drizzle schema with its own at startup and throws on a
+  required column it never writes: the `accounts.issuer` that 1.7.0–1.7.2 needed must **not** exist.
+- 2026-10-24 — Biome 2.6 formats and lints Markdown: `biome.json` turns it off
+  (`markdown.formatter/linter.enabled: false`), or `lint:fix` rewrites every document.
+- 2026-10-24 — `create-next-app@16.4.3` no longer writes `postcss.config.mjs` (it wires
+  `@tailwindcss/turbopack` into turbopack rules, which `next build --webpack` ignores): the PostCSS
+  config is hand-written and serves both dev and build.
+- 2026-10-24 — pnpm 11 refuses packages younger than its minimum release age: on `pnpm add` it
+  writes `minimumReleaseAgeExclude` into `pnpm-workspace.yaml`; keep those lines, a clean install
+  from the lockfile needs them.
+- 2026-10-24 — The project is CommonJS (no `"type": "module"`): no `import.meta` and no top-level
+  await in a `.ts` that Playwright or `tsx` loads (Node 22 then treats the transpiled file as ESM:
+  «exports is not defined»). A script's main guard is `require.main === module`.
+- 2026-10-24 — Next renders an empty `role="alert"` (its route announcer) on every page: Playwright
+  filters `getByRole('alert')` by text.
+- 2026-10-24 — Windows: `corepack enable` fails with EPERM under `C:\Program Files\nodejs`; use
+  `corepack enable --install-directory <a folder on PATH> pnpm`. libSQL keeps a test database file
+  locked until the worker exits, so temp test folders may stay in `%TEMP%`.
 - 2026-10-24 — Better Auth's in-memory rate limiter counts per Vercel instance: `storage: 'database'`.
 - 2026-10-24 — Vercel Blob: access and region of a store cannot be changed after creation; the CLI
   defaults to `iad1`; `handleUpload` needs `BLOB_READ_WRITE_TOKEN`; `onUploadCompleted` does not fire

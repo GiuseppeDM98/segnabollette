@@ -140,12 +140,7 @@ Of the tour, the status entry keeps only its outcome: done and closed, or what i
 The rules above are the standard. This section is the local translation of obligations 4 and 5 — it
 changes from repo to repo and is the only part to rewrite when the tooling changes.
 
-> **State on 2026-10-24**: the repo holds documentation and the v1 spec series (`doc/v1/`). There is
-> no code yet: every command below is the one the specs install, and each spec's § 9 updates this
-> section the day the command becomes real. Until spec 01 is in service, "the gates" means the
-> commands of the table once they exist, and nothing else.
-
-### The commands that exist (installed by spec 01 unless the column says otherwise)
+### The commands (installed by spec 01 unless the column says otherwise; a later spec's row is real once that spec is implemented)
 
 | Purpose | Command | Since |
 | --- | --- | --- |
