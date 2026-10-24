@@ -4,8 +4,8 @@ Track your household utility bills and prices — electricity, gas, water, inter
 waste tax — and see whether your offer is a good one. Multi-user with closable registration,
 self-hosted on Vercel + Turso, installable on your phone as a PWA.
 
-> **Status (2026-10-24)**: the scaffold, the database and access (sign-up, sign-in, closable
-> registration) exist; the rest of the v1 is specified in [`doc/v1/`](doc/v1/) and is being
+> **Status (2026-10-24)**: the scaffold, access (sign-up, sign-in, closable registration), the data
+> model and the calculation engine exist, with no pages for bills yet; the rest of the v1 is specified in [`doc/v1/`](doc/v1/) and is being
 > implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
 
 ## What it does
@@ -50,7 +50,7 @@ Node ≥ 22 and pnpm 11 (`corepack enable`; on Windows, if that fails with EPERM
 pnpm install
 cp .env.example .env.local   # then fill BETTER_AUTH_SECRET with: openssl rand -base64 32
 pnpm db:migrate              # creates local.db with the committed migrations
-pnpm db:seed                 # two invented users: seed-a@example.test / seed-b@example.test
+pnpm db:seed                 # two invented users (seed-a@example.test / seed-b@example.test) with their bills
 pnpm dev                     # http://localhost:3000
 ```
 
@@ -64,6 +64,7 @@ E2E run needs `pnpm exec playwright install chromium`.
 | --- | --- |
 | [`CLAUDE.md`](CLAUDE.md) | Index — what each piece is and where it lives; what does not exist yet |
 | [`AGENTS.md`](AGENTS.md) | Repo-wide conventions, isolation, money and dates, testing, gotchas |
+| [`doc/guide/calcoli.md`](doc/guide/calcoli.md) | The data model and the calculation engine: competence, bands, estimates, unit prices |
 | [`WORKFLOW.md`](WORKFLOW.md) | Session rules and the guided-verification protocol |
 | [`doc/v1/00-INDICE.md`](doc/v1/00-INDICE.md) | The v1 series: decisions, order, shared contracts, one spec per session |
 | [`COMMENTS.md`](COMMENTS.md), [`DEVELOPMENT_GUIDELINES.md`](DEVELOPMENT_GUIDELINES.md) | Binding code and comment guidelines |

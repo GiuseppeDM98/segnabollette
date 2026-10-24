@@ -1,7 +1,8 @@
 # 02 — Modello dei dati e motore dei calcoli
 
-> **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 24 rilievi, 5 decisioni
-> (D-43, D-44, D-46, D-47, D-48). Pronta per l'implementazione.
+> **Stato**: implementata il 2026-10-24, branch `feature/02-data-engine` (scritta e riletta in modo
+> adversariale il 2026-10-24: 24 rilievi, 5 decisioni D-43, D-44, D-46, D-47, D-48; in
+> implementazione D-62, D-63, D-64).
 > **Branch**: `feature/02-data-engine` da `main`. **Dipende da**: 01 (ritirata il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-3, D-5, D-6, D-22…D-27, D-29, D-31, D-43,
 > D-44, D-46, D-47, D-48; scelte T-7, T-9, T-10, T-11, T-12, T-13, T-28, T-30, T-33, T-34; contratti
@@ -67,6 +68,9 @@ cancellano bollette e letture. Nessuna UI (la 03).
   aveva sostituite altre: quelle che il nuovo periodo non tocca più tornano `confirmed` nello stesso
   batch); **D-47** (autolettura nel futuro → `VALIDATION` «La lettura non può essere nel futuro.»;
   `createSelfReadings` riceve `{ today }`); **D-48** (mesi stimati con i timbri di (d)).
+- Decisioni dell'owner prese in implementazione (2026-10-24, punti che la spec non copriva):
+  **D-62** (canone TV del seed da gennaio a ottobre), **D-63** (locale italiano di zod), **D-64**
+  (testi dei `VALIDATION` non scritti qui).
 - **T-7** (centesimi, micro-euro, date `YYYY-MM-DD`), **T-9** (categorie e componenti), **T-10**
   (tutte le voci), **T-11** (niente numero di fattura), **T-12** (fornitore sulla bolletta),
   **T-13** (controlli come avvisi), **T-28** (registri `feed_in` e `production`), **T-30** (C
@@ -1313,8 +1317,8 @@ no), `meseCorrente` = `monthKeyOf(oggi)`; nessuna data del seed cade dopo `oggi`
     `monthRange(shiftMonth(meseCorrente, -14), shiftMonth(meseCorrente, -1))` (da 14 mesi fa al
     mese scorso), periodo dal primo all'ultimo giorno del mese, ognuna con: `commodity` 200 kWh ×
     100000 µ€ = 2000 cent (offerta monoraria, `band: null`), `sale` fissa 600, `network` 800,
-    `system` 500, `excise` 400, `vat` 430, e nella sola bolletta di gennaio `outside` «Canone TV»
-    900; letture `bill_actual` F1/F2/F3 all'ultimo giorno del mese precedente e all'ultimo del mese,
+    `system` 500, `excise` 400, `vat` 430, e nelle bollette da gennaio a ottobre `outside` «Canone TV»
+    900 (le dieci rate reali del canone, D-62); letture `bill_actual` F1/F2/F3 all'ultimo giorno del mese precedente e all'ultimo del mese,
     che partono da 1000 kWh ciascuna il giorno prima del primo mese e crescono di 80/60/60 kWh al
     mese (quote 40% / 30% / 30%). La bolletta del primo mese ha la voce `commodity` con
     `isEstimated: true` (e `isEstimated: true` sulla bolletta); la bolletta del secondo mese
@@ -1345,7 +1349,7 @@ no), `meseCorrente` = `monthKeyOf(oggi)`; nessuna data del seed cade dopo `oggi`
 
 Per ogni bolletta seed `totalCents` = somma delle voci tranne `outside` (4730 per la luce, 4400 per
 il gas d'inverno e 2200 d'estate, 5170 per l'acqua, 3050 per l'internet), `amountDueCents` = somma
-di tutte le voci (5630 nella bolletta della luce di gennaio, uguale a `totalCents` nelle altre);
+di tutte le voci (5630 nelle bollette della luce da gennaio a ottobre, uguale a `totalCents` nelle altre);
 nessuna voce `feed_in` nei seed. `supplierName` è quello della fornitura del tipo («Fenicottero
 Energia» per luce e gas, «Ornitorinco Acque», «Lemure Telecomunicazioni»); `offerName`,
 `issueDate`, `dueDate` e `conversionFactor`/`calorificValueGj` fuori dal gas sono `null`;

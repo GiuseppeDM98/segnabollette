@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Db } from '@/lib/db/create-db';
 import { accounts, rateLimits, sessions, users } from '@/lib/db/schema/auth';
 import { createTestDb } from '@/lib/db/testing/create-test-db';
+import { billInput, createHouseWithSupply, snapshotUserRows } from '@/lib/db/testing/fixtures';
+import { confirmBill } from '@/lib/services/bills';
 import { deleteAllUserData } from '@/lib/services/user-data';
 import { type CreateAuthOptions, createAuth } from './create-auth';
 
@@ -103,6 +105,33 @@ describe('createAuth', () => {
     expect(deleteAllUserData).toHaveBeenCalledWith(db, user?.id);
     expect(afterUserDeleted).toHaveBeenCalledTimes(1);
     expect(afterUserDeleted).toHaveBeenCalledWith(user?.id);
+  });
+
+  it('deletes a user who has a bill and leaves the rows of another user alone', async () => {
+    // Arrange
+    const { db } = await createTestDb();
+    const auth = buildAuth(db);
+    await signUp(auth, 'pellicano@example.test');
+    await signUp(auth, 'gabbiano@example.test');
+    const { headers } = await signInHeaders(auth, 'pellicano@example.test');
+    const ids: Record<string, string> = {};
+    for (const email of ['pellicano@example.test', 'gabbiano@example.test']) {
+      const [user] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
+      if (!user) throw new Error(`no user ${email}`);
+      ids[email] = user.id;
+      const { supplyId } = await createHouseWithSupply(db, user.id);
+      await confirmBill(db, user.id, billInput(supplyId), { source: 'manual' });
+    }
+    const otherId = ids['gabbiano@example.test'] ?? '';
+    const otherBefore = await snapshotUserRows(db, otherId);
+
+    // Act
+    const result = await auth.api.deleteUser({ body: { password: PASSWORD }, headers });
+
+    // Assert
+    expect(result.success).toBe(true);
+    expect(await db.select({ id: users.id }).from(users)).toEqual([{ id: otherId }]);
+    expect(await snapshotUserRows(db, otherId)).toEqual(otherBefore);
   });
 
   it('deletes the user even when the after-delete cleanup throws', async () => {
