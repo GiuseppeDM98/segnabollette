@@ -27,6 +27,9 @@ playwright-report/
 test-results/
 playwright/.auth/
 
+# Fake Blob store used by Playwright
+.e2e-blob/
+
 # Misc
 .DS_Store
 *.pem

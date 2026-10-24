@@ -1,7 +1,15 @@
 # 01 — Scaffold, database e accesso
 
-> **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 23 rilievi, 1 decisione
-> (D-45). Pronta per l'implementazione.
+> **Stato**: implementata il 2026-10-24, branch `feature/01-scaffold-auth` (scritta e riletta in
+> modo adversariale il 2026-10-24: 23 rilievi, 1 decisione, D-45).
+> **Adeguamenti decisi dall'owner in implementazione (2026-10-24)**, dove il testo di § 4 e § 6
+> non regge alle versioni pinnate (misure in AGENTS.md § 11): niente `accounts.issuer` (Better
+> Auth 1.7.12 la rifiuta; la mutazione diventa «una colonna NOT NULL che Better Auth non scrive»);
+> `@libsql/client` 0.18 è un pool di connessioni → busy timeout con l'opzione `timeout: 5000` di
+> `createClient`, `prepareLocalDatabase` fa solo WAL e `foreign_keys = ON`, il test legge le PRAGMA
+> su più connessioni; `postcss.config.mjs` scritto a mano; `minimumReleaseAgeExclude` di pnpm in
+> `pnpm-workspace.yaml`; Markdown spento in `biome.json`; guardia del main del seed
+> `require.main === module`; `schema/app.ts` con `export {}`.
 > **Branch**: `feature/01-scaffold-auth` da `main`. **Dipende da**: niente (è la prima).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-1, D-4, D-12, D-37, D-38, D-40, D-45; scelte
 > T-1, T-3, T-4, T-5, T-6, T-8, T-14, T-15, T-16, T-17, T-34; contratti C-1, C-2 (parte auth), C-3

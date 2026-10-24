@@ -11,7 +11,8 @@
 > `claude-config/prompts/07_LETTURA_ADVERSARIALE_SPEC.md` (un lettore per spec e uno trasversale):
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
-> `08_CREA_RITIRO_SPEC.md`). Prossimo passo: la 01.
+> `08_CREA_RITIRO_SPEC.md`). **La 01 è implementata (2026-10-24)**; prossimo passo: la sua PR e il
+> merge, poi il suo ritiro con `PROMPT-RITIRO.md` (branch `docs/v1-ritiro-01`), poi la 02.
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -281,7 +282,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 
 | Spec | Titolo | Branch | Dipende da | Stato |
 |---|---|---|---|---|
-| 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | scritta 2026-10-24; riletta 2026-10-24 |
+| 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | implementata il 2026-10-24, branch `feature/01-scaffold-auth` |
 | 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 | scritta 2026-10-24; riletta 2026-10-24 |
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 | scritta 2026-10-24; riletta 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 | scritta 2026-10-24; riletta 2026-10-24 |

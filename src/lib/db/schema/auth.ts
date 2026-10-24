@@ -1,0 +1,90 @@
+/**
+ * Better Auth 1.7 core schema, written by hand so that every column is reviewed in the diff.
+ * Better Auth compares it with its own at startup and refuses a required column it never writes:
+ * `accounts.issuer`, which 1.7.0–1.7.2 needed, makes 1.7.12 throw, so it is not here. Table names
+ * are plural because the adapter runs with usePlural. `sessions` and `accounts` keep ON DELETE CASCADE towards users,
+ * as Better Auth's own schema declares; Better Auth also deletes them itself before the user.
+ */
+import { sql } from 'drizzle-orm';
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+
+const nowMs = sql`(cast(unixepoch('subsecond') * 1000 as integer))`;
+
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  emailVerified: integer('email_verified', { mode: 'boolean' }).default(false).notNull(),
+  image: text('image'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowMs).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    .default(nowMs)
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text('id').primaryKey(),
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+    token: text('token').notNull().unique(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowMs).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .$onUpdate(() => new Date())
+      .notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (table) => [index('sessions_user_id_idx').on(table.userId)],
+);
+
+export const accounts = sqliteTable(
+  'accounts',
+  {
+    id: text('id').primaryKey(),
+    accountId: text('account_id').notNull(),
+    providerId: text('provider_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    accessToken: text('access_token'),
+    refreshToken: text('refresh_token'),
+    idToken: text('id_token'),
+    accessTokenExpiresAt: integer('access_token_expires_at', { mode: 'timestamp_ms' }),
+    refreshTokenExpiresAt: integer('refresh_token_expires_at', { mode: 'timestamp_ms' }),
+    scope: text('scope'),
+    password: text('password'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowMs).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index('accounts_user_id_idx').on(table.userId)],
+);
+
+export const verifications = sqliteTable(
+  'verifications',
+  {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).default(nowMs).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .default(nowMs)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [index('verifications_identifier_idx').on(table.identifier)],
+);
+
+export const rateLimits = sqliteTable('rate_limits', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  count: integer('count').notNull(),
+  lastRequest: integer('last_request').notNull(),
+});
