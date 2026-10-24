@@ -44,11 +44,21 @@ export const UNIT_LABELS: Record<QuantityUnit, string> = {
 };
 
 export function formatEuro(cents: number): string {
-  return euro.format(cents / 100);
+  return formatEuroValue(cents / 100);
+}
+
+/** An amount already in euros (the chart series); formatEuro takes cents. */
+export function formatEuroValue(euroAmount: number): string {
+  return euro.format(euroAmount);
 }
 
 export function formatUnitPrice(micros: number, unit: ConsumptionUnit): string {
-  return `${unitPrice.format(micros / 1_000_000)} €/${UNIT_LABELS[unit]}`;
+  return formatUnitPriceValue(micros / 1_000_000, unit);
+}
+
+/** A unit price already in euros per unit (the chart series); formatUnitPrice takes micro-euros. */
+export function formatUnitPriceValue(euroPerUnit: number, unit: ConsumptionUnit): string {
+  return `${unitPrice.format(euroPerUnit)} €/${UNIT_LABELS[unit]}`;
 }
 
 /** "Per unit" reads in the singular: €/anno, not €/anni. */
@@ -62,6 +72,17 @@ const PER_UNIT_LABELS: Record<QuantityUnit, string> = {
 /** A bill line's printed unit price, at the precision it was typed (up to micro-euros). */
 export function formatLinePrice(micros: number, unit: QuantityUnit): string {
   return `${linePrice.format(micros / 1_000_000)} €/${PER_UNIT_LABELS[unit]}`;
+}
+
+const percent = new Intl.NumberFormat('it-IT', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+  signDisplay: 'exceptZero',
+});
+
+/** A change in percent with its sign and one decimal: '+10,0 %', '−4,5 %' (typographic minus). */
+export function formatPercentChange(change: number): string {
+  return `${percent.format(change).replace('-', '−')} %`;
 }
 
 export function formatQuantity(value: number, unit: QuantityUnit): string {

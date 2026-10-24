@@ -15,9 +15,9 @@ logo).
 
 | Route | Query | What it shows |
 |---|---|---|
-| `/` | `casa=<houseId>` (only with more than one house) | «Casa»: one `supply-card` per non-archived supply with its latest bill; empty state «Comincia creando la tua casa» |
+| `/` | `casa=<houseId>` (only with more than one house), `periodo=12\|24\|tutto` | «Casa»: period selector, the two tiles, the house costs chart, then one `supply-card` per non-archived supply with its latest bill and its last billed month (§ 9); empty state «Comincia creando la tua casa» |
 | `/forniture` | `archiviate=1` | Houses (create, rename, delete with a summary) and their supplies |
-| `/forniture/[id]` | — | One supply: facts, «Modifica», «Archivia»/«Riattiva», «Elimina», its bills, its last 10 readings |
+| `/forniture/[id]` | `periodo=12\|24\|tutto` | One supply: facts, «Modifica», «Archivia»/«Riattiva», «Elimina», period selector and charts (§ 9; without bills «Ancora nessuna bolletta: aggiungi la prima»), its bills, its last 10 readings |
 | `/bollette` | `fornitura=<supplyId>`, `pagina=<n>` | Bills, newest first, 50 a page |
 | `/bollette/nuova` | `fornitura=<supplyId>` | Without the query: the choice of the non-archived supplies; with it: `BillForm` (an archived supply opens too: past bills of a closed supply) |
 | `/bollette/[id]` | — | The bill: facts, lines grouped by category with subtotals, readings |
@@ -47,12 +47,16 @@ foreign `fornitura` filter gives an empty list, and the page has already answere
   confirmed bill of each supply, for «Casa»), `getBillDetail`, `billInputFromDetail` (a confirmed
   bill back into the form's input).
 - `src/lib/services/readings.ts`: `listReadings`, `suggestedRegisters`, `latestReadings` (§ 6).
+- `src/lib/services/dashboard.ts`: `getSupplyDashboard`, `getHouseDashboard` (§ 9).
 
 Two reads are guarded twice: `getSupplyDetail` reads the supply and then its house with the user,
 `getBillDetail` the bill and then its supply. Dropping `userId` from `getSupply` or `getBill` alone
 therefore leaves them refusing (and `isolamento.spec.ts` green); what goes red is the service tests
 that read through one guard only — `getDeletionSummary({ supplyId })`, the supply writes,
 `suggestedRegisters`, and the edit and delete pairs of `bills.test.ts` (measured 2026-10-24).
+«Casa» instead is refused by `getHouseDashboard` alone: the page does not look the house up again
+in the user's list, so dropping `userId` from `getHouse` turns `/?casa=<B's house>` into a 200 and
+`isolamento.spec.ts` red (measured 2026-10-24; with a second lookup it stayed green).
 
 With more than one house a supply is named `formatSupplyLabel` → «Luce · Casa Gabbiano»
 (`src/lib/format.ts`): `listBills` and `listReadings` return it, and the pages use it for the
@@ -218,6 +222,92 @@ the overlap panel from the start (the review knows them); manual entry learns th
   `overlap-panel`, `line-group`,
   `group-subtotal`, `arithmetic-warnings`, `form-errors`, `field-error`, `reading-row`,
   `self-reading-form`, `lower-reading-warning`, `delete-account`, `confirm-dialog`, `nav-bar`,
-  `side-bar`.
+  `side-bar`, `chart-frame`, `kpi-tile`, `supply-last-month`.
+- `dashboard.spec.ts` only reads seed A (no decoy word); `seedSupplyIds(email)` gives the seed
+  supplies' ids by name. `a11y.spec.ts` opens every `<details>` before axe, so the charts' data
+  tables are checked too.
 - Italian numbers in assertions: `it-IT` groups thousands only from five digits, so `1100 kWh`,
   not `1.100` (2026-10-24), as `formatQuantity` prints them.
+
+## 9. Dashboard and charts
+
+**Data** — `src/lib/services/dashboard.ts` (the calculations: `doc/guide/calcoli.md` § 13):
+`getSupplyDashboard(db, userId, supplyId, { today, range })` and `getHouseDashboard(db, userId,
+houseId, { today, range })`, `range` `'12' | '24' | 'all'`. Both reread the supply or house with
+the user: a foreign id is `NOT_FOUND`, a 404. The pages read `?periodo=` with `dashboardRange`
+(`page-helpers.ts`: `12`, `24`, `tutto`, anything else `24`) and pass `today = romeToday(Date.now())`.
+
+**Points** — `src/lib/charts/series.ts`, pure: `toConsumptionSeries`, `toUnitPriceSeries`,
+`toCostSeries`, `toHouseCostSeries`, `toYearOverYearSeries(months, endMonth, 'consumption' |
+'cost')`, `percentChange`, and the `ReferenceLine` type (market references; it lives in `src/lib`
+because `src/lib` never imports from `src/components`). It is the one place beside `format.ts`
+that divides by 100 and by 10⁶: points carry euros and euros per unit. A missing value is `null`,
+never 0 (a band without consumption, a month without price, a cost month without billed days), so
+Recharts draws a gap. Pages build the points; the chart components know neither the database nor
+the engine.
+
+**Formats** — points are already in euros, so axes, tooltips and tables use
+`formatEuroValue(euro)` and `formatUnitPriceValue(euroPerUnit, unit)` (`formatEuro(47.3)` would
+print «0,47 €»); quantities `formatQuantity`; the tiles take cents and micro-euros (`formatEuro`,
+`formatUnitPrice`) and the change `formatPercentChange` («+10,0 %», «−4,5 %», typographic minus).
+
+**Components** — `src/components/charts/`:
+
+- `recharts.ts` (`'use client'`) is the only import of `recharts`.
+- `ChartFrame` (`data-testid="chart-frame"`): title (h2) and unit, the plot at 240 px, 320 px from
+  `md` (a `ResponsiveContainer` without a parent height draws nothing), the HTML legend, notes,
+  and `<details><summary>Vedi i dati</summary>` with a table of one row per month (per bar),
+  every cell formatted by `format.ts`; the table region is focusable for sideways scrolling.
+- `chart-parts.tsx`: axis, grid and cursor styles, `CHART_MARGIN` (20 px on the right for the last
+  month label), `HatchPattern` and `StripePattern`, `ChartLegend`, `ChartTooltipBox` (value first,
+  then the series name, a line key in the series colour).
+- `ConsumptionChart`: bands F1/F2/F3/F23 and `single` stacked («Fascia unica» for electricity,
+  «Consumo» for gas and water), then «da letture, non ancora fatturato» on the same stack
+  (striped, bordered in `--color-readings`), «Autoconsumo» on the stack and «Immessa in rete» as a
+  line with panels. Estimated months: hatched bands at opacity 0.55 through `Cell`, and a
+  «stimato» legend entry; legend entries appear only when the range has them. Gas readings
+  converted with C = 1 print «Coefficiente C non noto: i m³ delle autoletture sono convertiti con
+  C = 1.».
+- `UnitPriceChart({ points, unit, references?, note? })`: «Materia prima (senza IVA)» and «Costo
+  totale per unità (IVA inclusa)», 2 px lines with ringed dots and gaps where there is no
+  consumption; references dashed (empty until the market references exist); water passes the note
+  «Per l'acqua non esiste una serie nazionale di riferimento: nessun confronto.».
+- `CostsChart({ points, mode })`: `supply` the seven categories + «Energia ceduta» (hatched grey,
+  below zero); `flat` the total only (no legend: one series); `house` the seven + «Canoni e
+  tributi» + «Energia ceduta». Categories that are zero over the whole range are left out. The
+  tooltip lists the non-zero segments and «Totale», net of the fed-in credit.
+- `YearOverYearChart({ consumption, cost, unit, totals })`: «quest'anno» / «anno prima» side by
+  side, a «Consumo / Spesa» switch for metered supplies (`aria-pressed`), and above it the
+  `KpiTile`s «Ultimi 12 mesi · consumo» and «· spesa» (spending only for flat fees).
+- `KpiTile({ label, value, change })` (`data-testid="kpi-tile"`): a number shows «+10,0 % sui 12
+  mesi precedenti», `null` «— sui 12 mesi precedenti» (the periods are not comparable), absent no
+  line.
+- `PeriodSelector({ current, hrefFor })`: «12 mesi» · «24 mesi» · «Tutto» as links, the current one
+  with `aria-current="true"`. On «Casa» its links keep `?casa=` and the house select keeps
+  `?periodo=`.
+
+**Rules of the charts** (DESIGN.md § Charts and the dataviz method):
+
+- Colours only as tokens in `fill`/`stroke` (`var(--color-cat-*)`, `--color-band-*`,
+  `--color-readings`, `--color-pv-*`, `--color-price-*`, `--color-yoy-*`); text in charts (ticks,
+  legend, tooltip, table) wears the ink tokens; ticks are figures (`--font-print`, 11 px).
+- Stacked charts use `stackOffset="sign"`: with the default offset a negative value starts from
+  the top of the pile and covers the positive segments; with `sign` the fed-in credit, discounts,
+  negative system charges and recalculations that sum below zero stack down from a zero line.
+- Bars at most 24 px, a 1 px surface-coloured edge (a 2 px gap between touching segments), no
+  rounded ends (DESIGN.md: square stationery); recessive solid grid; no Recharts animation (the
+  stamp is the only motion); one axis per chart. SVG pattern ids come from `useId` stripped to
+  `[A-Za-z0-9_-]`, since they are referenced as `url(#…)`.
+- Every chart has its table; axe runs on the pages with the tables open.
+
+**Pages** — `/forniture/[id]`: a metered supply shows consumption, unit price, costs, year over
+year (four `chart-frame`); a flat fee costs and year over year (two, one tile). The year-over-year
+points end at `lastBilledMonth ?? monthKeyOf(today)`. «Casa»: the line «Ultimi 12 mesi fatturati:
+<from> – <to>» (absent without a billed month), the tiles «Spesa degli ultimi 12 mesi» (change only
+when comparable) and «Spesa media mensile», `CostsChart mode="house"` (or «Ancora nessuna bolletta
+in questa casa» when no supply, archived ones included, has a billed month), then the cards with
+one more line from `lastBilled`: month · consumption · total unit price for metered supplies, month
+· spending for flat fees, «Nessun mese fatturato» without one. No second list under the cards.
+
+At 390 px the Y axes need room: 72 px for quantities («240 kWh»), 80 px for euros, 108 px for unit
+prices («0,2400 €/kWh»), or the tick text wraps (measured 2026-10-24).

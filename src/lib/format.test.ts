@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   formatDecimalInput,
   formatEuro,
+  formatEuroValue,
   formatLinePrice,
+  formatPercentChange,
   formatSupplyLabel,
   formatUnitPrice,
+  formatUnitPriceValue,
   parseDecimalInput,
 } from './format';
 
@@ -38,6 +41,17 @@ describe('formatting', () => {
   it('formats a unit price with four decimals and its unit', () => {
     expect(formatUnitPrice(99_000, 'kWh')).toBe('0,0990 €/kWh');
   });
+
+  it('formats an amount already in euros, not in cents', () => {
+    const text = formatEuroValue(47.3);
+
+    expect(text).toContain('47,30');
+    expect(text).toContain('€');
+  });
+
+  it('formats a unit price already in euros per unit with four decimals', () => {
+    expect(formatUnitPriceValue(0.1, 'kWh')).toBe('0,1000 €/kWh');
+  });
 });
 
 describe('formatDecimalInput', () => {
@@ -50,6 +64,14 @@ describe('formatDecimalInput', () => {
 
   it('reads back a pro-rata fraction exactly', () => {
     expect(parseDecimalInput(formatDecimalInput(30 / 365, 20))).toBe(30 / 365);
+  });
+});
+
+describe('formatPercentChange', () => {
+  it('writes the sign, one decimal and a typographic minus', () => {
+    expect(formatPercentChange(10)).toBe('+10,0 %');
+    expect(formatPercentChange(-4.54)).toBe('−4,5 %');
+    expect(formatPercentChange(0)).toBe('0,0 %');
   });
 });
 

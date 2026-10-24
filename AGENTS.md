@@ -29,7 +29,8 @@ explicitly. `src/lib/db/repositories/*` is the only place that writes SQL (Drizz
 (`listBills`, `listReadings`) with different signatures. Gateways:
 `src/lib/extraction/anthropic-extractor.ts` is the only file importing `@anthropic-ai/sdk`;
 `src/lib/blob/vercel-blob-store.ts` the only server file importing `@vercel/blob` (both *(from spec
-06)*); `src/components/charts/recharts.ts` *(from spec 04)* the only file importing `recharts`.
+06)*); `src/components/charts/recharts.ts` the only file importing `recharts` (it re-exports what the
+charts use, Recharts' `ReferenceLine` as `RechartsReferenceLine`).
 The app reaches external services through `src/lib/container.ts` (`getDb`; `getBlobStore`,
 `getBillExtractor` and their fakes under `E2E_FAKE_SERVICES=1` *(from spec 06)*); CLI scripts in `scripts/` build their
 clients directly and never import `server-only` modules (`env.ts`, `db/client.ts`, `auth/auth.ts`).
@@ -80,7 +81,7 @@ Money is **integer euro cents**, signed (`*_cents`); unit prices are **integer m
 with one `Math.round` at the end; splitting an amount uses `allocateCentsByWeights` (exact sums),
 which lives with `unitPriceMicros`, `centsFromEuro` and `microsFromEuro` in `src/lib/domain/money.ts`.
 Formatting and parsing of numbers and dates live only in `src/lib/format.ts`; components never
-divide by 100 (the chart series in `src/lib/charts/series.ts` *(from spec 04)* are the one other
+divide by 100 (the chart series in `src/lib/charts/series.ts` are the one other
 place that converts to display units). Calendar days (billing periods, readings, due dates) are
 `YYYY-MM-DD` strings with arithmetic at UTC midnight in `src/lib/domain/dates.ts`; instants
 (`created_at`) are epoch ms UTC; "today" is `romeToday(Date.now())` computed by the caller. Tests run with `TZ=Europe/Rome`.
@@ -172,7 +173,9 @@ the default Tailwind palette does not exist and the `dark:` variant is never use
 token). Theme from the `theme` cookie (`system|light|dark`). Pages turn a foreign id into a 404
 (`orNotFound`); Server Actions follow one shape (`doc/guide/app.md` § 3); deletions confirm in
 `ConfirmDialog`, never `window.confirm`. Recharts only through `src/components/charts/recharts.ts`
-*(from spec 04)*; every chart has a data-table alternative. `data-testid` on what Playwright drives.
+(no other file imports `recharts`); every chart has a data-table alternative (`ChartFrame`'s «Vedi i
+dati»), colours only as `var(--color-…)` tokens in `fill`/`stroke`, stacked charts with
+`stackOffset="sign"`, no Recharts animation (guide `doc/guide/app.md` § 9). `data-testid` on what Playwright drives.
 
 ## 8. Deploy, Blob and PWA *(from specs 05, 06, 09 — stubs; guides `doc/guide/deploy.md`, `doc/guide/pwa.md`)*
 
@@ -299,6 +302,11 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
 - 2026-10-24 — Windows, Git Bash: an argument `/` given to `node` arrives as
   `C:/Program Files/Git/` (set `MSYS_NO_PATHCONV=1`); stopping the agent's background task of
   `pnpm start` leaves the `node` child listening, so the port stays busy until that process is killed.
+- 2026-10-24 — Each Playwright run builds for production: four in a row beside `next dev` and Chrome
+  exhausted 16 GB, and Claude Code reaped the background `pnpm dev`. Its orphan `next dev` kept
+  answering on :3000 with its workers dead (`POST /api/auth/sign-in/email` → 500, «Jest worker
+  encountered 2 child process exceptions»): kill the project's `node` processes and restart
+  `pnpm dev`; a tour script stops when the sign-in is not 200 instead of opening `/accedi`.
 
 ## 12. Definition of done (per session)
 
