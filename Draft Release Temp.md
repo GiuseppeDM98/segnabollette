@@ -10,7 +10,7 @@
 
 **Bollette**
 
-- Added bills typed by hand: the form starts from the usual lines of the utility (energy, network, system charges, taxes, VAT…) with the amounts left empty, and shows the sums by category and a warning when the total does not add up. On a phone each line is a card, on a computer a table.
+- Added bills typed by hand: the form starts from the usual lines of the utility (energy, network, system charges, taxes, VAT…) with the amounts left empty, shows the sums by category and a warning when the total does not add up, and lets any bill, flat fees included, be marked as estimated. On a phone each line is a card, on a computer a table.
 - Added overlapping bills: when a new bill covers days already billed, you choose whether it adds up (an adjustment) or replaces the old one, which stays visible stamped «sostituita».
 - Added the bill list, filterable by supply, and the bill page with its lines grouped by category, subtotals, and edit and delete.
 

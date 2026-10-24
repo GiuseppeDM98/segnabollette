@@ -468,8 +468,8 @@ l'id della riga con lo stesso `register` e lo stesso `value`, altrimenti la inse
   poi, se `navigator.onLine === false` o la Server Action lancia per un errore di rete, il
   `SelfReadingInput` già costruito va a `enqueueSelfReading(input, useQueueDeps())` con lo stesso
   messaggio; online continua a usare `createReadingsAction`.
-- `src/components/offline/offline-banner.tsx` (`OfflineBanner`, montato in `AppShell` sotto
-  l'intestazione): `role="status"`, «Sei offline: quello che salvi resta in coda sul telefono.»
+- `src/components/offline/offline-banner.tsx` (`OfflineBanner`, montato in `AppShell` in cima
+  alla colonna del contenuto, sopra `<main>`: la shell non ha un'intestazione): `role="status"`, «Sei offline: quello che salvi resta in coda sul telefono.»
   finché `navigator.onLine` è falso.
 - `/bollette/da-rivedere`: sezione «In attesa di rete» con le bollette in coda di `useQueueItems`.
   Per ogni voce: «N file», data di accodamento `formatDate(romeToday(createdAt))`, stato «in coda»

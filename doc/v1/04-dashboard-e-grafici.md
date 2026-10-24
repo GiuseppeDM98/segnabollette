@@ -2,7 +2,7 @@
 
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 20 rilievi, 4 decisioni
 > (D-43, D-52, D-53, D-54). Pronta per l'implementazione.
-> **Branch**: `feature/04-dashboard` da `main`. **Dipende da**: 03 (in esercizio).
+> **Branch**: `feature/04-dashboard` da `main`. **Dipende da**: 03 (ritirata il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-22, D-23, D-25, D-26, D-29, D-30, D-31,
 > D-36, D-43, D-52, D-53, D-54; scelte T-1 (recharts), T-29, T-30 (avviso del coefficiente C);
 > contratti: crea C-13 (`dashboard.ts`) e C-15 (componenti e tipo `ReferenceLine` in
@@ -426,9 +426,8 @@ Contesto, prima di toccare qualsiasi file:
   firme dell'indice
 - Prima di scrivere il primo grafico carica la skill dataviz
 
-Prima di tutto (su `main` aggiornato con `git pull`): scrivi lo stato «in esercizio il <data>,
-PR #N» della spec 03 nella sua riga «Stato» e in § 5 dell'indice (PR mergiata e collaudo
-annotato in CLAUDE.md: regola 5 dell'indice); entra nel commit di questa sessione.
+Prima di tutto: `git pull` su `main`; la 03 è ritirata (2026-10-24, stato in § 5 dell'indice e in
+CLAUDE.md → Latest), quindi non c'è uno stato da scrivere per lei.
 
 Prima della prima modifica: `git branch --show-current` deve dire main; crea
 feature/04-dashboard. Crea SESSION_NOTES.md.

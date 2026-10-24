@@ -30,9 +30,10 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
 - **Latest (2026-10-24)**: spec 03 (design, houses and supplies, manual entry, self-readings,
-  settings) implemented on `feature/03-design-manual-entry`; guided verification A–G passed, tour
-  closed with no findings. Documented in `doc/guide/app.md`, DESIGN.md and PRODUCT.md. **Next**:
-  the PR of this branch, then spec 04 (its session records spec 03's PR in the status lines).
+  settings) in service with PR #7 and retired on 2026-10-24. The retirement changed the bill form
+  («Consumi stimati» on every kind, band order) and added tests: the guided verification holds for
+  the code before it, and on the new code the signals are redone after the deploy (spec 05).
+  Documented in `doc/guide/app.md`, DESIGN.md and PRODUCT.md. **Next**: spec 04 (dashboard).
   Still open: none.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine and the manual-entry UI exist; the rest as specified)
@@ -40,8 +41,8 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   `src/lib/db/create-db.ts` (`createDb`, `prepareLocalDatabase`) + `client.ts` (server singleton),
   `schema/auth.ts` (Better Auth tables) and `schema/app.ts` (app tables), migrations in `drizzle/`;
   `src/lib/auth/*` (`createAuth` factory, `auth`, `getSessionUser`/`requireUser`, `PUBLIC_PATHS`,
-  `safeNextPath`); `src/proxy.ts` (optimistic redirect on cookie presence); pages `/accedi`,
-  `/registrati` and the placeholder `/` behind the `(app)` layout guard; `src/lib/container.ts`
+  `safeNextPath`); `src/proxy.ts` (optimistic redirect on cookie presence); pages `/accedi` and
+  `/registrati`, and the `(app)` layout guard; `src/lib/container.ts`
   (`getDb`); `src/lib/errors.ts`; `src/lib/services/user-data.ts` (`deleteAllUserData`).
 - **Model** (exists): repositories `houses`, `supplies`, `bills`, `readings` and services
   `houses-supplies.ts`, `bills.ts` (`confirmBill` with overlaps and replaced bills), `readings.ts`;

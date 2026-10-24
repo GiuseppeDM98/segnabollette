@@ -61,6 +61,21 @@ describe('lineTemplateFor', () => {
     });
     expect(withoutPanels.some((line) => line.category === 'feed_in')).toBe(false);
   });
+
+  it('gives internet and phone a fee and its VAT, and TARI one fee without VAT', () => {
+    const shape = (kind: SupplyKind) =>
+      lineTemplateFor(kind, false).map(({ description, category, component }) => ({
+        description,
+        category,
+        component,
+      }));
+
+    expect(shape('telecom')).toEqual([
+      { description: 'Canone', category: 'sale', component: 'fixed' },
+      { description: 'IVA', category: 'vat', component: 'lump' },
+    ]);
+    expect(shape('waste')).toEqual([{ description: 'TARI', category: 'sale', component: 'fixed' }]);
+  });
 });
 
 describe('emptyBillInput', () => {

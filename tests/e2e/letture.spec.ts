@@ -39,6 +39,15 @@ test('autoletture a fasce, elenco e valore più basso', async ({ page }) => {
     }
     await page.getByRole('button', { name: 'Salva bolletta' }).click();
     await expect(page).toHaveURL(SAVED_BILL_URL);
+    const printed = page.getByTestId('bill-reading-row');
+    await expect(printed).toHaveCount(3);
+    for (const [register, value] of [
+      ['F1', '1000 kWh'],
+      ['F2', '800 kWh'],
+      ['F3', '600 kWh'],
+    ]) {
+      await expect(printed.filter({ hasText: register }).filter({ hasText: value })).toHaveCount(1);
+    }
   });
 
   const form = page.getByTestId('self-reading-form');

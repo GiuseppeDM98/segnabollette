@@ -67,6 +67,9 @@ const BAND_LABELS: Record<(typeof BANDS)[number], string> = {
   F23: 'F23',
 };
 
+/** The bands as a bill prints them, F1 first; «unica» last, after the time bands. */
+const BAND_OPTIONS = [...BANDS.filter((band) => band !== 'single'), 'single' as const];
+
 /** Labels above the field on a phone; on the desktop table the column header names it. */
 const CELL_LABEL = `${labelClass} mb-1 text-sm md:sr-only`;
 
@@ -365,14 +368,14 @@ export function BillForm({
             onChange: (offerName) => update({ offerName }),
           })}
         </div>
-        {metered && (
-          <CheckboxField
-            id={fieldId('isEstimated')}
-            label="Consumi stimati"
-            checked={draft.isEstimated}
-            onChange={setEstimated}
-          />
-        )}
+        {/* Every kind has it: a flat-fee bill marked estimated (by hand or by the extraction)
+            must be clearable here, or its «stimata» stamp would stay for good. */}
+        <CheckboxField
+          id={fieldId('isEstimated')}
+          label="Consumi stimati"
+          checked={draft.isEstimated}
+          onChange={setEstimated}
+        />
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
@@ -625,7 +628,7 @@ export function BillForm({
                               className={inputClass}
                             >
                               <option value="">—</option>
-                              {BANDS.map((band) => (
+                              {BAND_OPTIONS.map((band) => (
                                 <option key={band} value={band}>
                                   {BAND_LABELS[band]}
                                 </option>
