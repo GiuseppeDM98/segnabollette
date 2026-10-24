@@ -29,21 +29,25 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: spec 01 (scaffold, database, access, test harness) in service with PR #3
-  and retired on `docs/v1-ritiro-01` (text in `git log -- doc/v1/01-scaffold-database-e-accesso.md`).
-  The retirement fixed code — the sign-in return to `next` now has a load-bearing E2E, the
-  repository scope guard sees typed and wrapped exports, Biome's preset — so the guided
-  verification of 01 counts for the code before; spec 05 redoes its closing measures in production.
-  **Next**: spec 02. Still open: none.
+- **Latest (2026-10-24)**: spec 02 (data model and calculation engine) implemented on
+  `feature/02-data-engine`; guided verification done and closed (E2E of 01 green, seed lines and
+  engine probe on seed A's electricity as expected; no UI, so no tour), documented in
+  `doc/guide/calcoli.md`. Owner decisions taken while implementing: D-62…D-64 in the index.
+  **Next**: PR and merge, then spec 03. Still open: none.
 
-## Architecture Snapshot (database, access and test harness exist; the rest as specified)
+## Architecture Snapshot (database, access, test harness, data model and engine exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
   `src/lib/db/create-db.ts` (`createDb`, `prepareLocalDatabase`) + `client.ts` (server singleton),
-  `schema/auth.ts` (Better Auth tables, migration in `drizzle/`), `schema/app.ts` (empty until 02);
+  `schema/auth.ts` (Better Auth tables) and `schema/app.ts` (app tables), migrations in `drizzle/`;
   `src/lib/auth/*` (`createAuth` factory, `auth`, `getSessionUser`/`requireUser`, `PUBLIC_PATHS`,
   `safeNextPath`); `src/proxy.ts` (optimistic redirect on cookie presence); pages `/accedi`,
   `/registrati` and the placeholder `/` behind the `(app)` layout guard; `src/lib/container.ts`
-  (`getDb`); `src/lib/errors.ts`; `src/lib/services/user-data.ts` (`deleteAllUserData`, empty).
+  (`getDb`); `src/lib/errors.ts`; `src/lib/services/user-data.ts` (`deleteAllUserData`).
+- **Model** (exists): repositories `houses`, `supplies`, `bills`, `readings` and services
+  `houses-supplies.ts`, `bills.ts` (`confirmBill` with overlaps and replaced bills), `readings.ts`;
+  `src/lib/domain/*` (types, dates, money, `BillInputSchema`, checks), `src/lib/format.ts`.
+- **Engine** (exists): `src/lib/engine/*` — `buildSupplyMonths`, `buildHouseMonths`, `rolling12`,
+  `yearOverYear`, pure; seed data in `scripts/seed-data.ts` (`buildSeedBills`).
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →
   `src/lib/db/repositories` (Drizzle only, `(db, userId, …)`); pure `src/lib/domain` (types, dates,
   money, bill input and checks) and `src/lib/engine` (monthly series). Gateways:
@@ -58,7 +62,7 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 ## Key Features (planned; each line becomes real with its spec)
 - **Access** (exists since 2026-10-24): Better Auth email + password, `SIGNUP_ENABLED` closed by default,
   per-user isolation guarded by a test.
-- **Data model and engine** (02): bills by competence (recalculations land in their month), bands
+- **Data model and engine** (exists since 2026-10-24): bills by competence (recalculations land in their month), bands
   from the bill's readings, two unit prices, readings after the last bill, photovoltaic
   self-consumption. → `doc/guide/calcoli.md`.
 - **Manual entry** (03): houses and supplies, the bill form (`BillForm`, shared with the review),
@@ -79,8 +83,9 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 Vitest for pure modules, repositories and services (`createTestDb()`: temp-file libSQL with the
 real migrations, foreign keys on); `scope.test.ts` guards the `(db, userId, …)` signature of every
 repository. Playwright on a production build, :3100 open signup and :3101 closed, `file:e2e.db`,
-two read-only seed users (`pnpm db:seed`). Later: synthetic bill fixtures, fake Blob and extractor,
-axe (03). Never the real services. Commands: WORKFLOW.md § 3.
+two read-only seed users with invented houses, supplies and bills (`pnpm db:seed`). Later:
+synthetic bill fixtures, fake Blob and extractor, axe (03). Never the real services. Commands:
+WORKFLOW.md § 3.
 
 ## Data & Integrations
 Anthropic Messages API (`claude-opus-5-5`, key on the owner's personal Console organization) ·
@@ -91,11 +96,10 @@ use, never redistributed).
 None.
 
 ## Not yet present (do not assume it exists)
-- App tables: born in spec 02.
 - DESIGN.md and PRODUCT.md: born in spec 03 with the impeccable skill, never hand-written after.
 - SETUP.md: born in spec 05.
-- `doc/guide/*`: each guide is born with its spec (calcoli 02, app 03, deploy 05, estrazione 06,
-  riferimenti 08, pwa 09).
+- `doc/guide/*` beyond `calcoli.md`: each guide is born with its spec (app 03, deploy 05,
+  estrazione 06, riferimenti 08, pwa 09).
 - Password reset and email verification: no outbound email.
 - Water bills: never tried on a real bill (the owner's water is in the condominium fees); the first
   real one comes with the new house.

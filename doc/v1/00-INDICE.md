@@ -11,8 +11,8 @@
 > `claude-config/prompts/07_LETTURA_ADVERSARIALE_SPEC.md` (un lettore per spec e uno trasversale):
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
-> `08_CREA_RITIRO_SPEC.md`). **La 01 è in esercizio (PR #3) e ritirata il 2026-10-24**; prossimo
-> passo: la 02.
+> `08_CREA_RITIRO_SPEC.md`). **La 01 è in esercizio (PR #3) e ritirata il 2026-10-24; la 02 è
+> implementata il 2026-10-24**; prossimo passo: PR e merge della 02, poi la 03.
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -211,6 +211,9 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | D-52 | (2026-10-24) Pagina **Casa**: una sola card per fornitura, con i dati della 03 (ultima bolletta, pulsanti) e quelli della dashboard (consumo e costo unitario dell'ultimo mese fatturato). | 03, 04 |
 | D-53 | (2026-10-24) Riquadri della **Casa**: la finestra dei 12 mesi finisce al più vecchio fra gli «ultimi mesi fatturati» delle forniture non archiviate che hanno bollette (ogni fornitura è fatturata in tutti i 12 mesi). | 04 |
 | D-54 | (2026-10-24) **Spesa media mensile** della Casa = spesa degli ultimi 12 mesi ÷ mesi di quella finestra in cui almeno una fornitura ha giorni fatturati («—» se nessuno). | 04 |
+| D-62 | (2026-10-24, in implementazione) **Canone TV del seed** nelle bollette della luce **da gennaio a ottobre** (le dieci rate reali), non nella sola bolletta di gennaio. | 02 |
+| D-63 | (2026-10-24, in implementazione) **Locale italiano di zod** (`z.config(z.locales.it())` in `bill-input.ts`): anche i messaggi di default dei `VALIDATION` sono in italiano. | 02 |
+| D-64 | (2026-10-24, in implementazione) **Testi dei `VALIDATION`** non scritti nella spec: «Il nome della casa deve avere da 1 a 60 caratteri.», «Il nome della fornitura deve avere da 1 a 60 caratteri.», «Il fotovoltaico vale solo per la luce.», «Una fornitura a canone non ha letture.», «Una fornitura a canone non ha consumi: togli kWh, Smc e m³ dalle voci.», «Serve almeno una voce della materia prima in kWh.» (Smc, m³), «Le voci della materia prima vanno in kWh.» (Smc, m³), «Una lettura usa un registro che questa fornitura non ha.», «Coefficiente C e potere calorifico valgono solo per il gas.». | 02 |
 
 ### 3.5 Riferimenti di mercato (2026-10-24)
 
@@ -283,7 +286,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | Spec | Titolo | Branch | Dipende da | Stato |
 |---|---|---|---|---|
 | 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | in esercizio il 2026-10-24, PR #3; ritirata il 2026-10-24 |
-| 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | scritta 2026-10-24; riletta 2026-10-24 |
+| 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | implementata il 2026-10-24, branch `feature/02-data-engine` |
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 | scritta 2026-10-24; riletta 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 | scritta 2026-10-24; riletta 2026-10-24 |
 | 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -297,7 +300,8 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01 è ritirata (2026-10-24): la prossima da incollare è il prompt in fondo alla 02.
+La 01 è ritirata (2026-10-24); la 02 è implementata (2026-10-24): dopo il merge, la prossima da
+incollare è il prompt in fondo alla 03.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 

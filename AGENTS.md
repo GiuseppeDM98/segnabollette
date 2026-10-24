@@ -73,7 +73,8 @@ pair of tests «own resource passes / someone else's is refused».
 
 Money is **integer euro cents**, signed (`*_cents`); unit prices are **integer micro-euros** per unit
 (`*_micros`, 0,099000 €/kWh = 99000); physical quantities are `real`. Arithmetic on money is integer
-with one `Math.round` at the end; splitting an amount uses `allocateCentsByWeights` (exact sums).
+with one `Math.round` at the end; splitting an amount uses `allocateCentsByWeights` (exact sums),
+which lives with `unitPriceMicros`, `centsFromEuro` and `microsFromEuro` in `src/lib/domain/money.ts`.
 Formatting and parsing of numbers and dates live only in `src/lib/format.ts`; components never
 divide by 100 (the chart series in `src/lib/charts/series.ts` are the one other place that converts
 to display units). Calendar days (billing periods, readings, due dates) are `YYYY-MM-DD` strings with
@@ -100,15 +101,16 @@ Follow COMMENTS.md: a design comment at the top of a module that makes a non-obv
 comment where the code looks wrong on purpose, checklist comments (`WARNING: … also update`) where
 two places must change together, no TODO without an issue, no commented-out code.
 
-## 3. Domain model *(from spec 02 — stub; the guide is `doc/guide/calcoli.md`)*
+## 3. Domain model *(stub; the guide is `doc/guide/calcoli.md`)*
 
-One set of tables for every utility: `houses` → `supplies` (kind `electricity|gas|water|telecom|waste`,
-identifier = normalized POD/PDR/utility code) → `bills` (billing period, totals, gas C and PCS,
-status `confirmed|replaced`) → `bill_lines` (category, component, **own competence period**,
-quantity, unit price, amount, band, recalculation and estimate flags) and `meter_readings`
-(register, value, source). The engine spreads each line evenly over the days of its own period, so
-recalculations land in their month; consumption = commodity quantity; the two unit prices are
-commodity (net of VAT) and total (VAT included) per unit. Vocabulary in `src/lib/domain/types.ts`.
+One set of tables for every utility (`src/lib/db/schema/app.ts`): `houses` → `supplies` (kind
+`electricity|gas|water|telecom|waste`, normalized identifier) → `bills` (status
+`confirmed|replaced`) → `bill_lines` (each with **its own competence period**) and
+`meter_readings`. The pure engine (`src/lib/engine/`, `buildSupplyMonths`) spreads each line
+evenly over the days of its period, so recalculations land in their month; consumption = commodity
+quantity; two unit prices (commodity net of VAT, total with VAT); the month total is net of the
+fed-in credit. Vocabulary in `src/lib/domain/types.ts`; overlaps, replaced bills, bands, estimated
+months, readings and photovoltaic in the guide.
 
 ## 4. Database
 
@@ -180,7 +182,10 @@ precached by hand; the offline queue is drained by the pages.
 
 - Unit tests next to the module (`*.test.ts`), AAA, names as sentences. Every pure module has one.
 - Repositories and services against `createTestDb()` (temp file, real migrations, foreign keys on)
-  and `createTestUser(db, overrides?)`, both in `src/lib/db/testing/create-test-db.ts`.
+  and `createTestUser(db, overrides?)`, both in `src/lib/db/testing/create-test-db.ts`; builders and
+  probes for service tests (`billInput`, `commodityLine`, `createHouseWithSupply`,
+  `snapshotUserRows` for the «someone else's rows stay identical» half of an isolation pair,
+  `expectDomainError`) in `src/lib/db/testing/fixtures.ts`.
 - `src/lib/db/repositories/scope.test.ts` reads the source of every repository and fails on an
   exported function whose parameters do not start with `(db: Db, userId: string` (whitespace
   ignored) or on any exported `const`/`let`/`var` (a typed or wrapped arrow hides its parameters);
@@ -257,6 +262,14 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
 - 2026-10-24 — Next 16 `next dev` rewrites AGENTS.md unless `agentRules: false`.
 - 2026-10-24 — Windows checkouts: keep LF (`.gitattributes`), or Biome goes red on files nobody
   touched; `tsx --env-file-if-exists` (not `--env-file`, which crashes when the file is missing).
+- 2026-10-24 — A throwaway `tsx` script outside the repo (the agent's scratchpad) resolves `@/…`
+  with `--tsconfig tsconfig.json` but not bare packages: it may import only `@/lib/…` modules (and
+  use `client.execute` for raw SQL), never `drizzle-orm` directly.
+- 2026-10-24 — `src/lib/domain/bill-input.ts` sets zod's Italian locale globally
+  (`z.config(z.locales.it())`) so that `VALIDATION` details are Italian; a schema whose messages
+  must stay English writes them explicitly, as `src/lib/env-schema.ts` does.
+- 2026-10-24 — Drizzle `db.batch` takes a non-empty tuple: services build their query list and
+  run it through `runBatch` (`src/lib/services/batch.ts`), which skips an empty list.
 
 ## 12. Definition of done (per session)
 
