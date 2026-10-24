@@ -32,7 +32,8 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 - **Latest (2026-10-24)**: spec 01 implemented on `feature/01-scaffold-auth` — scaffold, database,
   Better Auth with closable signup, test harness; guided verification done and closed (owner's
   adjustments in the spec's Stato line, measures in AGENTS.md § 11). **Next**: PR and merge of 01,
-  then spec 02. Still open: none.
+  then its retirement with `doc/v1/PROMPT-RITIRO.md` (branch `docs/v1-ritiro-01`), then spec 02.
+  Still open: none.
 
 ## Architecture Snapshot (database, access and test harness exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);

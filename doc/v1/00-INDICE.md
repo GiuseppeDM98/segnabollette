@@ -12,7 +12,7 @@
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
 > `08_CREA_RITIRO_SPEC.md`). **La 01 è implementata (2026-10-24)**; prossimo passo: la sua PR e il
-> merge, poi la 02.
+> merge, poi il suo ritiro con `PROMPT-RITIRO.md` (branch `docs/v1-ritiro-01`), poi la 02.
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
