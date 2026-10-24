@@ -42,8 +42,15 @@ and UI text in Italian; code, identifiers and comments in English. The series la
 ### 2.3 Secrets and the owner's data
 
 Secrets only in `.env.local`, `.env.turso-prod` (both gitignored) and Vercel; `.env.example` lists
-every variable with an empty value; `src/lib/env-schema.ts` is the zod schema, `src/lib/env.ts` the
-server-only instance and the only reader of `process.env` in the app. Secret values never pass
+every variable a developer or a deployment sets (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
+`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGNUP_ENABLED`, `ANTHROPIC_API_KEY`,
+`BLOB_READ_WRITE_TOKEN`), with development defaults and empty secrets; the test-only switches
+(`E2E_FAKE_SERVICES`, `NEXT_PUBLIC_E2E_FAKE_SERVICES`, `E2E_BLOB_DIR`, `E2E_EXTRACTOR_DELAY_MS`) are
+set only by `playwright.config.ts` (and, for a local verification with the fakes, on the command
+line of that run, never in `.env.local`), and `VERCEL_ENV` only by Vercel. `src/lib/env-schema.ts` is the
+zod schema, `src/lib/env.ts` the server-only instance and the only reader of `process.env` in the
+app, except `process.env.NODE_ENV` and the `NEXT_PUBLIC_*` variables read literally in client code
+(Next inlines both at build time). Secret values never pass
 through the chat: the owner types them. **Nothing of the owner's data in a tracked file, commit or
 PR** (WORKFLOW § 1.6, public repo, no exception): no real bill, POD, PDR, invoice number, customer
 code, address, supplier of the owner or amount. Bill fixtures are synthetic and generated
@@ -122,12 +129,15 @@ the `(app)` layout calls `getSessionUser()` and every Server Action and route ha
 
 One extraction = one streamed call to `claude-opus-5-5` through `client.beta.messages.stream`, with
 `fallbacks: 'default'` (beta `server-side-fallback-2026-07-01`), `output_config: { effort: 'high',
-format: betaZodOutputFormat(ExtractionSchema) }`, `max_tokens: 32000`, a timeout from the 280 s
-deadline and `maxRetries: 0`. No `temperature` (400 since API version 2026-10-21), no prefill, no
-forced `tool_choice`, no reasoning requested inside the schema. The schema has no nullable fields
-(sentinels). No automatic retry: failures show «Riprova». Tokens and cost are recorded on every
-call that returned usage. Nothing reaches the bill tables without the owner's confirmation in the
-review.
+format }` where `format` is `betaZodOutputFormat(ExtractionSchema)` without its `parse` (the
+extractor checks `stop_reason` first, then validates with `ExtractionSchema.safeParse`),
+`max_tokens: 32000`, `timeout` and `signal: AbortSignal.timeout(…)` from the 280 s deadline (the SDK
+timeout covers only the wait for the headers) and `maxRetries: 0`. No `temperature` (400 since API
+version 2026-10-21), no prefill, no forced `tool_choice`, no reasoning requested inside the schema.
+The schema has no nullable fields (sentinels). An extraction starts only when the owner clicks
+«Estrai», after seeing the estimate. No automatic retry: failures show «Riprova». Tokens and cost are
+recorded (and summed across retries) on every call that returned usage. Nothing reaches the bill
+tables without the owner's confirmation in the review.
 
 ## 7. UI *(from spec 03 — stub; guide `doc/guide/app.md`, visual system DESIGN.md)*
 
@@ -138,7 +148,8 @@ data-table alternative. `data-testid` on what Playwright drives.
 
 ## 8. Deploy, Blob and PWA *(from specs 05, 06, 09 — stubs; guides `doc/guide/deploy.md`, `doc/guide/pwa.md`)*
 
-Vercel Hobby in `dub1`, production = `main`, `feature/*` branches not deployed; Turso in
+Vercel Hobby in `dub1`, production = `main`, every non-production build skipped by the ignored
+build step of `vercel.json` (no preview deployments, whatever the branch); Turso in
 `aws-eu-west-1`. Two **private** Blob stores: `segnabollette-files` (Production) and
 `segnabollette-files-dev` (Development); never `vercel blob create-store --yes`. Files go from the
 browser straight to Blob (`upload()` + `handleUpload()`; function bodies stop at 4.5 MB); nothing
@@ -158,6 +169,14 @@ precached by hand; the offline queue is drained by the pages.
   `seed-a@example.test` / `seed-b@example.test`, login through `POST /api/auth/sign-in/email` with
   an `Origin` header; projects `mobile` (390×844) and `desktop`, `closed`, and `pwa` (from spec 09);
   axe on every page from spec 03; decoy words differ per test file.
+- Seed users A and B are read-only for Playwright: they serve the tests that only read (dashboard,
+  isolation reads, a11y) and are never modified, signed out or deleted by a test. Every test that
+  writes data (bills, readings, extractions, batches, offline queue, sign-out, account deletion)
+  signs up its own user with `signUpTestUser(page, prefix)` from `tests/e2e/helpers.ts` (from spec
+  03) and creates its house and supplies through the UI, so that the `mobile` and `desktop` runs and
+  the order of the files never matter. In an isolation pair every write is made by users signed up
+  in the test; a seed user may only read (as the intruder, or as the owner of a resource that is
+  only read).
 
 ## 10. Commands *(installed by spec 01; see WORKFLOW.md § 3 for the table and the gate order)*
 
@@ -190,4 +209,5 @@ precached by hand; the offline queue is drained by the pages.
 Gates green (§ 10), the spec's § 7 verification done with the expected outcome stated first and the
 outcome written in CLAUDE.md → Latest, the spec's `Stato` line and `doc/v1/00-INDICE.md § 5`
 updated, § 9 documentation written, SESSION_NOTES.md folded and deleted, one commit after the
-owner's OK.
+owner's OK (specs 05–09: the production outcome stays in SESSION_NOTES.md and enters the next
+session's commit, WORKFLOW.md § 3).

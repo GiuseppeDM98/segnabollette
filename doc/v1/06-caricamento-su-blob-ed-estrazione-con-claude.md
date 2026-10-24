@@ -1,11 +1,14 @@
 # 06 — Caricamento su Blob ed estrazione con Claude
 
-> **Stato**: scritta 2026-10-24. Pronta per l'implementazione dopo la lettura adversariale.
-> **Branch**: `feature/06-extraction` da `main`. **Dipende da**: 05 (in esercizio).
+> **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 40 rilievi, 5 decisioni
+> (D-41, D-42, D-55, D-56, D-59). Pronta per l'implementazione.
+> **Branch**: `feature/06-extraction` da `main` aggiornato dopo il merge della 05. **Dipende da**: 05
+> (in esercizio).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-2, D-6, D-7, D-9, D-15, D-16, D-17, D-19,
-> D-20, D-21, D-40; scelte T-2, T-11, T-17…T-23, T-33, T-34; contratti C-1 (variabili nuove), C-2
-> (`documents`, `extractions`), C-5 (codici nuovi), C-16, C-17, C-18 — li crea o li estende; usa
-> C-6…C-14.
+> D-20, D-21, D-40, D-41, D-42, D-55, D-56, D-59; scelte T-2, T-6, T-11, T-17…T-23, T-33, T-34;
+> contratti C-1 (variabili nuove), C-2 (`documents`, `extractions`), C-5 (codici nuovi), C-8
+> (`formatUsd`), C-13 (`documentPathnames` pieni), C-16, C-17, C-18, C-24 (`reviewCount`) — li crea
+> o li estende; usa C-3, C-4, C-6…C-14, C-21, C-22, C-23.
 
 ## 1. Il problema oggi (prove)
 
@@ -22,16 +25,24 @@
    5 MB attraverso la function (sopra il limite, mai notato: rapporto dell'analisi, § 5).
 4. Anthropic (indice § 2.2): PDF come blocco `document` base64 (32 MB a richiesta, 600 pagine, ogni
    pagina testo + immagine, 1.500–3.000 token di testo per pagina, niente PDF cifrati); foto JPEG
-   fino a 2.576 px di lato lungo e 4.784 token; output strutturato senza vincoli numerici e con al
-   massimo **16 parametri a tipo unione**; `temperature` → 400; con `max_tokens` oltre ~21.333 l'SDK
-   pretende lo streaming. Nei tipi pubblicati dell'SDK `@anthropic-ai/sdk@1.3.0` (letti il
+   fino a 2.576 px di lato lungo, 4.784 token e 10 MB in base64 per immagine (il base64 pesa 4/3 del
+   file); output strutturato senza vincoli numerici e con al massimo **16 parametri a tipo
+   unione**; `temperature` → 400; con `max_tokens` oltre ~21.333 l'SDK pretende lo streaming. Nei tipi pubblicati dell'SDK `@anthropic-ai/sdk@1.3.0` (letti il
    2026-10-24): `client.beta.messages.stream(params, options)` → `finalMessage()` restituisce un
-   `ParsedBetaMessage` con `parsed_output`, `stop_reason`, `stop_details: BetaRefusalStopDetails |
-   null`, `usage.input_tokens`/`output_tokens`, `model`; `fallbacks?: Array<…> | 'default'`;
-   `betaZodOutputFormat` in `@anthropic-ai/sdk/helpers/beta/zod` (il suo `parse` lancia un
-   `AnthropicError` «Failed to parse structured output» se il JSON non rispetta lo schema); classi
-   di errore `APIError`, `APIConnectionError`, `APIConnectionTimeoutError`, `RateLimitError`,
-   `InternalServerError`, `AnthropicError`, esportate anche come proprietà statiche di `Anthropic`.
+   `ParsedBetaMessage` con `content`, `parsed_output`, `stop_reason`, `stop_details:
+   BetaRefusalStopDetails | null`, `usage.input_tokens`/`output_tokens`, `model`; `fallbacks?:
+   Array<…> | 'default'`; `betaZodOutputFormat` in `@anthropic-ai/sdk/helpers/beta/zod` restituisce
+   il formato JSON con una funzione `parse`. Nel codice dell'SDK (letto nella 0.120 di segnaprezzi,
+   stesso helper) la risposta si analizza **solo se il formato passato ha `parse`**, e allora
+   l'analisi avviene all'evento `message_stop`, senza guardare `stop_reason`: un JSON troncato da
+   `max_tokens` fa rifiutare `finalMessage()` con un `AnthropicError` «Failed to parse structured
+   output» e i token si perdono; passando il formato **senza** `parse`, `parsed_output` resta `null`
+   e non si lancia nulla. Il `timeout` delle opzioni copre solo la `fetch` fino all'arrivo delle
+   intestazioni: lo stream che continua dopo non si interrompe; serve un `signal` (`AbortSignal`),
+   e un'interruzione dal `signal` arriva come `APIUserAbortError` (sottoclasse di `APIError`). Classi
+   di errore `APIError`, `APIUserAbortError`, `APIConnectionError`, `APIConnectionTimeoutError`,
+   `RateLimitError`, `InternalServerError`, `AnthropicError`, esportate anche come proprietà
+   statiche di `Anthropic`.
 5. Le bollette campione (indice § 2.1) fissano che cosa il prompt deve saper fare: scegliere il
    dettaglio e **non** sommare anche lo «scontrino» riassuntivo; dare a ogni voce il **periodo del
    suo blocco** (i ricalcoli); leggere le quote annuali pro rata («31/365»); riconoscere le voci
@@ -50,16 +61,16 @@ con l'account.
 
 | # | Criterio | Prova |
 |---|---|---|
-| A1 | `/bollette/carica`: scelta della fornitura (facoltativa: «Riconosci dalla bolletta»), un PDF ≤ 10 MB oppure foto (pulsante «Scatta foto» con `capture="environment"` e «Scegli foto»), anteprima delle pagine con ordine e rimozione; le foto si convertono in JPEG ≤ 2.576 px; poi caricamento, estrazione e passaggio alla revisione. | E2E `estrazione.spec.ts` con il fake. |
-| A2 | Il file va dal browser a Blob privato (mai attraverso una function); il server verifica esistenza, dimensione, tipo (magic bytes), SHA-256 e pagine (≤ 40) prima di usarlo. | Unit `verify-document.test.ts`; integrazione `extractions.test.ts`. |
-| A3 | Un file già confermato → `DUPLICATE_DOCUMENT` con il link alla bolletta; un file di un'estrazione non scartata → si riapre quella estrazione, senza nuova chiamata. | Integrazione + E2E. |
-| A4 | L'estrazione usa esattamente la chiamata di § 4.6 (modello, `fallbacks`, effort, `max_tokens`, schema); rifiuto, troncamento, output non valido, errore di rete o del servizio e scadenza diventano `failed` con un codice e un messaggio italiano; nessun retry automatico. | Unit `anthropic-extractor.test.ts` con un client finto. |
-| A5 | Ogni estrazione registra modello, token e costo in micro-dollari; Impostazioni mostra la spesa del mese di calendario. | Integrazione; E2E. |
-| A6 | `/bollette/revisione/[id]`: il documento (PDF o foto) accanto a `BillForm` precompilato da `toBillInput`; fornitura riconosciuta dall'identificativo o da scegliere/creare; avvisi aritmetici e di sovrapposizione; «Conferma» salva con `confirmBill` (`source: 'extraction'`) e lega i file alla bolletta; «Scarta» cancella i file (riga prima, file dopo) e tiene la riga dell'estrazione per il costo. | E2E; integrazione. |
-| A7 | `/bollette/da-rivedere` elenca le estrazioni in coda, in corso, estratte e fallite, con «Rivedi», «Riprova», «Scarta»; la voce «Bollette» della navigazione mostra il numero delle estratte da rivedere. | E2E. |
-| A8 | Scheda della bolletta: sezione «Documenti» con «Apri» (nuova scheda, `/api/documents/[id]`) e «Allega il file» (stesso caricamento, nessuna estrazione). | E2E. |
+| A1 | `/bollette/carica`: scelta della fornitura (facoltativa: «Riconosci dalla bolletta»), un PDF ≤ 10 MB o fino a 10 foto (pulsanti «Scegli PDF o foto» e «Scatta foto» con `capture="environment"`); le foto si convertono in JPEG ≤ 2.576 px e compaiono come miniature numerate con «Su», «Giù», «Rimuovi»; il PDF come riga con nome, dimensione e «Rimuovi»; poi caricamento e verifica dei file, la stima e il pulsante «Estrai (circa X $)»: la chiamata a Claude parte **solo al clic** (D-42), poi la revisione. Senza case la pagina mostra lo stato vuoto della 03. | E2E `estrazione.spec.ts` con il fake (prima del clic l'estrazione è `queued` con `started_at` nullo). |
+| A2 | Il file va dal browser a Blob privato (mai attraverso una function); il server verifica esistenza, dimensione (PDF ≤ 10 MB, JPEG ≤ 5 MB, ≤ 20 MB per estrazione), tipo (magic bytes), SHA-256, cifratura e pagine (≤ 40) prima di usarlo. | Unit `verify-document.test.ts`; integrazione `extractions.test.ts`. |
+| A3 | Un file già in una bolletta → `DUPLICATE_DOCUMENT` con il link alla bolletta e il suo periodo; un file di un'estrazione aperta → si riprende quella estrazione secondo il suo stato (revisione, stima ed «Estrai», «già in lavorazione», messaggio dell'errore, ripresa del caricamento interrotto, D-59), senza nuova chiamata. | Integrazione + E2E. |
+| A4 | L'estrazione usa esattamente la chiamata di § 4.6 (modello, `fallbacks`, effort, `max_tokens`, formato senza `parse`, `signal` dalla scadenza); rifiuto, troncamento, output non valido, errore di rete o del servizio e scadenza diventano `failed` con un codice e un messaggio italiano, con i token quando la risposta li porta; nessun retry automatico. | Unit `anthropic-extractor.test.ts` con un client finto. |
+| A5 | Ogni estrazione registra modello, token e costo in micro-dollari, sommati su tutti i tentativi («Riprova»); Impostazioni mostra la spesa del mese di calendario. | Integrazione; E2E. |
+| A6 | `/bollette/revisione/[id]`: da 1024 px il documento (PDF in iframe o foto) accanto a `BillForm` precompilato da `toBillInput`; sotto i 1024 px il pulsante «Apri il PDF» (D-56) e le foto in sequenza; fornitura riconosciuta dall'identificativo o da scegliere fra tutte le forniture attive o da creare (con il tipo); avvisi aritmetici e di sovrapposizione; «Conferma» salva con `confirmBill` (`source: 'extraction'`) una volta sola e lega i file alla bolletta; «Scarta» cancella i file (riga prima, file dopo) e tiene la riga dell'estrazione per il costo. | E2E; integrazione. |
+| A7 | `/bollette/da-rivedere` elenca le estrazioni in coda, in corso, estratte e fallite, con «Rivedi», «Estrai (circa X $)» (in coda), «Riprova» (fallite e in corso da più di 6 minuti), «Scarta» (non sulle in corso recenti); la voce «Bollette» di `NavBar` e `SideBar` mostra il numero delle estratte da rivedere. | E2E. |
+| A8 | Scheda della bolletta, quando Blob è configurato: sezione «Documenti» con «Apri» (nuova scheda, `/api/documents/[id]`) e «Allega il file» (stesso caricamento, nessuna estrazione). | E2E. |
 | A9 | Cancellare una bolletta, una fornitura o una casa cancella i file su Blob; «Elimina account» cancella tutti i file dell'utente. | Integrazione con il fake Blob; collaudo § 7 sullo store di sviluppo. |
-| A10 | Isolamento: seed A non apre `/api/documents/<id di B>` (404), non esegue né rivede un'estrazione di B, non ottiene un token di upload per un documento di B. | E2E `isolamento.spec.ts` esteso; integrazione. |
+| A10 | Isolamento: un utente non apre `/api/documents/<id altrui>` (404), non esegue, non rivede, non conferma, non scarta un'estrazione altrui, non ottiene un token di upload per un documento altrui, non allega file a una bolletta altrui; elenchi, conteggi e spesa non contano le righe altrui. | Integrazione `extractions-isolation.test.ts`; E2E `isolamento.spec.ts` esteso. |
 | A11 | Le tre bollette campione dell'owner (luce, gas, telefono) estratte davvero nel collaudo, con il costo detto prima, danno totali uguali a quelli stampati e le voci di ricalcolo del gas nel mese precedente. | Collaudo § 7 C (con l'OK dell'owner). |
 
 ## 3. Decisioni
@@ -68,13 +79,20 @@ con l'account.
   **D-9** (fotocamera), **D-15** (Opus 5.5), **D-16** (fallback lato server), **D-17** (nessun
   tetto, costo registrato), **D-19** (allegato senza estrazione), **D-20** (storico ignorato),
   **D-21** (acqua non provata su una bolletta vera), **D-40** (file cancellati con l'account).
-- **T-2** (store di sviluppo), **T-11** (SHA-256), **T-17** (container e fake), **T-18**
-  (chiamata), **T-19** (schema senza nullable), **T-20** (foto e PDF), **T-21** (upload dal
-  client), **T-22** (route handler), **T-23** (stima), **T-33** (identificativo), **T-34**.
+- **D-41** (commit e PR prima del merge, collaudo in produzione dopo il merge, esito nel commit
+  della 07: § 8 e § 11), **D-42** (l'estrazione parte solo al clic su «Estrai (circa X $)»),
+  **D-55** (in locale le foto si caricano dal browser del computer; «Scatta foto» si prova in
+  produzione), **D-56** (revisione sul telefono con «Apri il PDF»), **D-59** (ripresa dei
+  caricamenti interrotti e abbandono delle estrazioni senza file).
+- **T-2** (store di sviluppo), **T-6** (script), **T-11** (SHA-256), **T-17** (container e fake),
+  **T-18** (chiamata: formato senza `parse`, `signal` dalla scadenza), **T-19** (schema senza
+  nullable), **T-20** (foto e PDF), **T-21** (upload dal client), **T-22** (route handler),
+  **T-23** (stima), **T-33** (identificativo), **T-34**.
 - Adottate qui, ribaltabili:
   (a) `ANTHROPIC_API_KEY` e `BLOB_READ_WRITE_TOKEN` **facoltative** nello schema dell'ambiente: senza
   la chiave l'app funziona e il caricamento risponde `EXTRACTION_UNAVAILABLE` («Estrazione non
-  configurata su questa installazione»); senza il token Blob il caricamento è nascosto;
+  configurata su questa installazione»); senza il token Blob il caricamento, la sezione «Documenti»
+  e «Allega il file» sono nascosti e le cancellazioni non toccano Blob;
   (b) la fornitura si riconosce **solo** dall'identificativo normalizzato o dalla scelta fatta prima
   del caricamento; mai «l'unica luce che c'è»;
   (c) se il documento contiene più forniture (bolletta «dual»), si estrae solo la prima e lo si
@@ -84,12 +102,18 @@ con l'account.
   (e) il costo con un fallback si calcola con il prezzo del modello di `response.model` per tutti
   i token; un modello assente dal listino si prezza come `claude-opus-5` (il più caro dei
   fallback noti) e lo si scrive nel log;
-  (f) un'estrazione `running` da più di 6 minuti si può rieseguire (la function è morta);
-  (g) le estrazioni scartate restano come righe (per la spesa del mese) senza file né risultato;
-  (h) nel caricamento singolo l'estrazione parte da sola appena i file sono verificati; la stima
-  del costo si mostra durante l'attesa («circa 0,30 $»);
-  (i) `documents:prune` cancella anche le estrazioni rimaste `uploading` da più di 24 ore con i
-  loro file.
+  (f) un'estrazione `running` da più di 6 minuti si può rieseguire e scartare (la function è
+  morta); il risultato di un'esecuzione che finisce dopo uno scarto o dopo una ripresa si butta, il
+  suo costo si somma;
+  (g) le estrazioni scartate e confermate restano come righe (per la spesa del mese) senza
+  risultato (`resultJson` nullo: i dati confermati vivono nella bolletta); le scartate anche senza
+  file;
+  (h) (D-42) dopo la verifica dei file la pagina mostra la stima e il pulsante «Estrai (circa X $)»;
+  `POST /api/extractions/[id]/run` parte solo al clic; senza clic l'estrazione resta `queued` in
+  «Da rivedere» con lo stesso pulsante «Estrai (circa X $)»;
+  (i) `documents:prune` cancella anche le estrazioni rimaste `uploading` e i documenti allegati mai
+  caricati (`uploadedAt` nullo) da più di 24 ore, con i loro file; un'estrazione `uploading` che un
+  nuovo caricamento non riprende si cancella subito (D-59).
 
 ## 4. La soluzione
 
@@ -108,10 +132,14 @@ E2E_BLOB_DIR: z.string().default('.e2e-blob'),
 ```
 
 `.env.example` aggiunge, con i commenti: `ANTHROPIC_API_KEY=""` («a key of your own Console
-organization; extraction is disabled without it») e `BLOB_READ_WRITE_TOKEN=""` («`vercel env pull
-.env.local --environment=development` fills it from the development store»). Il client usa
-`NEXT_PUBLIC_E2E_FAKE_SERVICES` (impostata a `'1'` dal `webServer` di Playwright **al momento della
-build**) per scegliere il caricamento finto.
+organization; extraction is disabled without it») e `BLOB_READ_WRITE_TOKEN=""` («the development
+store's token: `vercel env pull .env.vercel-dev --environment=development`, copy only this line here,
+then delete .env.vercel-dev — pulling into .env.local would overwrite the whole file»).
+
+`playwright.config.ts` (01): `serverEnv` aggiunge `NEXT_PUBLIC_E2E_FAKE_SERVICES: '1'`. Il
+`webServer` la passa a `pnpm build`, che la scrive nel bundle del client: `upload-client.ts` la legge
+come `process.env.NEXT_PUBLIC_E2E_FAKE_SERVICES` letterale (l'eccezione `NEXT_PUBLIC_*` di AGENTS.md
+§ 2.3) per scegliere il caricamento finto.
 
 ### 4.2 Schema — tabelle `documents` ed `extractions` (C-2)
 
@@ -126,6 +154,8 @@ export const extractions = sqliteTable('extractions', {
   inputTokens: integer('input_tokens'),
   outputTokens: integer('output_tokens'),
   costMicroUsd: integer('cost_micro_usd'),
+  /** Runs started (the first one and every «Riprova»); tokens and cost are summed across them. */
+  attempts: integer('attempts').notNull().default(0),
   resultJson: text('result_json'),
   errorCode: text('error_code').$type<ExtractionErrorCode>(),
   errorMessage: text('error_message'),
@@ -176,11 +206,15 @@ Cancellazioni (T-34), che cambiano i servizi della 02 senza cambiarne la firma:
   IN (…)`; per forniture e case anche `UPDATE extractions SET supply_id = NULL`; restituiscono in
   `documentPathnames` i pathname dei documenti cancellati (letti prima del batch).
 - Le azioni che chiamano quei servizi, **dopo** il batch, chiamano
-  `getBlobStore().deleteDocuments(documentPathnames)` (riga prima, file dopo: un file orfano si
-  recupera con `documents:prune`, una riga senza file no — segnaprezzi § 4.59); un errore di Blob
-  si scrive nel log e non annulla la cancellazione.
+  `getBlobStore().deleteDocuments(documentPathnames)` solo se `documentPathnames` non è vuoto e
+  `isBlobConfigured()` è vero, dentro un `try`/`catch` che scrive l'errore nel log e non annulla la
+  cancellazione (riga prima, file dopo: un file orfano si recupera con `documents:prune`, una riga
+  senza file no — segnaprezzi § 4.59).
 - `deleteAllUserData`: `documents` ed `extractions` (in quest'ordine) prima di `meter_readings`.
-- `src/lib/auth/auth.ts` passa `afterUserDeleted: (userId) => getBlobStore().deleteUserDocuments(userId)`.
+- `src/lib/auth/auth.ts` passa `afterUserDeleted: async (userId) => { if (isBlobConfigured()) await
+  getBlobStore().deleteUserDocuments(userId); }` (l'`afterDelete` della 01 ha già il suo
+  `try`/`catch`: un errore di Blob finisce nel log e l'account resta cancellato; i file rimasti si
+  recuperano con `documents:prune`).
 
 ### 4.3 Errori (C-5)
 
@@ -189,17 +223,17 @@ Cancellazioni (T-34), che cambiano i servizi della 02 senza cambiarne la firma:
 ```ts
 DUPLICATE_DOCUMENT: 'Questo file è già stato caricato.',
 DOCUMENT_INVALID: 'Il file non è valido.',
-EXTRACTION_FAILED: 'Non sono riuscito a leggere la bolletta.',
 EXTRACTION_UNAVAILABLE: 'L\'estrazione non è disponibile in questo momento.',
 EXTRACTION_BUSY: 'Questa bolletta è già in lavorazione.',
 ```
 
 `src/lib/http/error-status.ts`: `export const ERROR_STATUS: Record<DomainErrorCode, number>` =
 `UNAUTHORIZED 401, NOT_FOUND 404, VALIDATION 400, OVERLAP_DECISION_REQUIRED 409, DUPLICATE_IDENTIFIER
-409, DUPLICATE_DOCUMENT 409, DOCUMENT_INVALID 422, EXTRACTION_FAILED 422, EXTRACTION_UNAVAILABLE 503,
-EXTRACTION_BUSY 409` e `toErrorResponse(error)` (DomainError → JSON `{ code, message, details }` con
+409, DUPLICATE_DOCUMENT 409, DOCUMENT_INVALID 422, EXTRACTION_UNAVAILABLE 503, EXTRACTION_BUSY 409`
+e `toErrorResponse(error)` (DomainError → JSON `{ code, message, details }` con
 lo status; altro → 500 senza dettagli, con il log). Il `Record` esaustivo fa fallire il typecheck
-quando un codice nuovo non ha uno status.
+quando un codice nuovo non ha uno status. Un'estrazione fallita non è un errore HTTP:
+`runExtraction` restituisce la riga `failed` (con codice e messaggio) e la route risponde 200.
 
 ### 4.4 Blob — `src/lib/blob/` (C-16)
 
@@ -214,7 +248,16 @@ export interface BlobStore {
   listPathnames(prefix: string): Promise<string[]>;
 }
 
+/** A PDF as stored. */
 export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+/** One JPEG: 6.7 MB once base64-encoded, under the API's 10 MB per image. */
+export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+/** All the files of one extraction: 26.7 MB once base64-encoded, under the API's 32 MB per request. */
+export const MAX_EXTRACTION_BYTES = 20 * 1024 * 1024;
+
+export function maxBytesFor(contentType: DocumentContentType): number {
+  return contentType === 'application/pdf' ? MAX_DOCUMENT_BYTES : MAX_PHOTO_BYTES;
+}
 
 export function documentPathname(userId: string, documentId: string, contentType: DocumentContentType): string {
   return `users/${userId}/documents/${documentId}.${contentType === 'application/pdf' ? 'pdf' : 'jpg'}`;
@@ -240,8 +283,10 @@ import { upload } from '@vercel/blob/client';
 
 /** Send one file straight from the browser to the private store; Playwright builds use a local fake. */
 export async function uploadDocumentFile(args: { file: Blob; pathname: string; documentId: string; contentType: string }): Promise<void> {
+  // Next inlines NEXT_PUBLIC_* variables at build time: only the Playwright build has it.
   if (process.env.NEXT_PUBLIC_E2E_FAKE_SERVICES === '1') {
-    const response = await fetch(`/api/e2e/blob?pathname=${encodeURIComponent(args.pathname)}`, { method: 'PUT', body: args.file });
+    const query = new URLSearchParams({ documentId: args.documentId, pathname: args.pathname });
+    const response = await fetch(`/api/e2e/blob?${query.toString()}`, { method: 'PUT', body: args.file });
     if (!response.ok) throw new Error(`fake upload failed: ${response.status}`);
     return;
   }
@@ -254,9 +299,11 @@ export async function uploadDocumentFile(args: { file: Blob; pathname: string; d
 }
 ```
 
-`src/app/api/e2e/blob/route.ts`: `PUT` che risponde 404 se `!env.E2E_FAKE_SERVICES`, altrimenti
-`requireUser()`, verifica che il pathname sia di un documento dell'utente e lo scrive con il disk
-store.
+`src/app/api/e2e/blob/route.ts`: `PUT ?documentId=<id>&pathname=<pathname>` che risponde 404 se
+`!env.E2E_FAKE_SERVICES`, altrimenti `requireUser()` → `authorizeDocumentUpload(getDb(), user.id,
+documentId, pathname)` (§ 4.8: documento dell'utente in attesa con quel pathname, `NOT_FOUND` → 404
+altrimenti) → scrive i byte del corpo in `<E2E_BLOB_DIR>/<pathname>` (sovrascrivendo, come
+`allowOverwrite`) → 204.
 
 `src/app/api/documents/upload/route.ts`:
 
@@ -269,16 +316,19 @@ export async function POST(request: Request): Promise<Response> {
     const result = await handleUpload({
       body,
       request,
+      // The session is checked here, not first: Vercel's upload-completed request reaches this
+      // route without a session and does nothing.
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const user = await requireUser();
-        const document = await getPendingDocument(getDb(), user.id, clientPayload ?? '');
-        if (!document || document.pathname !== pathname) throw new DomainError('NOT_FOUND');
+        const documentId = clientPayload ?? '';
+        const { contentType } = await authorizeDocumentUpload(getDb(), user.id, documentId, pathname);
         return {
-          allowedContentTypes: [document.contentType],
-          maximumSizeInBytes: MAX_DOCUMENT_BYTES,
+          allowedContentTypes: [contentType],
+          maximumSizeInBytes: maxBytesFor(contentType),
           addRandomSuffix: false,
+          // A resumed upload writes the same pathname again.
           allowOverwrite: true,
-          tokenPayload: document.id,
+          tokenPayload: documentId,
         };
       },
       // Never relied upon: it does not fire on localhost, and the server verifies every file itself
@@ -292,13 +342,12 @@ export async function POST(request: Request): Promise<Response> {
 }
 ```
 
-`getPendingDocument(db, userId, documentId)` (repository `documents.ts`): il documento dell'utente
-con `uploadedAt` nullo.
-
-`src/app/api/documents/[id]/route.ts` (`GET`): `requireUser()` → `getDocument(db, user.id, id)` →
-404 se manca → `readDocument` → `new Response(bytes, { headers: { 'Content-Type': document.contentType,
-'Content-Disposition': 'inline', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options':
-'nosniff' } })`.
+`src/app/api/documents/[id]/route.ts` (`GET`): `requireUser()` → `readDocumentFile(getDb(), user.id,
+id, { blob: getBlobStore() })` (§ 4.8: `NOT_FOUND` se il documento non è dell'utente, se ha
+`uploadedAt` nullo o se il file manca → 404 con `toErrorResponse`) → `new Response(bytes, { headers:
+{ 'Content-Type': contentType, 'Content-Disposition': 'inline', 'Cache-Control': 'private, no-store',
+'X-Content-Type-Options': 'nosniff' } })`. Route e pagine non importano repository: passano dai
+servizi di § 4.8.
 
 ### 4.5 Container (C-18)
 
@@ -318,7 +367,15 @@ export function getBillExtractor(): BillExtractor {
 export function isExtractionConfigured(): boolean {
   return env.E2E_FAKE_SERVICES || (Boolean(env.ANTHROPIC_API_KEY) && Boolean(env.BLOB_READ_WRITE_TOKEN));
 }
+
+/** Files can be stored and read without the Anthropic key: attachments need only this. */
+export function isBlobConfigured(): boolean {
+  return env.E2E_FAKE_SERVICES || Boolean(env.BLOB_READ_WRITE_TOKEN);
+}
 ```
+
+Chi chiama `getBlobStore()` fuori dal caricamento (cancellazioni, account) controlla prima
+`isBlobConfigured()`: senza token Blob non c'è nessun file da cancellare.
 
 ### 4.6 Estrazione — `src/lib/extraction/` (C-17)
 
@@ -400,7 +457,8 @@ HEADER
   utenza" for water; always "" for telecom and waste, and "" when not printed.
 - periodStart, periodEnd: the billing period ("periodo di riferimento", "periodo di fatturazione"),
   YYYY-MM-DD. issueDate ("data emissione", "data fattura") and dueDate ("scadenza", "entro il"),
-  YYYY-MM-DD or "".
+  YYYY-MM-DD or "". For waste (TARI): periodStart and periodEnd are the year or period the tax
+  covers, totalCents is the whole tax and dueDate is the first instalment's due date.
 - totalCents: the bill total for the supply, VAT included ("Totale bolletta", "Totale fattura"), in
   integer euro cents (100,40 € → 10040). amountDueCents: the amount to pay ("Totale da pagare");
   equal to totalCents when only one total is printed.
@@ -436,6 +494,9 @@ One line per printed line that has an amount, zero and negative amounts included
     "scambio sul posto").
   outside — amounts included in the amount due but not in the bill total: "canone di abbonamento
     alla televisione", previous balances, credit carried over.
+  waste (TARI) — the tax lines ("quota fissa", "quota variabile") are sale with component fixed;
+    the provincial tribute ("TEFA", "tributo provinciale") is excise with component lump; the
+    instalments ("rata", "F24", "scadenza rata") are never lines.
 - component: variable for prices per kWh, Smc or m3; fixed for prices per day, month or year;
   power for prices per kW; lump for everything else (VAT, taxes without a unit price, one-offs).
 - periodStart, periodEnd: the period of the detail block the line is printed in ("Periodo di
@@ -549,15 +610,22 @@ export interface BillExtractor {
  * The real extractor: one streamed call to Claude per bill, structured output, server-side
  * fallback on a policy refusal. No automatic retry: a failure is shown with "Riprova", so the
  * owner decides whether to spend again.
+ *
+ * The output format is passed without its `parse` function. With it, the SDK parses the text as
+ * soon as the stream ends, before anyone looks at stop_reason: a refusal or an answer cut by
+ * max_tokens would throw "Failed to parse structured output" and the tokens paid for would be lost.
+ * So stop_reason is checked first, and the JSON is parsed and validated here.
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import type { BillExtractor, ExtractorDocument, ExtractorOutcome } from './extractor';
 import { EXTRACTION_MODEL } from './pricing';
 import { buildExtractionInstruction, EXTRACTION_SYSTEM_PROMPT } from './prompt';
-import { ExtractionSchema } from './schema';
+import { type Extraction, ExtractionSchema } from './schema';
 
 const MIN_CALL_MS = 30_000;
+
+const { parse: _sdkParse, ...EXTRACTION_FORMAT } = betaZodOutputFormat(ExtractionSchema);
 
 export function createAnthropicExtractor(options: { apiKey: string; clock: () => number; client?: Anthropic }): BillExtractor {
   const client = options.client ?? new Anthropic({ apiKey: options.apiKey, maxRetries: 0 });
@@ -584,28 +652,44 @@ export function createAnthropicExtractor(options: { apiKey: string; clock: () =>
                 ],
               },
             ],
-            output_config: { effort: 'high', format: betaZodOutputFormat(ExtractionSchema) },
+            output_config: { effort: 'high', format: EXTRACTION_FORMAT },
           },
-          { timeout: remainingMs, maxRetries: 0 },
+          // The SDK timeout only covers the wait for the response headers; the signal bounds the
+          // whole stream.
+          { timeout: remainingMs, maxRetries: 0, signal: AbortSignal.timeout(remainingMs) },
         );
         const message = await stream.finalMessage();
         const usage = { inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens };
+        const model = message.model;
         if (message.stop_reason === 'refusal') {
           const category = message.stop_details?.category ?? 'senza categoria';
-          return { ok: false, code: 'refusal', message: `Il modello ha rifiutato la richiesta (${category}).`, usage, model: message.model };
+          return { ok: false, code: 'refusal', message: `Il modello ha rifiutato la richiesta (${category}).`, usage, model };
         }
         if (message.stop_reason === 'max_tokens') {
-          return { ok: false, code: 'truncated', message: 'La risposta è stata troncata: bolletta troppo lunga.', usage, model: message.model };
+          return { ok: false, code: 'truncated', message: 'La risposta è stata troncata: bolletta troppo lunga.', usage, model };
         }
-        if (!message.parsed_output) {
-          return { ok: false, code: 'invalid_output', message: 'Risposta del modello non leggibile.', usage, model: message.model };
+        const text = message.content.map((block) => (block.type === 'text' ? block.text : '')).join('');
+        const extraction = parseExtraction(text);
+        if (!extraction) {
+          return { ok: false, code: 'invalid_output', message: 'Risposta del modello non conforme allo schema.', usage, model };
         }
-        return { ok: true, extraction: message.parsed_output, usage, model: message.model };
+        return { ok: true, extraction, usage, model };
       } catch (error) {
         return toFailure(error);
       }
     },
   };
+}
+
+function parseExtraction(text: string): Extraction | null {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const result = ExtractionSchema.safeParse(json);
+  return result.success ? result.data : null;
 }
 
 function toContentBlock(document: ExtractorDocument) {
@@ -616,18 +700,25 @@ function toContentBlock(document: ExtractorDocument) {
 }
 
 function toFailure(error: unknown): ExtractorOutcome {
-  const failure = (code: 'timeout' | 'unavailable' | 'api_error' | 'invalid_output', message: string): ExtractorOutcome =>
+  const failure = (code: 'timeout' | 'unavailable' | 'api_error', message: string): ExtractorOutcome =>
     ({ ok: false, code, message, usage: null, model: null });
-  if (error instanceof Anthropic.APIConnectionTimeoutError) return failure('timeout', 'Il modello non ha risposto in tempo.');
+  // First: the deadline signal aborts the stream with an APIUserAbortError, a subclass of APIError,
+  // and the connection timeout is a subclass of APIConnectionError.
+  if (error instanceof Anthropic.APIUserAbortError || error instanceof Anthropic.APIConnectionTimeoutError) {
+    return failure('timeout', 'Il modello non ha risposto in tempo.');
+  }
   if (error instanceof Anthropic.RateLimitError || error instanceof Anthropic.InternalServerError || error instanceof Anthropic.APIConnectionError) {
     return failure('unavailable', 'Il servizio di Anthropic non è disponibile ora: riprova più tardi.');
   }
   if (error instanceof Anthropic.APIError) return failure('api_error', `Errore dell'API (${error.status ?? 'senza stato'}).`);
-  // betaZodOutputFormat throws a plain AnthropicError when the JSON does not match the schema.
-  if (error instanceof Anthropic.AnthropicError) return failure('invalid_output', 'Risposta del modello non conforme allo schema.');
+  // With the format passed without `parse`, a plain AnthropicError means the stream broke off.
+  if (error instanceof Anthropic.AnthropicError) return failure('unavailable', 'La risposta si è interrotta: riprova più tardi.');
   throw error;
 }
 ```
+
+Un fallimento dentro `toFailure` non ha `usage`: la chiamata non è arrivata in fondo e l'API non ha
+restituito i token; ogni risposta completa (rifiuto, troncamento, JSON non valido) li porta.
 
 `fake-extractor.ts` — `createFakeExtractor(dir)`: calcola lo SHA-256 del primo documento, legge
 `<dir>/<sha256>.json`, lo valida con `ExtractionSchema` e risponde `{ ok: true, extraction, usage:
@@ -638,8 +729,9 @@ function toFailure(error: unknown): ExtractorOutcome {
 
 `validate.ts` — `validateExtraction(extraction): string[]` (pura): `isBill` falso → `['not_a_bill']`
 gestito a parte; periodo della bolletta con date valide (`isIsoDate`) e inizio ≤ fine; ogni data non
-vuota di voci e letture valida; almeno una voce; `quantityUnit === 'none'` ⇔ `quantity === 0`.
-Ogni violazione è una frase italiana.
+vuota di voci e letture valida; almeno una voce; `quantityUnit === 'none'` ⇒ `quantity === 0` (una
+quantità stampata 0 con la sua unità, per esempio «Energia F3 0 kWh», è valida). Ogni violazione è
+una frase italiana.
 
 `to-bill-input.ts` (C-17):
 
@@ -652,25 +744,28 @@ export interface ToBillInputContext {
 export interface ReviewDraft {
   input: BillInput;                 // supplyId is '' when no supply matched
   matchedSupplyId: string | null;
-  suggestedSupply: { kind: SupplyKind; supplierName: string | null; identifier: string | null } | null;
+  /** Prefills «Crea una nuova fornitura» when nothing matched; kind is null for an unrecognised utility. */
+  suggestedSupply: { kind: SupplyKind | null; supplierName: string | null; identifier: string | null } | null;
   warnings: string[];
 }
 
 export function toBillInput(extraction: Extraction, context: ToBillInputContext): ReviewDraft;
 ```
 
-Regole: `''` → `null` per date, nomi e identificativo; voce con periodo vuoto → periodo della
-bolletta; `quantityUnit 'none'` → `quantity: null, quantityUnit: null`; `unitPriceMicros 0` →
-`null`; `band 'none'` → `null`; `vatRatePercent < 0` → `null`, altrimenti
-`Math.round(percent * 100)` punti base; `conversionFactor`/`calorificValueGj` `0` → `null` (e
-`null` se il tipo non è gas); letture `actual` → `bill_actual`, `estimated` → `bill_estimated`;
-`isEstimated` della bolletta = `consumptionEstimated`; `overlapDecision: null`. Fornitura:
-`preselectedSupplyId` se è fra `supplies`; altrimenti la fornitura (anche archiviata) con
-`identifier === normalizeSupplyIdentifier(extraction.supplyIdentifier)` e lo stesso tipo; altrimenti
-nessuna, con `suggestedSupply` dai dati estratti (`supplyKind 'other'` → nessun suggerimento e
-l'avviso «Tipo di utenza non riconosciuto»). Se la fornitura preselezionata ha un tipo diverso da
-quello estratto, l'avviso «Il documento sembra una bolletta di <tipo>». Gli `warnings` del modello
-passano in coda.
+Regole: `''` → `null` per date, nomi e identificativo; una voce con `periodStart` o `periodEnd`
+vuoto (anche uno solo dei due) prende tutti e due gli estremi dalla bolletta; una lettura con data
+vuota si scarta con l'avviso «Lettura senza data scartata: <registro> <valore>»; `quantityUnit
+'none'` → `quantity: null, quantityUnit: null`; un'unità con quantità 0 resta `quantity: 0` con
+quell'unità; `unitPriceMicros 0` → `null`; `band 'none'` → `null`; `vatRatePercent < 0` → `null`,
+altrimenti `Math.round(percent * 100)` punti base; `conversionFactor`/`calorificValueGj` `0` →
+`null` (e `null` se il tipo non è gas); letture `actual` → `bill_actual`, `estimated` →
+`bill_estimated`; `isEstimated` della bolletta = `consumptionEstimated`; `overlapDecision: null`.
+Fornitura: `preselectedSupplyId` se è fra `supplies`; altrimenti la fornitura (anche archiviata)
+con `identifier === normalizeSupplyIdentifier(extraction.supplyIdentifier)` e lo stesso tipo;
+altrimenti nessuna (`supplyId: ''`), con `suggestedSupply` dai dati estratti (`supplyKind 'other'`
+→ `suggestedSupply.kind` nullo e l'avviso «Tipo di utenza non riconosciuto»). Se la fornitura
+preselezionata ha un tipo diverso da quello estratto, l'avviso «Il documento sembra una bolletta di
+<tipo>». Gli `warnings` del modello passano in coda.
 
 ### 4.7 Verifica dei file — `src/lib/extraction/verify-document.ts`
 
@@ -684,86 +779,164 @@ export async function verifyDocument(bytes: Uint8Array, declared: { contentType:
 ```
 
 Regole, ogni violazione → `DomainError('DOCUMENT_INVALID', <messaggio>)`: dimensione ≤
-`MAX_DOCUMENT_BYTES` e uguale a quella dichiarata; magic bytes `%PDF-` per il PDF, `FF D8 FF` per il
-JPEG; SHA-256 (`node:crypto`) uguale al dichiarato; PDF: `getDocumentProxy(bytes)` di `unpdf` →
-`numPages` ≤ 40 («La bolletta ha più di 40 pagine.»); un PDF cifrato o illeggibile → «PDF protetto o
-danneggiato.»; JPEG: `pageCount = null`.
+`maxBytesFor(contentType)` (PDF 10 MB, JPEG 5 MB) e uguale a quella dichiarata; magic bytes `%PDF-`
+per il PDF, `FF D8 FF` per il JPEG; SHA-256 (`node:crypto`) uguale al dichiarato; PDF che contiene un
+dizionario di cifratura (la sequenza di byte `/Encrypt` nel file: anche i PDF protetti solo contro
+la modifica, che si aprono senza password, l'API non li legge) → «PDF protetto: carica le foto delle
+pagine.»; PDF: `getDocumentProxy(bytes)` di `unpdf` → `numPages` ≤ 40 («La bolletta ha più di 40
+pagine.»); un PDF che `unpdf` non apre → «PDF danneggiato.»; JPEG: `pageCount = null`.
 
 ### 4.8 Servizi — `src/lib/services/extractions.ts` (C-17)
 
-Tutti `(db, userId, …, deps)` con `deps` esplicite (`blob`, `extractor`, `now`, `clock`).
+Tutti `(db, userId, …, deps)` con `deps` esplicite (`blob`, `extractor`, `now`, `clock`); `userId`
+in ogni lettura e scrittura, e un id altrui si comporta come mancante (`NOT_FOUND`). Le estrazioni
+`running` si considerano morte dopo 6 minuti (`STALE_RUN_MS = 360_000`, costante del modulo).
 
-- `createExtraction(db, userId, input, deps: { now })` con
+Controlli dei file, comuni a `createExtraction` e `createAttachment` (`VALIDATION`): 1–10 file; un
+PDF solo da solo; tipi `application/pdf`/`image/jpeg`; ogni file ≤ `maxBytesFor(contentType)` (PDF
+10 MB, JPEG 5 MB) e la somma ≤ `MAX_EXTRACTION_BYTES` (20 MB); due file con lo stesso `sha256`
+nella stessa richiesta → «Lo stesso file compare due volte.».
+
+- `createExtraction(db, userId, input, deps: { blob, now })` con
   `input = { supplyId: string | null; batchId: string | null; files: Array<{ sha256; contentType; sizeBytes }> }`:
-  1–10 file; un PDF solo da solo; dimensioni ≤ 10 MB; tipi `application/pdf`/`image/jpeg`
-  (`VALIDATION`); fornitura dell'utente se data (`NOT_FOUND`). Doppioni per `sha256` fra i documenti
-  dell'utente: legato a una bolletta → `DUPLICATE_DOCUMENT` con `details: { billId }`; legato a
-  un'estrazione non `discarded` → restituisce `{ duplicateOf: extractionId }` senza creare nulla.
-  Altrimenti, in un batch, una riga `extractions` (`uploading`) e una `documents` per file
-  (`position` = indice, `pathname` = `documentPathname`). Restituisce
-  `{ extractionId, documents: [{ documentId, pathname, contentType }] }`.
-- `createAttachment(db, userId, input: { billId; files })`: come sopra ma senza estrazione: i
-  documenti hanno `billId`; doppione legato a qualsiasi cosa → `DUPLICATE_DOCUMENT`.
-- `markExtractionUploaded(db, userId, extractionId, deps: { blob })`: estrazione `uploading`
+  controlli dei file; fornitura dell'utente se data (`NOT_FOUND`). Poi i doppioni:
+  `getDocumentBySha256(db, userId, sha256)` per ogni file, e si decide in quest'ordine:
+  1. un documento legato a una bolletta → `DUPLICATE_DOCUMENT` con `details: { billId, periodStart,
+     periodEnd }` di quella bolletta (il primo file in ordine);
+  2. un documento legato a un'estrazione `queued`, `running`, `extracted` o `failed` → restituisce
+     `{ duplicateOf: extractionId, duplicateStatus: status }` senza creare nulla, con in più
+     `estimatedCostMicroUsd` (calcolato come in `listPendingExtractions`) per `queued` ed
+     `errorCode`, `errorMessage` per `failed`;
+  3. un'estrazione `uploading` con lo stesso `batchId` della richiesta (o tutti e due nulli) i cui
+     documenti hanno gli stessi SHA-256 dei file della richiesta, nello stesso ordine (`position`)
+     → restituisce `{ duplicateOf, duplicateStatus: 'uploading', documents: [{ documentId, pathname,
+     contentType }] }` in ordine di `position`: il client ricarica tutti i file su quei pathname e poi
+     chiama `…/uploaded` (D-59);
+  4. ogni altra estrazione `uploading` che contiene uno dei file (altro lotto, altri file o altro
+     ordine) è abbandonata: nel batch della creazione, prima delle righe nuove, si cancellano i suoi
+     documenti e poi la sua riga; dopo il batch `blob.deleteDocuments` dei suoi pathname (un errore
+     di Blob va nel log: il file orfano lo recupera `documents:prune`).
+  Altrimenti, nello stesso batch, una riga `extractions` (`uploading`) e una `documents` per file
+  (`position` = indice, `pathname` = `documentPathname`). Restituisce `{ extractionId, documents:
+  [{ documentId, pathname, contentType }] }`. Se il batch fallisce sull'indice
+  `documents_user_sha256_uq` (due richieste in corsa con lo stesso file), il servizio rilegge i
+  doppioni una volta e risponde come sopra; se non ne trova, rilancia.
+- `createAttachment(db, userId, input: { billId; files })`: bolletta dell'utente (`NOT_FOUND`);
+  controlli dei file; doppioni: un documento della **stessa** bolletta con `uploadedAt` nullo si
+  riusa (stessi `documentId` e `pathname`: si riprende un allegato interrotto); un documento legato
+  a una bolletta → `DUPLICATE_DOCUMENT` con `details: { billId, periodStart, periodEnd }`; legato a
+  un'estrazione → `DUPLICATE_DOCUMENT` con `details: { extractionId }`. Altrimenti un batch di
+  righe `documents` con `billId` (`position` dopo quelle esistenti). Stessa regola per la corsa
+  sull'indice. Restituisce `{ documents: [{ documentId, pathname, contentType }] }`.
+- `markExtractionUploaded(db, userId, extractionId, deps: { blob, now })`: estrazione `uploading`
   dell'utente (`NOT_FOUND` altrimenti); per ogni documento `readDocument` (`null` →
-  `DOCUMENT_INVALID` «File non arrivato.») e `verifyDocument`; salva `pageCount` e `uploadedAt`;
+  `DOCUMENT_INVALID` «File non arrivato.») e `verifyDocument`; salva `pageCount` e `uploadedAt = now`;
   stato `queued`. Un `DOCUMENT_INVALID` porta l'estrazione a `failed` con `errorCode
-  'document_invalid'` e lo rilancia. Restituisce `{ pdfPages, photos, estimatedCostMicroUsd }`.
-- `markAttachmentUploaded(db, userId, billId, documentIds, deps: { blob })`: stessa verifica per i
-  documenti allegati.
+  'document_invalid'` e il messaggio, e lo rilancia (i file restano fino a «Scarta»). Restituisce
+  `{ pdfPages, photos, estimatedCostMicroUsd }` (`estimateExtractionCost`). Nessuna chiamata a
+  Claude: l'estrazione resta `queued` finché l'owner non clicca «Estrai» (D-42).
+- `markAttachmentUploaded(db, userId, billId, documentIds, deps: { blob, now })`: bolletta
+  dell'utente e ogni id un documento di quella bolletta con `uploadedAt` nullo (`NOT_FOUND`
+  altrimenti); stessa verifica; `uploadedAt = now`. Un `DOCUMENT_INVALID` cancella in un batch le
+  righe dei documenti di quella richiesta, poi i loro file, e si rilancia.
 - `runExtraction(db, userId, extractionId, deps: { blob, extractor, now, clock })`:
-  1. presa atomica: `UPDATE extractions SET status='running', started_at=:now, error_code=NULL,
-     error_message=NULL WHERE id=:id AND user_id=:userId AND (status IN ('queued','failed') OR
-     (status='running' AND started_at < :now - 360000)) RETURNING *` (con `failed` solo se
-     `error_code != 'document_invalid'`); nessuna riga → `NOT_FOUND` se l'estrazione non è
-     dell'utente, `EXTRACTION_BUSY` altrimenti;
-  2. legge i documenti in ordine di `position` (`readDocument`);
+  1. presa atomica: `UPDATE extractions SET status='running', started_at=:now, attempts=attempts+1,
+     error_code=NULL, error_message=NULL WHERE id=:id AND user_id=:userId AND (status='queued' OR
+     (status='failed' AND error_code != 'document_invalid') OR (status='running' AND started_at <
+     :now - 360000)) RETURNING *`; nessuna riga → `NOT_FOUND` se l'estrazione non è dell'utente,
+     `EXTRACTION_BUSY` altrimenti;
+  2. legge i documenti in ordine di `position` (`readDocument`); un file mancante → esito `failed`
+     con `document_invalid` («File non trovato.»), senza chiamata;
   3. `extractor.extract({ documents, today: romeToday(now), expectedKind: tipo della fornitura
      preselezionata o null, deadlineMs: now + 280_000 })`;
-  4. con `usage`: `model`, token e `costMicroUsd` (sempre, anche sui fallimenti);
-  5. `ok` e `isBill` falso → `failed` con `not_a_bill` («Il documento non sembra una bolletta.»);
-     `ok` e `validateExtraction` con errori → `failed` con `invalid_output` e le frasi unite;
-     `ok` → `extracted` con `resultJson`; non `ok` → `failed` con codice e messaggio;
-  6. `finishedAt = clock()`; restituisce la riga.
+  4. esito: `ok` e `isBill` falso → `failed` con `not_a_bill` («Il documento non sembra una
+     bolletta.»); `ok` e `validateExtraction` con errori → `failed` con `invalid_output` e le frasi
+     unite; `ok` → `extracted` con `resultJson`; non `ok` → `failed` con codice e messaggio;
+  5. un solo `UPDATE` finale, condizionato: `WHERE id=:id AND user_id=:userId AND status='running'
+     AND started_at=:startedAt` (lo `startedAt` della presa); scrive stato, `resultJson`, errore,
+     `finishedAt = clock()` e, con `usage`, `model` = quello che ha risposto e i valori **sommati**:
+     `input_tokens = COALESCE(input_tokens, 0) + :in`, `output_tokens = COALESCE(output_tokens, 0) +
+     :out`, `cost_micro_usd = COALESCE(cost_micro_usd, 0) + :cost` (`costMicroUsd(usage, model)`);
+  6. nessuna riga aggiornata (estrazione scartata nel frattempo, o ripresa da un'altra esecuzione
+     dopo 6 minuti) → il risultato si butta e, con `usage`, un secondo `UPDATE` con il solo
+     `WHERE id=:id AND user_id=:userId` somma token e costo; restituisce la riga riletta.
 - `getExtractionReview(db, userId, extractionId)`: estrazione `extracted` dell'utente → `{
-  extraction, documents, draft: toBillInput(...), supplies, houses }`; altrimenti `NOT_FOUND`.
+  extraction, documents, draft, supplies, houses, overlaps }` con `draft = toBillInput(result, {
+  supplies: tutte le forniture dell'utente, archiviate comprese, preselectedSupplyId:
+  extraction.supplyId })`, `supplies` = le forniture non archiviate (per la scelta) più quella
+  riconosciuta anche se archiviata (per la prop `supply` di `BillForm`), `overlaps:
+  ExistingBillPeriod[]` = `findOverlappingBills` di `draft.input` sulle bollette confermate di
+  `draft.matchedSupplyId` (vuote se nullo); altrimenti `NOT_FOUND`.
 - `confirmExtraction(db, userId, extractionId, payload: { input: unknown; newSupply: { houseId;
-  label; supplierName; identifier; hasPhotovoltaic } | null })`: estrazione `extracted` dell'utente;
-  con `newSupply` → `createSupply` (tipo = `supplyKind` estratto) e `input.supplyId` = la nuova;
-  `confirmBill(db, userId, input, { source: 'extraction' })`; se `confirmBill` lancia e la fornitura
-  è stata creata ora → `deleteSupply` e rilancia; poi batch: `documents.bill_id` = bolletta per i
-  documenti dell'estrazione, estrazione `confirmed` con `billId`. Restituisce `{ billId }`.
-- `discardExtraction(db, userId, extractionId, deps: { blob })`: estrazione dell'utente non
-  `confirmed`; batch: cancella i suoi documenti, stato `discarded`, `resultJson = NULL`; poi
-  `deleteDocuments` dei pathname.
-- `listPendingExtractions(db, userId)`: stati `queued`, `running`, `extracted`, `failed`, dal più
-  vecchio; `countExtractedToReview(db, userId)`.
+  kind: SupplyKind; label; supplierName; identifier; hasPhotovoltaic } | null })`:
+  1. presa atomica: `UPDATE extractions SET status='confirmed' WHERE id=:id AND user_id=:userId AND
+     status='extracted' RETURNING *`; nessuna riga → `NOT_FOUND` se l'estrazione non è
+     dell'utente, `EXTRACTION_BUSY` altrimenti (un secondo «Conferma» non crea una seconda bolletta);
+  2. con `newSupply` → `createSupply(db, userId, newSupply)` (il tipo è `newSupply.kind`) e una
+     copia dell'input con `supplyId` = la nuova (l'input resta `unknown` fino a `confirmBill`);
+  3. `confirmBill(db, userId, input, { source: 'extraction' })`; se il passo 2 o il 3 lanciano: la
+     fornitura creata al passo 2 si cancella (`deleteSupply`), l'estrazione torna `extracted`, e
+     l'errore si rilancia (`OVERLAP_DECISION_REQUIRED`, `VALIDATION`, `DUPLICATE_IDENTIFIER` arrivano
+     al modulo);
+  4. batch: `documents.bill_id` = bolletta per i documenti dell'estrazione; estrazione con `billId`
+     = bolletta e `resultJson = NULL` (i dati vivono nella bolletta). Restituisce `{ billId }`.
+- `discardExtraction(db, userId, extractionId, deps: { blob, now })`: estrazione dell'utente in
+  `uploading`, `queued`, `extracted`, `failed`, o `running` con `startedAt` più vecchio di 6
+  minuti; `running` più recente → `EXTRACTION_BUSY`; `confirmed` o `discarded` → `NOT_FOUND`. Batch:
+  cancella i suoi documenti, stato `discarded`, `resultJson = NULL`; poi `blob.deleteDocuments` dei
+  pathname.
+- `listPendingExtractions(db, userId)` → `Array<{ id; status; supplyLabel: string | null; createdAt;
+  startedAt: number | null; errorCode; errorMessage; estimatedCostMicroUsd: number | null }>`: stati
+  `queued`, `running`, `extracted`, `failed`, dal più vecchio; per le `queued`
+  `estimatedCostMicroUsd` = `estimateExtractionCost` dai loro documenti (`pageCount` per i PDF, 1
+  per foto), `null` per gli altri stati. `countExtractedToReview(db, userId)`: il numero delle
+  `extracted`.
 - `monthlyExtractionSpend(db, userId, month: MonthKey)`: somma di `costMicroUsd` e numero delle
-  estrazioni con `startedAt` nel mese di Roma (`romeToday(startedAt).slice(0, 7) === month`).
+  estrazioni il cui ultimo `startedAt` cade nel mese di Roma (`romeToday(startedAt).slice(0, 7) ===
+  month`); il costo di tutti i tentativi di un'estrazione va nel mese dell'ultimo.
+- `listBillDocuments(db, userId, billId)` → `Array<{ id: string; contentType: DocumentContentType;
+  pageCount: number | null; position: number }>`: bolletta dell'utente (`NOT_FOUND` altrimenti),
+  solo i documenti con `uploadedAt`, in ordine di `position`; lo legge la scheda della bolletta.
+- `readDocumentFile(db, userId, documentId, deps: { blob })` → `{ bytes: Uint8Array; contentType:
+  DocumentContentType }`: documento dell'utente con `uploadedAt` non nullo e file presente,
+  `NOT_FOUND` altrimenti; lo usa `GET /api/documents/[id]`.
+- `authorizeDocumentUpload(db, userId, documentId, pathname)` → `{ contentType: DocumentContentType
+  }`: documento dell'utente in attesa (`uploadedAt` nullo) con quel pathname, allegato a una
+  bolletta o di un'estrazione `uploading`; `NOT_FOUND` altrimenti; lo usano `onBeforeGenerateToken`
+  e il caricamento finto.
 
 Repository nuovi (C-12): `documents.ts` (`insertDocumentsQuery`, `getDocument`, `getPendingDocument`,
-`listDocumentsOfExtraction`, `listDocumentsOfBill`, `findDocumentBySha256`, `updateDocumentQuery`,
-`linkDocumentsToBillQuery`, `deleteDocumentsOfExtractionQuery`, `deleteDocumentsOfBillsQuery`,
-`listDocumentPathnamesOfBills`), `extractions.ts` (`insertExtractionQuery`, `getExtraction`,
-`claimExtractionForRun`, `updateExtractionQuery`, `listExtractions`, `clearBillOfExtractionsQuery`,
-`clearSupplyOfExtractionsQuery`). Tutti `(db, userId, …)`.
+`getDocumentBySha256`, `listDocumentsOfExtraction`, `listDocumentsOfBill`, `updateDocumentQuery`,
+`linkDocumentsToBillQuery`, `deleteDocumentsQuery`, `deleteDocumentsOfExtractionQuery`,
+`deleteDocumentsOfBillsQuery`, `listDocumentPathnamesOfBills`), `extractions.ts`
+(`insertExtractionQuery`, `getExtraction`, `claimExtractionForRun`, `finishExtractionRun` (l'`UPDATE`
+condizionato del passo 5, restituisce le righe aggiornate), `addExtractionUsage`,
+`claimExtractionForConfirm`, `updateExtractionQuery`, `deleteExtractionsQuery`, `listExtractions`,
+`clearBillOfExtractionsQuery`, `clearSupplyOfExtractionsQuery`). Tutti `(db, userId, …)`. Le sole
+query fra utenti stanno in `src/lib/db/maintenance/prune.ts` (§ 4.11).
 
 ### 4.9 Route (T-22)
 
 | Metodo e rotta | Corpo | Servizio | Risposta |
 |---|---|---|---|
-| `POST /api/extractions` | `{ supplyId, batchId, files }` (zod) | `createExtraction` | 201 `{ extractionId, documents }` o 200 `{ duplicateOf }` |
+| `POST /api/extractions` | `{ supplyId, batchId, files }` (zod) | `createExtraction` | 201 `{ extractionId, documents }`; 200 `{ duplicateOf, duplicateStatus }` con `documents` (`uploading` da riprendere), `estimatedCostMicroUsd` (`queued`), `errorCode` ed `errorMessage` (`failed`) |
 | `POST /api/extractions/[id]/uploaded` | — | `markExtractionUploaded` | 200 `{ pdfPages, photos, estimatedCostMicroUsd }` |
 | `POST /api/extractions/[id]/run` | — | `runExtraction` (`export const maxDuration = 300`) | 200 `{ status, errorCode, errorMessage }` |
 | `POST /api/bills/[id]/documents` | `{ files }` | `createAttachment` | 201 `{ documents }` |
-| `POST /api/bills/[id]/documents/uploaded` | `{ documentIds }` | `markAttachmentUploaded` | 200 |
-| `POST /api/documents/upload` | protocollo di `handleUpload` | — | § 4.4 |
-| `GET /api/documents/[id]` | — | `getDocument` | il file |
-| `PUT /api/e2e/blob` | il file | solo con `E2E_FAKE_SERVICES` | 204 |
+| `POST /api/bills/[id]/documents/uploaded` | `{ documentIds }` | `markAttachmentUploaded` | 204 |
+| `POST /api/documents/upload` | protocollo di `handleUpload` | `authorizeDocumentUpload` (in `onBeforeGenerateToken`) | § 4.4 |
+| `GET /api/documents/[id]` | — | `readDocumentFile` | il file |
+| `PUT /api/e2e/blob?documentId=&pathname=` | il file | `authorizeDocumentUpload`, solo con `E2E_FAKE_SERVICES` | 204 |
 
-Ogni route: `requireUser()` per prima cosa, zod sul corpo, errori con `toErrorResponse`. Le azioni
-della revisione (`confirmExtractionAction`, `discardExtractionAction`) sono Server Action in
-`src/app/(app)/bollette/revisione/[id]/actions.ts`.
+Ogni route: `requireUser()` per prima cosa, tranne `POST /api/documents/upload`, che lo chiama dentro
+`onBeforeGenerateToken` (la richiesta di fine upload di Vercel non ha sessione e non fa nulla); zod
+sul corpo, errori con `toErrorResponse`. Le azioni della revisione (`confirmExtractionAction({
+extractionId, input, newSupply })`, `discardExtractionAction(extractionId)`) sono Server Action in
+`src/app/(app)/bollette/revisione/[id]/actions.ts`: `requireUser()` → il servizio dentro
+`toActionResult` (`discardExtraction` con `{ blob: getBlobStore(), now: Date.now() }`) → con `ok`
+`revalidatePath('/', 'layout')` (badge e pagine «Bollette», «Da rivedere», «Casa», scheda della
+fornitura). «Scarta» in ogni punto dell'interfaccia (caricamento, «Da rivedere», revisione) chiama
+`discardExtractionAction`.
 
 ### 4.10 Interfaccia
 
@@ -772,79 +945,153 @@ della revisione (`confirmExtractionAction`, `discardExtractionAction`) sono Serv
   foto» (`accept="application/pdf,image/jpeg,image/png,image/webp,image/heic"`, `multiple`) e
   «Scatta foto» (`accept="image/*" capture="environment"`); un PDF esclude le foto e viceversa
   (messaggio chiaro). Le foto passano da `compressPhoto` e compaiono come miniature numerate con
-  «Su», «Giù», «Rimuovi» (massimo 10). Pulsante «Carica» → SHA-256 nel browser
-  (`crypto.subtle.digest`) → `POST /api/extractions` (o `/api/bills/[id]/documents`) →
-  `uploadDocumentFile` per ogni file (in ordine) → `…/uploaded` → in modalità `extract` mostra
-  «Estrazione in corso… (costo stimato circa X $)» e chiama `…/run`; `extracted` →
-  `router.push('/bollette/revisione/<id>')`; `failed` → il messaggio con «Riprova», «Inserisci a
-  mano» (`/bollette/nuova?fornitura=…`) e «Scarta»; `duplicateOf` → `router.push` alla revisione di
-  quell'estrazione; `DUPLICATE_DOCUMENT` → «Questo file è già nella bolletta del …» con il link.
+  «Su», «Giù», «Rimuovi» (massimo 10); il PDF come riga con nome, dimensione e «Rimuovi». Un PDF
+  oltre 10 MB o una foto che dopo la compressione supera 5 MB → messaggio sotto il campo, niente
+  invio. Pulsante «Carica» → SHA-256 nel browser (`crypto.subtle.digest`) → `POST /api/extractions`
+  (o `/api/bills/[id]/documents`) → `uploadDocumentFile` per ogni file (in ordine) → `…/uploaded`.
+  In modalità `extract`, poi:
+  - la stima e il pulsante «Estrai (circa X $)» (`formatUsd(estimatedCostMicroUsd)`), con la nota
+    «La bolletta resta in «Da rivedere» finché non la estrai» e «Scarta»; **nessuna chiamata a Claude
+    prima del clic** (D-42);
+  - al clic: «Estrazione in corso…» e `POST …/run`; `extracted` → `router.push('/bollette/revisione/<id>')`;
+    `failed` → il messaggio con «Riprova» (di nuovo `…/run`), «Inserisci a mano»
+    (`/bollette/nuova?fornitura=…`) e «Scarta»; dopo ogni `…/run` `router.refresh()` (badge);
+  - risposta 200 «doppione» (D-59), secondo `duplicateStatus`: `extracted` →
+    `router.push('/bollette/revisione/<duplicateOf>')`; `queued` → la stima e «Estrai (circa X $)»
+    di quell'estrazione, come dopo un caricamento; `failed` con `errorCode` diverso da
+    `document_invalid` → `errorMessage` con «Riprova» e «Scarta»; `failed` con `document_invalid` →
+    `errorMessage` con «Scarta»; `running` → «Questa bolletta è già in lavorazione» con il link a
+    «Da rivedere»; `uploading` con `documents` → ricarica tutti i file su quei pathname, chiama
+    `…/uploaded` di `duplicateOf` e prosegue come dopo un caricamento;
+  - `DUPLICATE_DOCUMENT` → «Questo file è già nella bolletta dal <formatDate(periodStart)> al
+    <formatDate(periodEnd)>» con il link a `/bollette/<billId>`;
+  - `…/uploaded` che risponde `DOCUMENT_INVALID` → il messaggio della risposta con «Scarta».
+  In modalità `attach`: dopo `…/documents/uploaded` `router.refresh()`; `DUPLICATE_DOCUMENT` con
+  `billId` → lo stesso messaggio col link, con `extractionId` → «Questo file è già fra le bollette
+  da rivedere» con il link a «Da rivedere».
 - **`src/lib/upload/compress-photo.ts`** (client): `createImageBitmap(file, { imageOrientation:
   'from-image' })`; lato lungo ridotto a 2.576 px se più grande; `canvas.toBlob(…, 'image/jpeg',
   0.85)`; se `createImageBitmap` fallisce → «Formato immagine non supportato: usa JPEG o PNG.».
-- **`/bollette/carica`**: titolo «Carica una bolletta», select della fornitura (prima voce
-  «Riconosci dalla bolletta»; `?fornitura=` la preseleziona), `BillUploader mode="extract"`. Se
-  `!isExtractionConfigured()` la pagina spiega «Estrazione non configurata su questa installazione»
-  e offre solo l'inserimento a mano. Il riepilogo «Casa» (03) e la scheda della fornitura aggiungono
-  il pulsante «Carica bolletta» accanto a «Nuova bolletta».
-- **`/bollette/revisione/[id]`**: due colonne da 1024 px (documento a sinistra, modulo a destra),
-  una sopra l'altra su mobile (documento in un riquadro richiudibile). Documento: PDF in `<iframe
-  src="/api/documents/<id>">` con il link «Apri in una nuova scheda»; foto come `<img>` in
-  sequenza. In cima gli avvisi di `draft.warnings`. Se `matchedSupplyId` è nullo: «A quale fornitura
-  appartiene?» con le forniture dello stesso tipo e «Crea una nuova fornitura» (casa, etichetta
-  default `KIND_LABELS[kind]`, fornitore e identificativo precompilati, fotovoltaico per la luce).
-  Poi `BillForm` con `initialValue = draft.input`, `overlaps` calcolate dal server per la fornitura
-  scelta, `submitLabel="Conferma"`; un secondo pulsante «Scarta».
+- **`/bollette/carica`**: titolo «Carica una bolletta». Se l'utente non ha case, la pagina mostra lo
+  stato vuoto della 03 («Comincia creando la tua casa» → `/forniture`) al posto del caricamento. Se
+  `!isExtractionConfigured()` spiega «Estrazione non configurata su questa installazione» e offre
+  solo l'inserimento a mano. Altrimenti select della fornitura (prima voce «Riconosci dalla
+  bolletta»; `?fornitura=` la preseleziona) e `BillUploader mode="extract"`.
+- **Ingressi a «Carica bolletta»** (`/bollette/carica?fornitura=<id>`): nella card di ogni fornitura
+  della pagina «Casa» (`data-testid="supply-card"`, D-52) accanto a «Nuova bolletta»; nella scheda
+  della fornitura `/forniture/[id]`, che nell'intestazione aggiunge «Nuova bolletta»
+  (`/bollette/nuova?fornitura=<id>`) e «Carica bolletta»; nell'elenco `/bollette` accanto a «Nuova
+  bolletta» (senza `fornitura`). Si mostrano solo se `isExtractionConfigured()`.
+- **`/bollette/revisione/[id]`** (dati da `getExtractionReview`): in cima gli avvisi di
+  `draft.warnings`. Documento (D-56): da 1024 px due colonne, a sinistra il PDF in `<iframe
+  src="/api/documents/<id>">` con il link «Apri in una nuova scheda» o le foto come `<img>` in
+  sequenza, a destra il modulo; sotto i 1024 px niente iframe: per il PDF il pulsante «Apri il PDF»
+  (link a `/api/documents/<id>` con `target="_blank"`, che il telefono apre nel suo visore), per le
+  foto le `<img>` in sequenza in un riquadro richiudibile sopra il modulo.
+  Fornitura: se `matchedSupplyId` c'è, la fornitura è quella (solo testo). Altrimenti «A quale
+  fornitura appartiene?» (`<select>` con etichetta) elenca **tutte** le forniture non archiviate
+  dell'utente, quelle del tipo estratto per prime, più la voce «Crea una nuova fornitura», che apre:
+  casa (select delle case), tipo (select con `KIND_LABELS`, precompilata con
+  `suggestedSupply.kind`, vuota e obbligatoria quando è nullo), etichetta (default
+  `KIND_LABELS[tipo]`), fornitore e identificativo precompilati da `suggestedSupply`, «Fotovoltaico»
+  solo per la luce.
+  `BillForm` si monta **solo dopo la scelta**, con `key` = id della fornitura scelta o `new-<tipo>`:
+  fornitura esistente → `supply` = quella riga e `initialValue = { ...draft.input, supplyId: <id> }`;
+  nuova fornitura → `supply = { id: 'nuova', kind: <tipo scelto>, label: <etichetta digitata>,
+  hasPhotovoltaic: <spunta> }` e `initialValue = { ...draft.input, supplyId: 'nuova' }` (segnaposto
+  non vuoto: `inputFromDraft` valida `supplyId` con `min(1)`; `confirmExtraction` lo sostituisce con
+  l'id della fornitura creata); `overlaps` = quelle del server solo
+  se la fornitura scelta è `matchedSupplyId`, altrimenti le porta `OVERLAP_DECISION_REQUIRED` al
+  primo «Conferma» (come nell'inserimento a mano, 03 § 4.5 punto 7). `submitLabel="Conferma"`;
+  `onSubmit` chiama `confirmExtractionAction({ extractionId, input, newSupply })` (`newSupply` dai
+  campi di «Crea una nuova fornitura», `null` per una fornitura esistente); al successo `BillForm` va
+  a `/bollette/<billId>` (03 § 4.5 punto 8) e il componente della revisione non naviga. Un secondo pulsante «Scarta» (→ `/bollette/da-rivedere`).
 - **`/bollette/da-rivedere`**: elenco di `listPendingExtractions`: data, fornitura (o «da
-  assegnare»), stato in italiano («in coda», «in corso», «da rivedere», «fallita: <messaggio>»),
-  azioni «Rivedi» (estratte), «Riprova» (fallite non `document_invalid`), «Scarta». La `NavBar`
-  mostra sul tab «Bollette» il numero di `countExtractedToReview` (badge con `aria-label`).
-- **Scheda della bolletta**: sezione «Documenti» (per ogni documento «Pagina N» o «PDF, N pagine» e
-  «Apri») e `BillUploader mode="attach"`.
+  assegnare»), stato in italiano («in coda», «in corso», «da rivedere», «fallita: <messaggio>»).
+  Azioni: «Rivedi» (estratte); «Estrai (circa X $)» (in coda, D-42: chiama `…/run`); «Riprova»
+  (fallite non `document_invalid`, e in corso con `startedAt` più vecchio di 6 minuti: chiama
+  `…/run`); «Scarta» su tutte tranne le in corso più recenti di 6 minuti. Dopo `…/run`: `extracted`
+  → la revisione, altrimenti `router.refresh()`.
+- **Badge** (C-24): il layout `(app)` calcola `countExtractedToReview(getDb(), user.id)` e lo passa
+  ad `AppShell` come `reviewCount`; `NavBar` e `SideBar` mostrano sul tab «Bollette» il badge quando
+  è > 0, con `aria-label` «N bollette da rivedere»; a 0 il badge non c'è.
+- **Scheda della bolletta**: se `isBlobConfigured()` (la chiave Anthropic non serve), sezione
+  «Documenti» da `listBillDocuments` (solo i documenti caricati; per ognuno «Pagina N» o «PDF, N
+  pagine» e «Apri», nuova scheda su `/api/documents/<id>`) e `BillUploader mode="attach"` («Allega
+  il file»); senza Blob la sezione non c'è.
 - **Impostazioni**: sezione «Estrazioni con Claude»: «Questo mese: X $ in N estrazioni» (`formatUsd`),
   il modello in uso.
 
 ### 4.11 Script
 
+- Script di `package.json` (T-6): `"fixture:bills": "tsx scripts/make-bill-fixtures.ts"`,
+  `"documents:prune": "tsx --env-file-if-exists=.env.local scripts/prune-documents.ts"`.
 - `scripts/make-bill-fixtures.ts` (`pnpm fixture:bills`): scrive **PDF minimi fatti a mano** (nessuna
   dipendenza: oggetti Catalog, Pages, una Page per blocco di 50 righe, font Helvetica, flusso di
   testo con `BT /F1 10 Tf 40 800 Td 13 TL (…) ' … ET`, tabella `xref` con gli offset calcolati) in
-  `tests/fixtures/bills/`: `luce-fenicottero.pdf` (mensile, letture F1/F2/F3, canone TV fuori
-  totale), `gas-fenicottero.pdf` (settembre con il blocco di agosto rifatturato con le voci di
-  ricalcolo, C e PCS), `acqua-ornitorinco.pdf` (trimestrale, scaglioni, fognatura, depurazione,
-  UI), `internet-quokka.pdf` (canone IVA inclusa); tutte con fornitori e numeri inventati e tondi,
-  nessun indirizzo. Per ognuna scrive anche l'estrazione attesa in
+  `tests/fixtures/bills/`, con **periodi fissi del 2024** (prima di ogni finestra dei seed, che va da
+  14 mesi fa al mese scorso), fornitori inventati che non compaiono nel seed e identificativi
+  diversi da quelli del seed (`IT001E00000011`, `00000000000011`):
+  `luce-pellicano.pdf` (01/09/2024–30/09/2024, «Pellicano Energia», POD `IT001E00000011`, letture
+  F1/F2/F3, canone TV fuori totale), `gas-pellicano.pdf` («Pellicano Energia», settembre 2024 con il
+  blocco di agosto 2024 rifatturato con le voci di ricalcolo, PDR `00000000000011`, C e PCS),
+  `acqua-lontra.pdf` (01/07/2024–30/09/2024, «Lontra Acque», scaglioni, fognatura, depurazione, UI),
+  `internet-armadillo.pdf` (settembre 2024, «Armadillo Telecomunicazioni», canone IVA inclusa);
+  numeri tondi, nessun indirizzo. Per ognuna scrive anche l'estrazione attesa in
   `tests/fixtures/extractions/<sha256>.json` (costruita da un oggetto TypeScript nello script e
-  validata con `ExtractionSchema`); in più `luce-fenicottero-rotta.pdf` (la stessa luce con un'altra
+  validata con `ExtractionSchema`); in più `luce-pellicano-rotta.pdf` (la stessa luce con un'altra
   data di emissione, quindi un altro SHA) con `tests/fixtures/extractions/<sha256>.json` =
   `{ "fail": "unavailable" }`, e `tests/fixtures/extractions/photo-default.json` (l'estrazione
   dell'internet). Stessi byte a ogni esecuzione.
-- `scripts/prune-documents.ts` (`pnpm documents:prune [-- --delete] [-- --force]`): legge le
-  variabili come gli altri script (`EnvSchema`), stampa **quale database e quale store** confronta
-  (host del DB e prefisso del token), elenca i pathname sotto `users/` senza riga in `documents` e le
-  estrazioni `uploading` più vecchie di 24 ore; senza `--delete` è una prova a secco; rifiuta di
-  cancellare se il DB non ha nessun documento e manca `--force` (segnaprezzi § 4.61: mai accoppiare
-  un DB locale con lo store di produzione).
+- `scripts/e2e-reset-db.mjs` (01) cancella anche la cartella del disk store, prima delle migrazioni:
+  `rmSync('.e2e-blob', { recursive: true, force: true })`; ogni `pnpm test:e2e` parte senza file né
+  documenti di esecuzioni precedenti.
+- `scripts/prune-documents.ts` (`pnpm documents:prune [-- --prod] [-- --delete] [-- --force]`):
+  legge `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` e `BLOB_READ_WRITE_TOKEN` con uno schema zod suo
+  (non `EnvSchema`, che pretende anche le variabili di Better Auth). Senza `--prod` usa le variabili
+  di `.env.local` e rifiuta un `TURSO_DATABASE_URL` che non comincia con `file:`. Con `--prod` prende
+  il database da `loadProductionTarget()` (C-22) e il token dello store di produzione **solo** dalla
+  terza riga facoltativa `BLOB_READ_WRITE_TOKEN` di `.env.turso-prod` (letta con `dotenv.parse` del
+  file, mai da `process.env`, dove c'è quello di sviluppo di `.env.local`); se la riga manca esce con
+  «BLOB_READ_WRITE_TOKEN missing in .env.turso-prod (see SETUP.md)». Stampa **quale database e quale
+  store** confronta (host del DB e prefisso del token), elenca i pathname sotto `users/` senza riga in
+  `documents`, le estrazioni `uploading` e i documenti allegati con `uploadedAt` nullo creati da più
+  di 24 ore; senza `--delete` è una prova a secco; con `--delete` cancella righe (prima) e file
+  (dopo); rifiuta di cancellare se il DB non ha nessun documento e manca `--force` (segnaprezzi §
+  4.61: mai accoppiare un DB locale con lo store di produzione). Le query fra utenti stanno in
+  `src/lib/db/maintenance/prune.ts` (`listAllDocumentPathnames(db)`, `listStaleUploads(db,
+  olderThanMs)`, `deleteStaleUploadsQuery(db, ids)`), fuori da `repositories/` (quindi fuori da
+  `scope.test.ts`), usate solo da questo script; nessun altro modulo le importa.
 
 ## 5. Vincoli e trappole
 
 - **AGENTS.md § 2.1 Layers** — qui vuol dire che `@anthropic-ai/sdk` si importa solo in
   `anthropic-extractor.ts` e `@vercel/blob` (lato server) solo in `vercel-blob-store.ts`; i servizi
-  ricevono `blob` ed `extractor` come dipendenze; le route li prendono dal container.
+  ricevono `blob` ed `extractor` come dipendenze; le route li prendono dal container; pagine e route
+  non importano repository (`listBillDocuments`, `readDocumentFile`, `authorizeDocumentUpload` sono
+  servizi); l'unico SQL fuori da `repositories/` è `src/lib/db/maintenance/prune.ts`, solo per lo
+  script.
 - **AGENTS.md § 2.3 Secrets** — `ANTHROPIC_API_KEY` e `BLOB_READ_WRITE_TOKEN` mai nel client né nei
-  log; `NEXT_PUBLIC_E2E_FAKE_SERVICES` è l'unica variabile pubblica e vale solo nelle build di
-  Playwright.
+  log; `NEXT_PUBLIC_E2E_FAKE_SERVICES` è l'unica variabile pubblica, letta come
+  `process.env.NEXT_PUBLIC_E2E_FAKE_SERVICES` letterale solo in `upload-client.ts`, e vale solo nelle
+  build di Playwright; il token Blob lo digita l'owner, non passa dalla chat.
 - **AGENTS.md § 2.4 Isolation** — il token di upload si genera solo per un documento dell'utente in
   attesa; `GET /api/documents/[id]` legge il documento con `userId`; l'estrazione si prende con
-  `user_id` nel `WHERE` atomico.
+  `user_id` nel `WHERE` atomico; ogni servizio nuovo ha la coppia proprio/altrui.
 - **AGENTS.md § 2.6 Foreign keys** — `documents` ed `extractions` in `deleteAllUserData`; riga prima,
   file dopo.
-- **AGENTS.md § 6 Claude** (nasce qui): un'estrazione = una chiamata; niente `temperature`, niente
-  prefill, niente `tool_choice` forzato; `max_tokens` 32.000 con streaming; timeout dalla scadenza;
-  nessun retry automatico; costo sempre registrato; il prompt non chiede ragionamenti scritti nello
-  schema (rifiuti `reasoning_extraction`).
+- **AGENTS.md § 6 Claude** (scritto in pianificazione, vale da qui): un'estrazione = una chiamata
+  che parte al clic dell'owner; niente `temperature`, niente prefill, niente `tool_choice` forzato;
+  `max_tokens` 32.000 con streaming; formato senza `parse`; `timeout` e `signal` dalla scadenza;
+  nessun retry automatico; costo sempre registrato e sommato sui tentativi; il prompt non chiede
+  ragionamenti scritti nello schema (rifiuti `reasoning_extraction`).
+- **AGENTS.md § 9 Testing** — gli utenti seed sono in sola lettura per Playwright: `estrazione.spec.ts`
+  e le coppie che scrivono in `isolamento.spec.ts` registrano i loro utenti con `signUpTestUser`.
 - Vercel: body 4,5 MB → mai file attraverso una function; `maxDuration = 300` dichiarato sulla
-  route di esecuzione; 280 s di scadenza interna.
+  route di esecuzione; 280 s di scadenza interna, rispettata anche a stream aperto grazie al
+  `signal`.
+- Fotocamera (D-55): il server di sviluppo non si apre dal telefono (né https locale né tunnel); in
+  locale le foto si caricano dal browser del computer, «Scatta foto» si prova in produzione.
 - Blob Hobby: 2.000 operazioni avanzate al mese (upload, list) e 10.000 semplici (letture); oltre,
   Blob si blocca per 30 giorni: `documents:prune` non si lancia in un ciclo, e la pagina «da
   rivedere» non legge i file.
@@ -856,72 +1103,120 @@ della revisione (`confirmExtractionAction`, `discardExtractionAction`) sono Serv
 
 | Livello | Test | Mutazione che lo prova portante |
 |---|---|---|
-| Unit | `schema.test.ts`: lo schema JSON generato da `ExtractionSchema` (`z.toJSONSchema`) non contiene `anyOf`, `oneOf`, `type` a lista, `minimum`, `maximum`; ogni estrazione di `tests/fixtures/extractions/*.json` (tranne i `fail`) passa lo schema. | Rendere `offerName` nullable → compare un `anyOf` e il test fallisce. |
-| Unit | `to-bill-input.test.ts`: estrazione del gas → voci di agosto col periodo di agosto e `isRecalculation`, voci di settembre col periodo della bolletta, `0` → `null` per C mancante sulla luce, letture `bill_actual`; identificativo `IT 001 E00000001` riconosce la fornitura `IT001E00000001`; preselezione di tipo diverso → avviso; `supplyKind 'other'` → nessun suggerimento. | Usare il periodo della bolletta anche per i blocchi con un periodo → agosto sparisce. |
-| Unit | `anthropic-extractor.test.ts` con un `client` finto che espone `beta.messages.stream()` → `{ finalMessage }`: la richiesta ha `model 'claude-opus-5-5'`, `max_tokens 32000`, `betas ['server-side-fallback-2026-07-01']`, `fallbacks 'default'`, `output_config.effort 'high'`, nessuna `temperature`, il blocco `document` prima del testo; `stop_reason 'refusal'` con categoria `cyber` → `refusal` col testo «(cyber)»; `max_tokens` → `truncated`; un `RateLimitError` → `unavailable`; un `AnthropicError` semplice → `invalid_output`; scadenza a 10 s → `timeout` senza chiamata. | Aggiungere `temperature: 0` → l'asserzione «nessuna temperature» fallisce. |
+| Unit | `schema.test.ts`: lo schema JSON generato da `ExtractionSchema` (`z.toJSONSchema`) non contiene `anyOf`, `oneOf` né `type` a lista; gli unici `minimum`/`maximum` ammessi sono i limiti degli interi sicuri (±9007199254740991) che `.int()` aggiunge e che l'SDK sposta nella descrizione; ogni estrazione di `tests/fixtures/extractions/*.json` (tranne i `fail`) passa lo schema. | Rendere `offerName` nullable → compare `"type": ["string", "null"]` e il test fallisce; aggiungere `.min(0)` ad `amountCents` → compare `minimum: 0` e il test fallisce. |
+| Unit | `to-bill-input.test.ts`: estrazione del gas → voci di agosto col periodo di agosto e `isRecalculation`, voci di settembre col periodo della bolletta, `0` → `null` per C mancante sulla luce, letture `bill_actual`; identificativo `IT 001 E00000011` riconosce la fornitura `IT001E00000011`; preselezione di tipo diverso → avviso; `supplyKind 'other'` → `suggestedSupply.kind` nullo e l'avviso «Tipo di utenza non riconosciuto»; voce con il solo `periodEnd` vuoto → tutti e due gli estremi della bolletta; lettura con data vuota → scartata con l'avviso «Lettura senza data scartata: …»; voce `kWh` con quantità 0 → `quantity: 0`, `quantityUnit: 'kWh'`. | Usare il periodo della bolletta anche per i blocchi con un periodo → agosto sparisce; tenere `periodStart` della voce quando manca solo `periodEnd` → il caso del periodo a metà fallisce; trattare la quantità 0 come assente → il caso 0 kWh dà `null`. |
+| Unit | `anthropic-extractor.test.ts` con un `client` finto il cui `beta.messages.stream(params, options)` registra i due argomenti e restituisce `{ finalMessage }`: la richiesta ha `model 'claude-opus-5-5'`, `max_tokens 32000`, `betas ['server-side-fallback-2026-07-01']`, `fallbacks 'default'`, `output_config.effort 'high'`, `output_config.format` con `type` e `schema` e **nessuna** proprietà `parse`, nessuna `temperature`, il blocco `document` prima del testo; le opzioni hanno `maxRetries 0`, `timeout` e un `signal` (`AbortSignal`); `stop_reason 'refusal'` con categoria `cyber` → `refusal` col testo «(cyber)» e `usage`; `stop_reason 'max_tokens'` con un testo JSON tagliato → `truncated` con `usage`; un JSON valido che non rispetta lo schema → `invalid_output` con `usage` e `model`; il JSON di una fixture → `ok`; un `RateLimitError` → `unavailable`; `finalMessage` che rifiuta con `APIUserAbortError` → `timeout`; un `AnthropicError` semplice → `unavailable`; scadenza a 10 s → `timeout` senza chiamata a `stream`. | Aggiungere `temperature: 0` → l'asserzione «nessuna temperature» fallisce; passare `betaZodOutputFormat(ExtractionSchema)` intero → l'asserzione «nessun `parse`» fallisce; togliere il ramo `APIUserAbortError` da `toFailure` → `api_error` e il test fallisce. |
 | Unit | `pricing.test.ts`: `costMicroUsd({ inputTokens: 1_000_000, outputTokens: 0 }, 'claude-opus-5-5') === 4_000_000`; modello ignoto → prezzo di `claude-opus-5`; `estimateExtractionCost({ pdfPages: 8, photos: 0 }) === 312_000`. | Invertire input e output → 20.000.000. |
-| Unit | `verify-document.test.ts`: PDF delle fixture → `pageCount` giusto; byte alterati → SHA diverso; JPEG con intestazione PDF → `DOCUMENT_INVALID`; 11 MB → `DOCUMENT_INVALID`. | Saltare il controllo SHA → il caso alterato passa. |
-| Unit | `validate.test.ts`: periodo invertito, data `2026-02-30`, zero voci, `quantityUnit none` con quantità 5 → errori. | — (ogni caso è un ramo). |
-| Integrazione | `extractions.test.ts` (fake Blob su cartella temporanea, fake extractor): creazione → upload simulato → `markExtractionUploaded` → `runExtraction` → `extracted` con costo; secondo `runExtraction` concorrente → `EXTRACTION_BUSY`; `confirmExtraction` con `newSupply` → bolletta e fornitura, documenti legati; `confirmBill` che fallisce (sovrapposizione senza decisione) → la fornitura nuova non resta; `discardExtraction` → riga `discarded`, documenti e file spariti; doppione confermato → `DUPLICATE_DOCUMENT`; doppione non confermato → `duplicateOf`; utente B su estrazione di A → `NOT_FOUND`; `deleteBill` → `documentPathnames` pieno; `deleteAllUserData` con documenti ed estrazioni → nessun errore. | Togliere `user_id` dal `WHERE` della presa → B esegue l'estrazione di A. |
-| Integrazione | `monthly-spend.test.ts`: due estrazioni in ottobre e una a settembre (orari di confine a mezzanotte di Roma) → la somma di ottobre. | Usare il mese UTC → l'estrazione delle 00:30 del 1° finisce nel mese sbagliato. |
-| E2E | `estrazione.spec.ts` (seed A, fake): carica `luce-fenicottero.pdf` con «Riconosci dalla bolletta» → revisione con la fornitura «Luce» riconosciuta dall'identificativo, il PDF nell'iframe, avvisi assenti → «Conferma» → scheda con i documenti; ricarica dello stesso file → messaggio di doppione con il link; `gas-fenicottero.pdf` → agosto con le voci di ricalcolo; `luce-fenicottero-rotta.pdf` → «fallita» con «Riprova»; «Scarta» → sparisce da «da rivedere»; una foto PNG generata nel test con un `<canvas>` e caricata con «Scegli PDF o foto» → convertita in JPEG, revisione con l'estrazione di `photo-default.json`; badge sul tab «Bollette»; Impostazioni → spesa del mese > 0. | Saltare `linkDocumentsToBillQuery` → la scheda non ha documenti. |
-| E2E | `isolamento.spec.ts` esteso: seed A → `GET /api/documents/<id di B>` 404 (B 200); `POST /api/extractions/<id di B>/run` 404; `/bollette/revisione/<id di B>` 404; `POST /api/documents/upload` con `clientPayload` di un documento di B → errore. | Togliere `userId` da `getDocument` → A scarica il file di B. |
+| Unit | `verify-document.test.ts`: PDF delle fixture → `pageCount` giusto; byte alterati → SHA diverso; JPEG con intestazione PDF → `DOCUMENT_INVALID`; PDF da 11 MB e JPEG da 6 MB (generati nel test) → `DOCUMENT_INVALID`; `luce-pellicano.pdf` con `/Encrypt 5 0 R` inserito nel dizionario del trailer (nel test, SHA ricalcolato) → `DOCUMENT_INVALID` con il messaggio «PDF protetto: carica le foto delle pagine.». | Saltare il controllo SHA → il caso alterato passa; saltare il controllo `/Encrypt` → il messaggio non è più quello e il test fallisce; usare `MAX_DOCUMENT_BYTES` anche per il JPEG → il JPEG da 6 MB passa. |
+| Unit | `validate.test.ts`: periodo invertito, data `2026-02-30`, zero voci, `quantityUnit none` con quantità 5 → errori; voce `kWh` con quantità 0 → nessun errore. | Ripristinare il «se e solo se» fra `none` e quantità 0 → il caso 0 kWh dà un errore. |
+| Integrazione | `extractions.test.ts` (fake Blob su cartella temporanea; il fake extractor o un estrattore di prova che restituisce l'esito dato): creazione → file scritti nel disk store → `markExtractionUploaded` → `queued` con `started_at` nullo e la stima → `runExtraction` → `extracted` con costo e `attempts 1`; secondo `runExtraction` concorrente → `EXTRACTION_BUSY`; esito `truncated` con `usage`, poi «Riprova» riuscito → token e costo = somma dei due, `attempts 2`; uno scarto durante l'esecuzione (l'estrattore di prova, prima di rispondere, chiama `discardExtraction` con un `now` di 7 minuti dopo la presa: l'esecuzione risulta morta) → resta `discarded` con `result_json` nullo e il costo della chiamata sommato; `confirmExtraction` con `newSupply` → bolletta e fornitura, documenti legati, `result_json` nullo; estrazione `other` confermata con `newSupply.kind 'telecom'` → fornitura internet creata; `confirmBill` che fallisce (sovrapposizione senza decisione) → la fornitura nuova non resta e l'estrazione torna `extracted`; due `confirmExtraction` in parallelo → una bolletta sola, l'altra `EXTRACTION_BUSY`; `discardExtraction` → riga `discarded`, documenti e file spariti; scarto di una `running` recente → `EXTRACTION_BUSY`; doppione di una bolletta → `DUPLICATE_DOCUMENT` con `billId`, `periodStart`, `periodEnd`; doppione di una `queued` → `duplicateStatus 'queued'` con la stima; doppione di una `uploading` dello stesso lotto e degli stessi file → `documents` con gli stessi pathname e nessuna riga nuova; doppione di una `uploading` di un altro lotto → estrazione nuova, la vecchia con documenti e file sparita; due foto con lo stesso SHA, un JPEG da 6 MB, cinque foto da 4,5 MB → `VALIDATION`; allegato con un file che non rispetta lo SHA → `DOCUMENT_INVALID` e le righe dei suoi documenti sparite; allegato interrotto ricaricato → stesso `documentId`; `listPendingExtractions` con una `queued` da un PDF di 8 pagine → `estimatedCostMicroUsd 312_000`; `deleteBill` → `documentPathnames` pieno; `deleteAllUserData` con documenti ed estrazioni → nessun errore. | Assegnare token e costo invece di sommarli → il caso «Riprova» trova solo il secondo costo; togliere `status='running' AND started_at=:startedAt` dall'`UPDATE` finale → la scartata torna `extracted`; togliere `status='extracted'` dalla presa di `confirmExtraction` → due bollette; non cancellare i documenti dell'estrazione `uploading` abbandonata → il batch viola `documents_user_sha256_uq` e il caso dell'altro lotto fallisce. |
+| Integrazione | `extractions-isolation.test.ts` (utenti A e B con `createTestUser`): per `createExtraction` (fornitura), `createAttachment` (bolletta), `markAttachmentUploaded` (documenti), `markExtractionUploaded`, `runExtraction`, `getExtractionReview`, `confirmExtraction` (estrazione; `newSupply.houseId`; `input.supplyId`), `discardExtraction`, `listBillDocuments`, `readDocumentFile`, `authorizeDocumentUpload` (documento in attesa: A → `{ contentType }`): la risorsa di A con A passa, la stessa con B → `NOT_FOUND` e righe di A invariate; `listPendingExtractions`, `countExtractedToReview` e `monthlyExtractionSpend` di B non contano le estrazioni di A. | Togliere `userId` dal `WHERE` di `getExtraction` → B rivede l'estrazione di A e il caso di `getExtractionReview` fallisce. |
+| Integrazione | `monthly-spend.test.ts`: due estrazioni in ottobre e una a settembre (orari di confine a mezzanotte di Roma) → la somma di ottobre; un'estrazione tentata a settembre e ripresa a ottobre → tutto il suo costo in ottobre. | Usare il mese UTC → l'estrazione delle 00:30 del 1° finisce nel mese sbagliato. |
+| E2E | `estrazione.spec.ts` (fake; un utente nuovo per progetto con `signUpTestUser(page, 'pellicano')`, che dalla UI crea «Casa Pellicano» con «Luce» `IT001E00000011` e «Gas» `00000000000011`): (1) `luce-pellicano.pdf` con «Riconosci dalla bolletta» → dopo la verifica la stima ed «Estrai (circa … $)»; una lettura di `e2e.db` (`@libsql/client`, `file:e2e.db`) trova l'estrazione `queued` con `started_at` nullo; clic → revisione con la «Luce» riconosciuta dall'identificativo, su desktop il PDF nell'iframe, su mobile il pulsante «Apri il PDF» con `href` `/api/documents/<id>`, avvisi assenti → «Conferma» → scheda con i documenti e «Apri»; (2) lo stesso file di nuovo → il messaggio di doppione col periodo della bolletta e il link; (3) `gas-pellicano.pdf` caricato senza cliccare «Estrai» → «Da rivedere» lo mostra «in coda» con «Estrai (circa … $)» → clic → «Rivedi» → agosto 2024 con le voci di ricalcolo → «Scarta» → sparisce da «Da rivedere»; (4) `luce-pellicano-rotta.pdf` → «Estrai» → «fallita» con «Riprova»; (5) una foto PNG generata nel test con un `<canvas>` e caricata con «Scegli PDF o foto» → convertita in JPEG → «Estrai» → revisione con l'estrazione di `photo-default.json` e «A quale fornitura appartiene?»; `AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze()` → 0 violazioni; il badge del tab «Bollette» mostra 1; (6) Impostazioni → «Questo mese:» con una spesa > 0. | Saltare `linkDocumentsToBillQuery` → la scheda non ha documenti; chiamare `…/run` subito dopo `…/uploaded` nel `BillUploader` → la lettura di `e2e.db` trova `started_at` pieno prima del clic; mostrare l'iframe anche sotto i 1024 px → nel progetto `mobile` «Apri il PDF» manca; togliere l'etichetta della select «A quale fornitura appartiene?» → violazione axe. |
+| E2E | `a11y.spec.ts` esteso a `/bollette/carica` e `/bollette/da-rivedere` (seed A, che legge soltanto; mobile e desktop, tema chiaro e scuro) → 0 violazioni. | Un `<input type="file">` senza etichetta in `BillUploader` → violazione. |
+| E2E | `isolamento.spec.ts` esteso (fake): nel `beforeAll` due utenti registrati con `signUpTestUser`, P (`'isolamento-p'`) e Q (`'isolamento-q'`); con la sessione di P: `POST /api/extractions` con `internet-armadillo.pdf` → `PUT /api/e2e/blob` → `…/uploaded` → `…/run` (fake) → `extracted`. Coppie sullo stesso URL: `GET /api/documents/<documento di P>` P 200 / Q 404; `POST /api/extractions/<id di P>/run` P 409 (`EXTRACTION_BUSY`: già estratta) / Q 404; `/bollette/revisione/<id di P>` P 200 / Q 404. La coppia sul token di upload sta in `extractions-isolation.test.ts` (`authorizeDocumentUpload`): sotto Playwright non c'è un `handleUpload` vero. | Togliere `userId` dalla lettura del documento in `readDocumentFile` → Q riceve 200. |
 
 ## 7. Collaudo guidato (WORKFLOW.md § 2)
 
 - **A — Invarianza**: suite precedente verde; inserimento a mano invariato.
 - **B — Cambio di contesto**: `.env.local` con `ANTHROPIC_API_KEY` (chiave dell'organizzazione
-  personale, D-2) e `BLOB_READ_WRITE_TOKEN` dello **store di sviluppo** (`vercel env pull .env.local
-  --environment=development`); `isExtractionConfigured()` vero; `pnpm dev`.
-- **C — Comportamento nuovo** (con l'OK dell'owner per ogni chiamata reale; costo dichiarato prima:
-  **circa 0,30 $ a bolletta, 0,90 $ in tutto**): le tre bollette campione di
-  `Downloads\bollette-campione\` (fuori dal repo), caricate con seed A dalla UI. Esito atteso
-  dichiarato prima, per ciascuna: tipo giusto; totale estratto = totale stampato; avvisi aritmetici
-  assenti o di pochi centesimi; luce: letture F1/F2/F3 a due date e il canone TV in «fuori
-  bolletta»; gas: C a 7 decimali, PCS in GJ/Smc, le voci del mese precedente con quel periodo e
-  `isRecalculation`, IVA a due aliquote; telefono: voce netta + IVA 22% e l'avviso «Importi
-  stampati IVA inclusa». L'owner confronta a colpo d'occhio con la bolletta; l'agente legge dal DB
-  il costo registrato di ogni estrazione e lo riporta.
-- **D — Sotto la UI**: `curl` con la sessione di seed A su `/api/documents/<id>` di un documento di
-  seed B → 404.
+  personale, D-2) e `BLOB_READ_WRITE_TOKEN` dello **store di sviluppo**: `vercel env pull
+  .env.vercel-dev --environment=development`, poi l'owner copia in `.env.local` la sola riga
+  `BLOB_READ_WRITE_TOKEN` e cancella `.env.vercel-dev` (i valori li digita e li copia l'owner, non
+  passano dalla chat); `isExtractionConfigured()` vero; `pnpm dev`. Esito atteso: «Carica bolletta»
+  compare nelle card della pagina «Casa» di seed A.
+- **C — Comportamento nuovo** (con l'OK dell'owner per ogni chiamata reale; effetti dichiarati prima:
+  file nello store di sviluppo, righe in `local.db`, **circa 0,30 $ a bolletta, 0,90 $ in tutto**):
+  le tre bollette campione di `Downloads\bollette-campione\` (fuori dal repo), caricate con seed A
+  dalla UI (in `local.db` seed A si può scrivere: il divieto vale solo per Playwright). Per ognuna
+  la pagina si ferma sulla stima: l'owner preme «Estrai (circa X $)» solo dopo l'OK. In revisione si
+  sceglie «Crea una nuova fornitura» nella casa di seed A (le forniture seed hanno identificativi
+  inventati e bollette che si sovrapporrebbero). Esito atteso dichiarato prima, per ciascuna: tipo
+  giusto; totale estratto = totale stampato; avvisi aritmetici assenti o di pochi centesimi; luce:
+  letture F1/F2/F3 a due date e il canone TV in «fuori bolletta»; gas: C a 7 decimali, PCS in
+  GJ/Smc, le voci del mese precedente con quel periodo e `isRecalculation`, IVA a due aliquote;
+  telefono: voce netta + IVA 22% e l'avviso «Importi stampati IVA inclusa». L'owner confronta a
+  colpo d'occhio con la bolletta; l'agente legge dal DB modello, token e costo registrati di ogni
+  estrazione e li riporta accanto alla stima.
+- **D — Sotto la UI** (scrittura su Blob dichiarata, nessuna chiamata a Claude): uno script
+  Playwright usa e getta nella cartella temporanea della sessione (mai nel repo) registra su `pnpm
+  dev` un utente di prova P (`collaudo-06-<data>@example.test`, password generata e mai stampata),
+  crea dalla UI la casa «Casa Collaudo», carica `internet-armadillo.pdf` da `/bollette/carica` e si
+  ferma sulla stima (D-42: l'estrazione resta `queued`), poi salva i cookie di P. Esito atteso
+  dichiarato prima: `curl` di `/api/documents/<id del documento di P>` con la sessione di seed A →
+  404; con quella di P → 200 e il PDF.
 - **E — Casi negativi**: un PDF di 41 pagine (generato al volo) → «La bolletta ha più di 40
-  pagine.», nessuna chiamata a Claude (costo 0 registrato).
-- **F — Giro guidato** (al via dell'owner): (1) dal telefono, sulla rete locale, «Scatta foto» di una
-  bolletta di carta qualsiasi dell'owner (resta nello store di sviluppo, cancellata in G) → la
-  revisione si legge? (2) la revisione del gas su desktop: documento e modulo affiancati? (3) «da
-  rivedere» e il badge. Non copre: l'acqua (D-21, nessuna bolletta vera), l'import multiplo (07),
-  la coda offline (09).
-- **G — Ripristino**: le bollette campione confermate si **eliminano** dalla UI (che cancella anche i
-  file dallo store di sviluppo); le estrazioni scartate restano come righe senza file;
-  `pnpm documents:prune` sullo store di sviluppo → 0 orfani. Nessun dato delle bollette vere resta
-  in `local.db` oltre alle righe delle estrazioni (costo e stato, senza risultato).
+  pagine.», nessuna chiamata a Claude: sul DB l'estrazione è `failed` con `error_code
+  'document_invalid'`, `started_at` e `cost_micro_usd` nulli; un PDF con `/Encrypt` nel trailer
+  (generato al volo) → «PDF protetto: carica le foto delle pagine.».
+- **F — Giro guidato** (al via dell'owner; D-55: il telefono non si collega al server di sviluppo):
+  (1) dal browser del computer, «Scegli PDF o foto» con la foto di una pagina di
+  `luce-pellicano.pdf` presa dallo schermo (o un PNG generato): la stima del pulsante è circa
+  0,24 $, e «Estrai» parte solo all'OK → la revisione si legge? (2) la revisione del gas su desktop:
+  documento e modulo affiancati? E con la finestra stretta sotto i 1024 px, «Apri il PDF» apre il
+  documento? (3) «Da rivedere» e il badge: le righe e le azioni sono chiare? Non copre: l'acqua
+  (D-21, nessuna bolletta vera), l'import multiplo (07), la coda offline (09), «Scatta foto» dal
+  telefono (in produzione, § 8).
+- **G — Ripristino**: le bollette campione confermate si **eliminano** dalla UI (file compresi); le
+  estrazioni non confermate si scartano; le forniture create in C con l'identificativo vero si
+  eliminano; l'utente di prova P si elimina da Impostazioni («Elimina account»: i suoi file se ne
+  vanno con lui). Poi una query su `local.db` conferma `result_json` nullo in tutte le estrazioni,
+  nessuna fornitura fuori dal seed e nessun utente P; `pnpm documents:prune` sullo store di
+  sviluppo → 0 orfani. Restano solo le righe delle estrazioni (costo e stato, senza risultato).
 
 ## 8. Messa in esercizio
 
-- DDL: `drizzle/0002_*.sql` con `pnpm db:migrate:prod` **prima** del merge.
-- Variabili: `vercel env add ANTHROPIC_API_KEY production` (l'owner, chiave personale; il
-  consiglio in SETUP.md: un limite di spesa mensile sull'organizzazione Console); 
-  `BLOB_READ_WRITE_TOKEN` è già nello store di produzione (05).
-- Misura di chiusura in produzione: dal telefono, una bolletta vera dell'owner caricata, estratta
-  (costo detto prima), confermata e riaperta dalla scheda; la bolletta resta (è un dato vero
-  dell'owner, nel suo deploy). L'isolamento in produzione non si riprova qui: le iscrizioni sono
-  chiuse, la 05 l'ha provato con l'account di collaudo e i test E2E coprono le route nuove.
+Ordine (D-41): gate verdi e collaudo § 7 in locale → commit unico e PR (stato «implementata il
+<data>, branch `feature/06-extraction`» nella riga «Stato» e nell'indice § 5) → migrazione e variabile di produzione → merge
+→ collaudo in produzione nella stessa sessione → esito in `SESSION_NOTES.md`.
+
+- DDL: `drizzle/0002_*.sql` con `pnpm db:migrate:prod` **prima** del merge (dopo la PR).
+- Variabili, prima del merge: `vercel env add ANTHROPIC_API_KEY production` (l'owner digita la
+  chiave personale; il consiglio in SETUP.md: un limite di spesa mensile sull'organizzazione
+  Console); `BLOB_READ_WRITE_TOKEN` è già nel progetto di produzione (05).
+- Merge della PR su `main` (lo fa l'owner) → deploy di produzione; l'agente controlla che il log
+  della build sia verde.
+- Misura di chiusura in produzione, dopo il merge (D-55): dal telefono, «Scatta foto» delle pagine
+  di una bolletta vera dell'owner aperta in digitale sullo schermo del computer → la stima → «Estrai
+  (circa X $)» solo all'OK dell'owner, col costo detto prima → revisione leggibile sul telefono →
+  «Conferma» → la scheda riapre le foto con «Apri»; la bolletta resta (è un dato vero dell'owner,
+  nel suo deploy). L'isolamento in produzione non si riprova qui: le iscrizioni sono chiuse, la 05
+  l'ha provato con l'account di collaudo e i test E2E coprono le route nuove.
+- Esito, gotchas e stato «in esercizio» della 06 vanno in `SESSION_NOTES.md`, che resta (non
+  tracciato) per il commit della 07: la sessione della 07 comincia scrivendoli (riga «Stato» di
+  questa spec, indice § 5, CLAUDE.md → Latest, `doc/guide/estrazione.md` o AGENTS.md § 11 se ci
+  sono lezioni).
 
 ## 9. Documentazione
 
 - **`doc/guide/estrazione.md`** (nasce qui, ≤ 400 righe): il flusso (creazione, upload, verifica,
   esecuzione, revisione, conferma, scarto), lo schema e le sentinelle, il prompt e come si
   modifica (un esempio nella forma esatta del documento che fallisce, segnaprezzi § 4.54), costi e
-  stima, errori e codici, Blob privato e cancellazioni, `documents:prune`, i fake.
-- `AGENTS.md`: § 6 Claude (stub: le regole di § 5 e il rimando alla guida); § 8 Blob (riga prima,
-  file dopo; due store); § 11 Gotchas nuove con la data.
-- `CLAUDE.md`: Latest; § Key Features (estrazione); § Data & Integrations (Anthropic, Blob); § Not
-  yet present: bollette «dual», prompt caching, acqua non provata su una bolletta vera.
+  stima (l'estrazione parte solo al clic), errori e codici, la ripresa dei caricamenti interrotti,
+  Blob privato e cancellazioni, `documents:prune`, i fake.
+- `AGENTS.md`: § 6 e § 8 esistono dalla pianificazione: si allineano al codice scritto (`signal`,
+  formato senza `parse`, clic su «Estrai», limiti dei file) senza duplicarli; § 2.1 e § 2.4 dicono
+  che `src/lib/db/maintenance/prune.ts` è l'unico SQL fuori da `repositories/` e l'unica query fra
+  utenti oltre a `reference-prices.ts`, usata solo da `documents:prune`; § 2.3 nomina già
+  `NEXT_PUBLIC_E2E_FAKE_SERVICES` fra le variabili lette in modo letterale: si verifica; § 11
+  Gotchas nuove con la data.
+- `CLAUDE.md`: Latest; § Key Features e § Data & Integrations hanno già l'estrazione, Anthropic e
+  Blob: si verifica che dicano lo stesso del codice; § Not yet present ha già bollette «dual»,
+  prompt caching e acqua non provata: si controlla che dicano lo stesso.
 - `SETUP.md`: sezione *Anthropic API key* (organizzazione propria, limite di spesa) e *Development
-  file store* (`vercel env pull`).
+  file store* (`vercel env pull .env.vercel-dev --environment=development`, copia della sola riga
+  `BLOB_READ_WRITE_TOKEN` in `.env.local`, cancellazione di `.env.vercel-dev`); in *Updating*,
+  `pnpm documents:prune -- --prod` con la terza riga facoltativa `BLOB_READ_WRITE_TOKEN` di
+  `.env.turso-prod` (il token dello store di produzione, che l'owner aggiunge solo per lanciare
+  `documents:prune -- --prod`).
 - `README.md`: § What it does (PDF e foto, revisione, file conservati), nota privacy: i file vanno
-  ad Anthropic per l'estrazione e restano nello store privato del proprio deploy.
+  ad Anthropic per l'estrazione e restano nello store privato del proprio deploy; gli screenshot di
+  `doc/screenshots/` presi nella 05 entrano in questo commit.
 - `.env.example`: le due variabili nuove.
+- Dalla 05 (D-41), all'inizio della sessione: l'esito del collaudo in produzione della 05 da
+  `SESSION_NOTES.md` (stato «in esercizio» nella riga «Stato» della 05 e nell'indice § 5,
+  CLAUDE.md → Latest, AGENTS.md § 11 e `doc/guide/deploy.md` se SESSION_NOTES.md riporta lezioni)
+  entra in questo commit.
 
 ## 10. Fuori ambito, dichiarato
 
@@ -937,25 +1232,37 @@ Modello: Claude Opus 5.5, effort high. Taglia: **L** (due servizi esterni, schem
 ```
 Ciao, in questa sessione implemento la spec doc/v1/06-caricamento-su-blob-ed-estrazione-con-claude.md.
 
-Contesto, prima di toccare qualsiasi file:
+Prima di tutto (`git branch --show-current` deve dire main, aggiornato con `git pull` dopo il
+merge della 05): scrivi l'esito del collaudo in produzione della spec precedente da
+SESSION_NOTES.md (stato «in esercizio» nella sua riga Stato e nell'indice § 5, CLAUDE.md →
+Latest, AGENTS.md § 11 e doc/guide/deploy.md se SESSION_NOTES.md riporta lezioni), poi crea il
+branch feature/06-extraction.
+
+Contesto, prima di toccare qualsiasi altro file:
 - Leggi WORKFLOW.md (regole di sessione e collaudo; § 3 dice come si applicano qui)
-- Leggi AGENTS.md (CLAUDE.md è già nel contesto), DESIGN.md, doc/guide/calcoli.md, doc/guide/app.md
+- Leggi AGENTS.md (CLAUDE.md è già nel contesto), DESIGN.md, doc/guide/calcoli.md,
+  doc/guide/app.md, doc/guide/deploy.md
 - Leggi COMMENTS.md e DEVELOPMENT_GUIDELINES.md
 - Carica la skill claude-api PRIMA di scrivere anthropic-extractor.ts e usa solo le forme che
-  documenta o che la spec cita dai tipi dell'SDK 1.3.0
+  documenta o che la spec cita dall'SDK (formato senza `parse`, `signal`)
 - Leggi doc/v1/00-INDICE.md per intero e poi la spec 06 INTERA
-- Controlla con un grep che i contratti C-1…C-14 e C-18 esistano con i nomi e le firme dell'indice
+- Controlla con un grep che i contratti C-1…C-14, C-18, C-21…C-24 esistano con i nomi e le firme
+  dell'indice
 
-Prima della prima modifica: `git branch --show-current` deve dire main; crea
-feature/06-extraction. Crea SESSION_NOTES.md.
+SESSION_NOTES.md esiste già (dalla 05): dopo averne travasato l'esito, lo riusi per questa sessione.
 
 Implementa la spec 06 esattamente come scritta: § 4 è la soluzione, § 6 i test con le mutazioni
-che li provano portanti, § 7 il collaudo (fase per fase, esito atteso prima; ogni chiamata reale a
-Claude parte solo al mio OK, con il costo detto prima), § 9 la documentazione. Non decidere nulla
-che la spec ha già deciso; se trovi un punto che la spec non copre, fermati e chiedimelo con
+che li provano portanti, § 7 il collaudo in locale (fase per fase, esito atteso prima; ogni
+chiamata reale a Claude parte solo al mio OK sul pulsante «Estrai», con il costo detto prima), § 8
+la messa in esercizio (migrazione di produzione prima del merge, ANTHROPIC_API_KEY su Vercel
+digitata da me, misura di chiusura dal telefono dopo il merge), § 9 la documentazione. Non decidere
+nulla che la spec ha già deciso; se trovi un punto che la spec non copre, fermati e chiedimelo con
 AskUserQuestion. Le etichette della serie non entrano nel codice. Le bollette vere non entrano mai
 nel repo.
 
-Alla fine: riassumi il diff, scrivi lo stato nella riga «Stato» della spec e in § 5
-dell'indice, aggiorna CLAUDE.md → Latest, poi chiedimi l'OK per il commit (uno solo).
+Ordine della chiusura: riassumi il diff; scrivi lo stato «implementata il <data>, branch `feature/06-extraction`» nella riga
+«Stato» della spec e in § 5 dell'indice, aggiorna CLAUDE.md → Latest; chiedimi l'OK per il commit
+(uno solo) e apri la PR; migrazione e variabile di produzione; merge (lo faccio io); collaudo in
+produzione con me; esito, gotchas e stato «in esercizio» in SESSION_NOTES.md, che resta (non
+tracciato) per la sessione della 07.
 ```
