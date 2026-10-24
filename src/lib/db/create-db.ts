@@ -39,7 +39,9 @@ export async function prepareLocalDatabase(client: Client, url: string): Promise
   // workers get SQLITE_BUSY; WAL lets readers and a writer proceed together. It is a property of
   // the file, so one connection is enough.
   await client.execute('PRAGMA journal_mode = WAL');
-  // Pooled connections already open with foreign keys on; this keeps the guarantee from hanging
-  // only on that driver default, and create-db.test.ts reads it on several connections at once.
+  // Pooled connections already open with foreign keys on (the driver's default since 0.18.0); this
+  // PRAGMA reaches only the one connection that runs it, so it is not what keeps the others on.
+  // The guard is create-db.test.ts, which reads the setting on several connections at once and
+  // goes red if a driver upgrade ever opens them with foreign keys off.
   await client.execute('PRAGMA foreign_keys = ON');
 }

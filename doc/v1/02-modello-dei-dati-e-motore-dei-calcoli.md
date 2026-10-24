@@ -2,7 +2,7 @@
 
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 24 rilievi, 5 decisioni
 > (D-43, D-44, D-46, D-47, D-48). Pronta per l'implementazione.
-> **Branch**: `feature/02-data-engine` da `main`. **Dipende da**: 01 (in esercizio).
+> **Branch**: `feature/02-data-engine` da `main`. **Dipende da**: 01 (ritirata il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-3, D-5, D-6, D-22…D-27, D-29, D-31, D-43,
 > D-44, D-46, D-47, D-48; scelte T-7, T-9, T-10, T-11, T-12, T-13, T-28, T-30, T-33, T-34; contratti
 > C-2 (tabelle dell'app), C-6, C-7, C-8, C-9, C-10, C-11 (con `SupplyMonth.hasCommodityBands`), C-12,
@@ -30,7 +30,7 @@
    conguagli **per competenza** (D-23), consumi dal fatturato con le fasce dalle letture (D-25),
    ripartizione **uniforme per giorno** (D-27), materia prima **senza IVA** e totale **con IVA**
    (D-26), fotovoltaico con immessa e produzione (D-29).
-4. Le foreign key sono spente su Turso remoto (01 § 1.5, T-34): ogni cancellazione deve essere
+4. Le foreign key sono spente su Turso remoto (AGENTS.md § 2.6, T-34): ogni cancellazione deve essere
    esplicita.
 
 ## 2. Obiettivo e criteri di accettazione
@@ -1488,9 +1488,8 @@ Contesto, prima di toccare qualsiasi file:
   `createTestDb`, `createTestUser`; C-5 `DomainError(code, message?, details?)`; C-21
   `SEED_USERS`, `seedDatabase(db)`) esistano con quei nomi e quelle firme
 
-Prima di tutto (su `main` aggiornato con `git pull`): scrivi lo stato «in esercizio il <data>,
-PR #N» della spec 01 nella sua riga «Stato» e in § 5 dell'indice (PR mergiata e collaudo
-annotato in CLAUDE.md: regola 5 dell'indice); entra nel commit di questa sessione.
+Prima di tutto: `git pull` su `main`; la 01 è ritirata (2026-10-24, stato in § 5 dell'indice e in
+CLAUDE.md → Latest), quindi non c'è uno stato da scrivere per lei.
 
 Prima della prima modifica: `git branch --show-current` deve dire main; crea
 feature/02-data-engine. Crea SESSION_NOTES.md.

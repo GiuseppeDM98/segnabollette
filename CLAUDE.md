@@ -29,11 +29,12 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: spec 01 implemented on `feature/01-scaffold-auth` — scaffold, database,
-  Better Auth with closable signup, test harness; guided verification done and closed (owner's
-  adjustments in the spec's Stato line, measures in AGENTS.md § 11). **Next**: PR and merge of 01,
-  then its retirement with `doc/v1/PROMPT-RITIRO.md` (branch `docs/v1-ritiro-01`), then spec 02.
-  Still open: none.
+- **Latest (2026-10-24)**: spec 01 (scaffold, database, access, test harness) in service with PR #3
+  and retired on `docs/v1-ritiro-01` (text in `git log -- doc/v1/01-scaffold-database-e-accesso.md`).
+  The retirement fixed code — the sign-in return to `next` now has a load-bearing E2E, the
+  repository scope guard sees typed and wrapped exports, Biome's preset — so the guided
+  verification of 01 counts for the code before; spec 05 redoes its closing measures in production.
+  **Next**: spec 02. Still open: none.
 
 ## Architecture Snapshot (database, access and test harness exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
@@ -55,7 +56,7 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   calendar days as `YYYY-MM-DD`.
 
 ## Key Features (planned; each line becomes real with its spec)
-- **Access** (01, exists): Better Auth email + password, `SIGNUP_ENABLED` closed by default,
+- **Access** (exists since 2026-10-24): Better Auth email + password, `SIGNUP_ENABLED` closed by default,
   per-user isolation guarded by a test.
 - **Data model and engine** (02): bills by competence (recalculations land in their month), bands
   from the bill's readings, two unit prices, readings after the last bill, photovoltaic
@@ -92,7 +93,7 @@ None.
 ## Not yet present (do not assume it exists)
 - App tables: born in spec 02.
 - DESIGN.md and PRODUCT.md: born in spec 03 with the impeccable skill, never hand-written after.
-- SETUP.md: born in spec 05. `Draft Release Temp.md`: born at the first session end.
+- SETUP.md: born in spec 05.
 - `doc/guide/*`: each guide is born with its spec (calcoli 02, app 03, deploy 05, estrazione 06,
   riferimenti 08, pwa 09).
 - Password reset and email verification: no outbound email.
