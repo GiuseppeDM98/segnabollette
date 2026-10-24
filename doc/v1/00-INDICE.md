@@ -11,8 +11,8 @@
 > `claude-config/prompts/07_LETTURA_ADVERSARIALE_SPEC.md` (un lettore per spec e uno trasversale):
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
-> `08_CREA_RITIRO_SPEC.md`). **La 01 è in esercizio (PR #3) e ritirata il 2026-10-24; la 02 è
-> implementata il 2026-10-24**; prossimo passo: PR e merge della 02, poi la 03.
+> `08_CREA_RITIRO_SPEC.md`). **La 01 (PR #3) e la 02 (PR #5) sono in esercizio e
+> ritirate il 2026-10-24**; prossimo passo: la 03.
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -286,8 +286,8 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | Spec | Titolo | Branch | Dipende da | Stato |
 |---|---|---|---|---|
 | 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | in esercizio il 2026-10-24, PR #3; ritirata il 2026-10-24 |
-| 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | implementata il 2026-10-24, branch `feature/02-data-engine` |
-| 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 | scritta 2026-10-24; riletta 2026-10-24 |
+| 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #5; ritirata il 2026-10-24 |
+| 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | scritta 2026-10-24; riletta 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 | scritta 2026-10-24; riletta 2026-10-24 |
 | 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 | scritta 2026-10-24; riletta 2026-10-24 |
 | 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -300,8 +300,7 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01 è ritirata (2026-10-24); la 02 è implementata (2026-10-24): dopo il merge, la prossima da
-incollare è il prompt in fondo alla 03.
+La 01 e la 02 sono ritirate (2026-10-24): la prossima da incollare è il prompt in fondo alla 03.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 
@@ -317,8 +316,8 @@ incollare è il prompt in fondo alla 03.
 | C-8 | Denaro e formati: `allocateCentsByWeights(amountCents, weights)`, `unitPriceMicros(cents, quantity)`, `centsFromEuro(euro)`, `microsFromEuro(euro)` (`src/lib/domain/money.ts`); `formatEuro`, `formatUnitPrice`, `formatQuantity`, `formatDate`, `formatMonth`, `parseDecimalInput` (`src/lib/format.ts`; la 03 aggiunge `CATEGORY_LABELS`, `COMPONENT_LABELS`, `KIND_LABELS`, `REGISTER_LABELS`, `IDENTIFIER_HINTS`, `formatDecimalInput(value, maxFractionDigits)`; la 04 `formatEuroValue(euro)`, `formatUnitPriceValue(euroPerUnit, unit)`; la 06 `formatUsd(microUsd)`) | vedi colonna | 02 | 03+ |
 | C-9 | `BillInputSchema` (zod) → `BillInput` con `BillLineInput`, `BillReadingInput`; `SelfReadingInputSchema` → `SelfReadingInput` | `src/lib/domain/bill-input.ts` | 02 | 03, 06, 07 |
 | C-10 | Controlli puri: `checkBillArithmetic(input): ArithmeticReport`, `arithmeticTolerance(lineCount)`, `findOverlappingBills(bill, existing): ExistingBillPeriod[]` | `src/lib/domain/bill-checks.ts` | 02 | 03, 06 |
-| C-11 | Motore: `buildSupplyMonths(input: SupplyMonthsInput): SupplyMonth[]`, `buildHouseMonths(supplies): HouseMonth[]`, `yearOverYear(months, month)`, `rolling12(months, endMonth)`, `bandSharesOfBill(bill)`, `pickReadings(readings)`, `dailyFromReadings(readings, register)`; `SupplyMonth` con `totalCents` al netto dell'energia ceduta (D-43) e `hasCommodityBands` (D-44) | `src/lib/engine/*.ts` (un file per funzione principale, § 4 della 02) | 02 | 03, 04, 08 |
-| C-12 | Repository `(db, userId, …)`: `houses.ts`, `supplies.ts`, `bills.ts`, `readings.ts` (02), `documents.ts`, `extractions.ts` (06); `reference-prices.ts` (08, globale: senza `userId`, l'unica eccezione) | `src/lib/db/repositories/*` | 02, 06, 08 | servizi |
+| C-11 | Motore: `buildSupplyMonths(input: SupplyMonthsInput): SupplyMonth[]`, `buildHouseMonths(supplies): HouseMonth[]`, `yearOverYear(months, month)`, `rolling12(months, endMonth)`, `bandSharesOfBill(bill)`, `pickReadings(readings)`, `dailyFromReadings(readings, register)`; `SupplyMonth` con `totalCents` al netto dell'energia ceduta (D-43) e `hasCommodityBands` (D-44) | `src/lib/engine/*.ts` (un file per funzione principale; guida `doc/guide/calcoli.md`) | 02 | 03, 04, 08 |
+| C-12 | Repository `(db, userId, …)`: `houses.ts`, `supplies.ts`, `bills.ts`, `readings.ts` (02; `readings.ts` ha anche `listBillReadings(db, userId, billId)`, per giorno e registro, che usa `getBillDetail`), `documents.ts`, `extractions.ts` (06); `reference-prices.ts` (08, globale: senza `userId`, l'unica eccezione) | `src/lib/db/repositories/*` | 02, 06, 08 | servizi |
 | C-13 | Servizi: `createHouse`, `renameHouse`, `deleteHouse`, `createSupply`, `updateSupply`, `archiveSupply`, `deleteSupply` (`houses-supplies.ts`; la 03 aggiunge `listHousesWithSupplies`, `getSupplyDetail`, `getDeletionSummary`); `confirmBill(db, userId, input, options)`, `deleteBill`, `getBillDetail`, `listBills` (`bills.ts`; la 03 aggiunge `listLatestBills` e la pura `billInputFromDetail(detail)`); `createSelfReadings(db, userId, rawInput, { today })`, `deleteReading`, `listReadings` (`readings.ts`; la 03 aggiunge `suggestedRegisters(db, userId, supplyId)` e `latestReadings(db, userId, supplyId)`; la 09 rende `createSelfReadings` idempotente senza cambiarne la firma); `assertInputFitsSupply(supply, input)` (pura, in `bills.ts`); `getSupplyDashboard`, `getHouseDashboard`, `DashboardRange`, `SupplyDashboard`, `HouseDashboard` (`dashboard.ts`, 04; la 08 aggiunge a `SupplyDashboard` `references: ReferenceLine[]` e `latestCalorificValueGj: number \| null`). `deleteBill`, `deleteSupply`, `deleteHouse` restituiscono `{ documentPathnames }` (vuoto fino alla 06, che lo riempie) | `src/lib/services/*` | 02 (03 e 04 aggiungono, 08 e 09 estendono) | 03+ |
 | C-14 | `BillForm` (componente client) con `supply`, `initialValue: BillInput`, `overlaps?: ExistingBillPeriod[]`, `submitLabel`, `blankAmounts?: boolean` (bolletta nuova a mano, D-51), `onSubmit(input): Promise<ActionResult<{ billId; nextPath? }>>` (dopo il salvataggio il modulo va a `nextPath`, altrimenti a `/bollette/<billId>`); `LineTemplate`, `lineTemplateFor(kind, hasPhotovoltaic)` ed `emptyBillInput(supply: { id; kind; supplierName; hasPhotovoltaic }, today)` (in `line-templates.ts`, modulo puro); `BillDraft`, `FieldErrors`, `draftFromInput(input, options?: { blankAmounts?: boolean })`, `inputFromDraft(draft)` | `src/components/bills/bill-form.tsx`, `line-templates.ts`, `bill-draft.ts` | 03 | 06, 07 |
 | C-15 | Grafici: `src/components/charts/recharts.ts` (unico import di Recharts), `ConsumptionChart`, `UnitPriceChart` (prop `references?: ReferenceLine[]`), `CostsChart`, `YearOverYearChart`, `KpiTile`; il tipo `ReferenceLine` e le serie in `src/lib/charts/series.ts` | `src/components/charts/*`, `src/lib/charts/series.ts` | 04 | 08 |

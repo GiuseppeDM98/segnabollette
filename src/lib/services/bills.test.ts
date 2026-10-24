@@ -104,6 +104,61 @@ describe('confirmBill', () => {
     expect(await billRow(db, newId)).toBeUndefined();
   });
 
+  it('deletes a bill together with its lines and the readings it printed', async () => {
+    // Arrange
+    const { db, userId, supplyId } = await setup();
+    const { billId } = await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, {
+        readings: [
+          { readOn: '2026-08-31', register: 'single', value: 1000, source: 'bill_actual' },
+          { readOn: '2026-09-30', register: 'single', value: 1200, source: 'bill_actual' },
+        ],
+      }),
+      MANUAL,
+    );
+
+    // Act
+    await deleteBill(db, userId, billId);
+
+    // Assert
+    expect(await billRow(db, billId)).toBeUndefined();
+    expect(await db.select().from(billLines).where(eq(billLines.billId, billId))).toEqual([]);
+    expect(await db.select().from(meterReadings).where(eq(meterReadings.billId, billId))).toEqual(
+      [],
+    );
+  });
+
+  it('returns the readings of a bill by day, then register', async () => {
+    // Arrange: entered out of order on purpose
+    const { db, userId, supplyId } = await setup();
+    const { billId } = await confirmBill(
+      db,
+      userId,
+      billInput(supplyId, {
+        readings: [
+          { readOn: '2026-09-30', register: 'F2', value: 160, source: 'bill_actual' },
+          { readOn: '2026-08-31', register: 'F2', value: 100, source: 'bill_actual' },
+          { readOn: '2026-09-30', register: 'F1', value: 180, source: 'bill_actual' },
+          { readOn: '2026-08-31', register: 'F1', value: 100, source: 'bill_actual' },
+        ],
+      }),
+      MANUAL,
+    );
+
+    // Act
+    const { readings } = await getBillDetail(db, userId, billId);
+
+    // Assert
+    expect(readings.map((reading) => [reading.readOn, reading.register])).toEqual([
+      ['2026-08-31', 'F1'],
+      ['2026-08-31', 'F2'],
+      ['2026-09-30', 'F1'],
+      ['2026-09-30', 'F2'],
+    ]);
+  });
+
   it('replaces the lines and readings of an edited bill', async () => {
     // Arrange
     const { db, userId, supplyId } = await setup();
