@@ -4,13 +4,17 @@
  */
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { SEED_A_STATE, seedIds } from './helpers';
+import { SEED_A_STATE, seedIds, seedSupplyIds } from './helpers';
 
 const THEMES = ['light', 'dark'] as const;
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 async function expectNoViolations(page: Page, path: string) {
   await page.goto(path);
+  // The charts' data tables sit in closed <details>: open them so axe checks the tables too.
+  await page.locator('details').evaluateAll((elements) => {
+    for (const element of elements) (element as HTMLDetailsElement).open = true;
+  });
   const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   expect(
     violations.map((violation) => `${violation.id}: ${violation.nodes.length}`),
@@ -29,10 +33,13 @@ for (const theme of THEMES) {
 
       test('le pagine dell’app', async ({ page }) => {
         const { supplyId, billId } = await seedIds('seed-a@example.test');
+        const supplies = await seedSupplyIds('seed-a@example.test');
         for (const path of [
           '/',
           '/forniture',
           `/forniture/${supplyId}`,
+          `/forniture/${supplies.Acqua}`,
+          `/forniture/${supplies.Internet}`,
           '/bollette',
           '/bollette/nuova',
           `/bollette/nuova?fornitura=${supplyId}`,

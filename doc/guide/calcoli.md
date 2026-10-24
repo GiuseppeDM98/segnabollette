@@ -207,3 +207,28 @@ and two bills. The first electricity bill is estimated and the second re-bills i
 recalculation pair, so the oldest month ends up actual. The «Canone TV» (900 cents, `outside`)
 is on the electricity bills from January to October, the ten instalments of the real fee.
 Nothing is dated after the day of the seed.
+
+## 13. The dashboard windows (`src/lib/services/dashboard.ts`)
+
+- **Series**: each supply is built once by `buildSupplyMonths`, from the earlier of the shown range's
+  start and 23 months before its **oldest month** (the oldest `periodStart` of a confirmed bill's
+  line or `readOn` of a reading, never later than the current month: bill dates are free, and a
+  bill dated in the future must not empty «Tutto») up to the current month. The range (12 or 24
+  months ending this month, or everything from the oldest month) is a slice of it, so changing
+  the range never changes the tiles.
+- **Last billed month** of a supply: the latest month with `billedDays` ≥ half its days (a bill
+  that touches a month by a few days does not make it the reference). The year-over-year chart and
+  the supply's «Ultimi 12 mesi» tiles use the 24 months ending there (or this month without one);
+  `rolling12` compares the 12 with the 12 before, and the change is shown only when **both** have
+  12 months with bills (`isComparable`), otherwise «—» (the first year of data).
+- **House window**: it ends at the **oldest** of the last billed months of the non-archived
+  supplies, so every active supply is billed in the whole window (a water bill every quarter does
+  not make the house look cheaper than its monthly bills); no such month → no window, tiles «—».
+  `last12`/`previous12` sum `totalCents` of every supply, archived ones included (real spending);
+  the change is shown when each of the 24 months has billed days in at least one supply.
+- **Monthly average** of the house: `last12` ÷ the months of its window with billed days in at
+  least one supply, rounded. Invented example: electricity 1000 cents a month billed from 9 months
+  ago to last month, water 3000 cents a quarter from 11 months ago to 3 months ago → the window ends
+  3 months ago, `last12` = 7 × 1000 + 3 × 3000 = 16000, average 16000 ÷ 9 = 1778.
+- Every total is **net of the fed-in credit** (`totalCents`, § 8): house spending, tiles, the sum
+  of the categories and the «Totale» of the cost chart.

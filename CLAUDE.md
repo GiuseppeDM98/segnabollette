@@ -29,14 +29,12 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: spec 03 (design, houses and supplies, manual entry, self-readings,
-  settings) in service with PR #7 and retired on 2026-10-24. The retirement changed the bill form
-  («Consumi stimati» on every kind, band order) and added tests: the guided verification holds for
-  the code before it, and on the new code the signals are redone after the deploy (spec 05).
-  Documented in `doc/guide/app.md`, DESIGN.md and PRODUCT.md. **Next**: spec 04 (dashboard).
+- **Latest (2026-10-24)**: spec 04 (dashboard and charts) implemented on `feature/04-dashboard`,
+  guided verification done and closed with nothing open. Documented in `doc/guide/app.md` § 9 and
+  `doc/guide/calcoli.md` § 13. **Next**: merge the PR, retire spec 04, then spec 05 (production).
   Still open: none.
 
-## Architecture Snapshot (database, access, test harness, data model, engine and the manual-entry UI exist; the rest as specified)
+## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI and the dashboard exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
   `src/lib/db/create-db.ts` (`createDb`, `prepareLocalDatabase`) + `client.ts` (server singleton),
   `schema/auth.ts` (Better Auth tables) and `schema/app.ts` (app tables), migrations in `drizzle/`;
@@ -57,6 +55,11 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   string draft of `bill-draft.ts` and the templates of `line-templates.ts`);
   `src/components/readings/self-reading-form.tsx`; primitives in `src/components/ui/*`; icons in
   `src/components/icons/*`; tokens in `src/app/globals.css`; logo `public/brand/logo.svg`.
+- **Dashboard** (exists): `src/lib/services/dashboard.ts` (`getSupplyDashboard`,
+  `getHouseDashboard`), pure chart points in `src/lib/charts/series.ts` (euros and €/unit, the
+  `ReferenceLine` type), charts in `src/components/charts/*` (`recharts.ts` the only Recharts
+  import, `ChartFrame` with its «Vedi i dati» table, `ConsumptionChart`, `UnitPriceChart`,
+  `CostsChart`, `YearOverYearChart`, `KpiTile`, `PeriodSelector`) on `/` and `/forniture/[id]`.
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →
   `src/lib/db/repositories` (Drizzle only, `(db, userId, …)`); pure `src/lib/domain` (types, dates,
   money, bill input and checks) and `src/lib/engine` (monthly series). Gateways:
@@ -78,8 +81,11 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   with the review; new bills start with empty amounts), overlaps that add or replace, self-readings
   with banded registers and a warning on a lower value, settings with theme and account deletion. →
   `doc/guide/app.md`.
-- **Dashboard** (04): consumption per month, unit price over time, costs by category, year over
-  year (Recharts).
+- **Dashboard** (exists since 2026-10-24): four Recharts charts per supply — consumption per month
+  (bands, estimated months, readings not yet billed, photovoltaic), unit price (commodity and
+  total), costs by category (fed-in credit below zero), year over year with the 12-month tiles —
+  and on «Casa» the house costs, two tiles and the last billed month on each card; 12 / 24 months /
+  everything, a data table under every chart. → `doc/guide/app.md` § 9, `doc/guide/calcoli.md` § 13.
 - **Production** (05): Vercel, Turso, two private Blob stores, SETUP.md. → `doc/guide/deploy.md`.
 - **Extraction** (06): PDF or up to 10 photos to private Blob, Claude Opus 5.5, review and confirm,
   files reopened from the bill, cost recorded. → `doc/guide/estrazione.md`.
@@ -121,7 +127,7 @@ None.
   "cliente tipo"; per-month calorific value; any water reference (no national series).
 - Push notifications, dashboard offline, Web Share Target, app badge.
 - Data export, duplicating a bill as next month's template, drag-and-drop line ordering.
-- Daily charts, zoom, forecasts of the next bill.
+- Daily charts, zoom, comparisons between supplies of different houses, forecasts of the next bill.
 - Custom domain, backups beyond Turso's free 1-day restore, alerting.
 - Out of scope for v1 (owner's decision): guided supplier switching or offer comparison, home
   automation and automatic smart-meter readings, sharing between users, paying bills, any change to

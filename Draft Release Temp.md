@@ -6,7 +6,8 @@
 
 **Casa**
 
-- Added the home page: for each supply of the house, its latest bill with period and total, and one-tap buttons for a new bill or a meter reading. With more than one house, a selector picks which one to show.
+- Added the home page: the house's spending over its last 12 billed months with the monthly average, a chart of costs by category for the whole house, then for each supply its latest bill, its last billed month («set 2026 · 200 kWh · 0,2365 €/kWh») and one-tap buttons for a new bill or a meter reading. With more than one house, a selector picks which one to show.
+- Added the period choice for the charts: 12 months, 24 months or everything, kept when you switch house.
 
 **Bollette**
 
@@ -21,6 +22,9 @@
 **Forniture**
 
 - Added houses and supplies: electricity, gas, water, internet and phone, TARI, with the POD/PDR code tidied up when saved (spaces and dashes removed, letters in capitals) and solar panels for electricity. Supplies can be archived, and deleting a house first tells you how many supplies, bills and readings go with it.
+- Added charts on each supply's page: consumption per month by band (estimated months hatched, readings not yet billed striped, solar self-consumption and energy fed into the grid), unit price for energy alone and all-in, costs by category with the fed-in credit below zero, and this year against the year before. Flat fees show costs and year over year only.
+- Added the 12-month tiles: consumption and spending of the last 12 billed months, with the change against the 12 before («+10,0 % sui 12 mesi precedenti») only when both years have a bill every month.
+- Added «Vedi i dati» under every chart: the same figures as a table, readable with a screen reader and on narrow screens.
 
 **Impostazioni**
 

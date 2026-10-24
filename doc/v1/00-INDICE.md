@@ -214,6 +214,9 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | D-62 | (2026-10-24, in implementazione) **Canone TV del seed** nelle bollette della luce **da gennaio a ottobre** (le dieci rate reali), non nella sola bolletta di gennaio. | 02 |
 | D-63 | (2026-10-24, in implementazione) **Locale italiano di zod** (`z.config(z.locales.it())` in `bill-input.ts`): anche i messaggi di default dei `VALIDATION` sono in italiano. | 02 |
 | D-64 | (2026-10-24, in implementazione) **Testi dei `VALIDATION`** non scritti nella spec: «Il nome della casa deve avere da 1 a 60 caratteri.», «Il nome della fornitura deve avere da 1 a 60 caratteri.», «Il fotovoltaico vale solo per la luce.», «Una fornitura a canone non ha letture.», «Una fornitura a canone non ha consumi: togli kWh, Smc e m³ dalle voci.», «Serve almeno una voce della materia prima in kWh.» (Smc, m³), «Le voci della materia prima vanno in kWh.» (Smc, m³), «Una lettura usa un registro che questa fornitura non ha.», «Coefficiente C e potere calorifico valgono solo per il gas.». | 02 |
+| D-65 | (2026-10-24, in implementazione) La **variazione dei riquadri** si formatta con `formatPercentChange(change)` in `src/lib/format.ts` (segno, una cifra decimale, «−» tipografico), come vuole AGENTS.md § 2.5; il riquadro scrive «+10,0 % sui 12 mesi precedenti» (o «— sui 12 mesi precedenti»). | 04 |
+| D-66 | (2026-10-24, in implementazione) **Etichette dei consumi**: la serie senza fasce è «Fascia unica» per la luce e «Consumo» per gas e acqua; il fotovoltaico «Autoconsumo» e «Immessa in rete». | 04 |
+| D-67 | (2026-10-24, in implementazione) Il **mese più vecchio** dei dati di una fornitura non va oltre il mese corrente: una bolletta con date future non svuota «Tutto». | 04 |
 
 ### 3.5 Riferimenti di mercato (2026-10-24)
 
@@ -288,7 +291,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | 01 | Scaffold, database e accesso | `feature/01-scaffold-auth` | — | in esercizio il 2026-10-24, PR #3; ritirata il 2026-10-24 |
 | 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #5; ritirata il 2026-10-24 |
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #7; ritirata il 2026-10-24 |
-| 04 | Dashboard e grafici | `feature/04-dashboard` | 03 (ritirata il 2026-10-24) | scritta 2026-10-24; riletta 2026-10-24 |
+| 04 | Dashboard e grafici | `feature/04-dashboard` | 03 (ritirata il 2026-10-24) | implementata il 2026-10-24 (D-65…D-67), collaudo chiuso il 2026-10-24; in esercizio con il merge della PR |
 | 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 | scritta 2026-10-24; riletta 2026-10-24 |
 | 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 | scritta 2026-10-24; riletta 2026-10-24 |
 | 07 | Import multiplo | `feature/07-bulk-import` | 06 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -300,8 +303,8 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01, la 02 e la 03 sono ritirate (2026-10-24): la prossima da incollare è il prompt in fondo alla
-04.
+La 01, la 02 e la 03 sono ritirate (2026-10-24); la 04 è implementata (2026-10-24): dopo il merge
+della sua PR si ritira con `PROMPT-RITIRO.md`, poi si incolla il prompt in fondo alla 05.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 
@@ -314,7 +317,7 @@ La 01, la 02 e la 03 sono ritirate (2026-10-24): la prossima da incollare è il 
 | C-5 | `DomainError(code, message?, details?)`, `DomainErrorCode` (`UNAUTHORIZED`, `NOT_FOUND`, `VALIDATION`, `OVERLAP_DECISION_REQUIRED`, `DUPLICATE_IDENTIFIER`; la 06 aggiunge `DUPLICATE_DOCUMENT`, `DOCUMENT_INVALID`, `EXTRACTION_UNAVAILABLE`, `EXTRACTION_BUSY`), `ERROR_MESSAGES: Record<DomainErrorCode, string>` (italiano), `ActionResult<T>` (il ramo d'errore porta `code`, `message`, `details?`; `details` di un `VALIDATION` è sempre `string[]`), `toActionResult(fn)` | `src/lib/errors.ts` | 01 | tutte |
 | C-6 | Tipi di dominio: `SupplyKind`, `METERED_KINDS`, `isMetered(kind)`, `consumptionUnitOf(kind)`, `readingUnitOf(kind)`, `allowedRegisters(kind, hasPhotovoltaic)`, `CostCategory`, `COST_CATEGORIES`, `BillSource`, `LineCategory`, `LineComponent`, `QuantityUnit`, `Band`, `ReadingRegister`, `ReadingSource`, `BillStatus`, `IsoDate`, `MonthKey`, `normalizeSupplyIdentifier(raw)` | `src/lib/domain/types.ts` | 02 | 03+ |
 | C-7 | Date: `parseIsoDate`, `isIsoDate`, `addDays`, `daysBetween`, `daysInclusive`, `monthKeyOf`, `monthRange`, `monthStart`, `monthEnd`, `daysInMonth`, `shiftMonth`, `eachMonthOverlap(start, end)`, `romeToday(nowMs)` | `src/lib/domain/dates.ts` | 02 | 03+ |
-| C-8 | Denaro e formati: `allocateCentsByWeights(amountCents, weights)`, `unitPriceMicros(cents, quantity)`, `centsFromEuro(euro)`, `microsFromEuro(euro)` (`src/lib/domain/money.ts`); `formatEuro`, `formatUnitPrice`, `formatQuantity`, `formatDate`, `formatMonth`, `parseDecimalInput` (`src/lib/format.ts`; la 03 aggiunge `CATEGORY_LABELS`, `COMPONENT_LABELS`, `KIND_LABELS`, `REGISTER_LABELS`, `IDENTIFIER_HINTS`, `UNIT_LABELS`, `formatDecimalInput(value, maxFractionDigits)`, `formatLinePrice(micros, unit)`, `formatSupplyLabel(label, houseName, houseCount)` («Luce · Casa …» con più case); la 04 `formatEuroValue(euro)`, `formatUnitPriceValue(euroPerUnit, unit)`; la 06 `formatUsd(microUsd)`) | vedi colonna | 02 | 03+ |
+| C-8 | Denaro e formati: `allocateCentsByWeights(amountCents, weights)`, `unitPriceMicros(cents, quantity)`, `centsFromEuro(euro)`, `microsFromEuro(euro)` (`src/lib/domain/money.ts`); `formatEuro`, `formatUnitPrice`, `formatQuantity`, `formatDate`, `formatMonth`, `parseDecimalInput` (`src/lib/format.ts`; la 03 aggiunge `CATEGORY_LABELS`, `COMPONENT_LABELS`, `KIND_LABELS`, `REGISTER_LABELS`, `IDENTIFIER_HINTS`, `UNIT_LABELS`, `formatDecimalInput(value, maxFractionDigits)`, `formatLinePrice(micros, unit)`, `formatSupplyLabel(label, houseName, houseCount)` («Luce · Casa …» con più case); la 04 `formatEuroValue(euro)`, `formatUnitPriceValue(euroPerUnit, unit)` e — decisione dell'owner in implementazione, 2026-10-24 — `formatPercentChange(change)` («+10,0 %», «−4,5 %»); la 06 `formatUsd(microUsd)`) | vedi colonna | 02 | 03+ |
 | C-9 | `BillInputSchema` (zod) → `BillInput` con `BillLineInput`, `BillReadingInput`; `SelfReadingInputSchema` → `SelfReadingInput` | `src/lib/domain/bill-input.ts` | 02 | 03, 06, 07 |
 | C-10 | Controlli puri: `checkBillArithmetic(input): ArithmeticReport`, `arithmeticTolerance(lineCount)`, `findOverlappingBills(bill, existing): ExistingBillPeriod[]` | `src/lib/domain/bill-checks.ts` | 02 | 03, 06 |
 | C-11 | Motore: `buildSupplyMonths(input: SupplyMonthsInput): SupplyMonth[]`, `buildHouseMonths(supplies): HouseMonth[]`, `yearOverYear(months, month)`, `rolling12(months, endMonth)`, `bandSharesOfBill(bill)`, `pickReadings(readings)`, `dailyFromReadings(readings, register)`; `SupplyMonth` con `totalCents` al netto dell'energia ceduta (D-43) e `hasCommodityBands` (D-44) | `src/lib/engine/*.ts` (un file per funzione principale; guida `doc/guide/calcoli.md`) | 02 | 03, 04, 08 |

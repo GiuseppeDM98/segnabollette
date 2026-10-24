@@ -1,7 +1,9 @@
 # 04 — Dashboard e grafici
 
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 20 rilievi, 4 decisioni
-> (D-43, D-52, D-53, D-54). Pronta per l'implementazione.
+> (D-43, D-52, D-53, D-54). Implementata il 2026-10-24 sul branch `feature/04-dashboard`, con tre
+> decisioni dell'owner in implementazione (D-65, D-66, D-67); collaudo guidato fatto e chiuso il
+> 2026-10-24, nessun rilievo aperto. In esercizio dopo il merge della PR.
 > **Branch**: `feature/04-dashboard` da `main`. **Dipende da**: 03 (ritirata il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-22, D-23, D-25, D-26, D-29, D-30, D-31,
 > D-36, D-43, D-52, D-53, D-54; scelte T-1 (recharts), T-29, T-30 (avviso del coefficiente C);

@@ -136,3 +136,16 @@ export async function seedIds(email: string): Promise<{
     client.close();
   }
 }
+
+/** The ids of a seed user's supplies by name («Luce», «Gas», «Acqua», «Internet»), from e2e.db. */
+export async function seedSupplyIds(email: string): Promise<Record<string, string>> {
+  const { db, client } = createDb({ url: E2E_DB_URL });
+  try {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    if (!user) throw new Error(`seedSupplyIds: no user ${email}`);
+    const rows = await db.select().from(supplies).where(eq(supplies.userId, user.id));
+    return Object.fromEntries(rows.map((row) => [row.label, row.id]));
+  } finally {
+    client.close();
+  }
+}

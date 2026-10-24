@@ -5,8 +5,8 @@ waste tax — and see whether your offer is a good one. Multi-user with closable
 self-hosted on Vercel + Turso, installable on your phone as a PWA.
 
 > **Status (2026-10-24)**: access (sign-up, sign-in, closable registration), houses and supplies,
-> bills typed by hand, self readings and settings work locally, on the data model and the
-> calculation engine; charts, deployment, extraction and the rest of the v1 are specified in
+> bills typed by hand, self readings, settings and the charts per supply and per house work
+> locally, on the data model and the calculation engine; deployment, extraction and the rest of the v1 are specified in
 > [`doc/v1/`](doc/v1/) and are being implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
 
 ## What it does
@@ -24,7 +24,8 @@ self-hosted on Vercel + Turso, installable on your phone as a PWA.
   period, so an adjustment printed in September corrects August.
 - **Charts per supply and per house.** Consumption per month (kWh per band, Smc, m³), the price of
   the commodity alone and the total cost per unit, costs by category, year over year — with
-  photovoltaic self-consumption when you have panels.
+  photovoltaic self-consumption when you have panels. Over 12 months, 24 months or everything,
+  each chart with its figures as a table.
 - **Against the market.** Your commodity price next to the PUN Index GME, the PSV (ARERA's CMEM) and
   ARERA's prices for vulnerable customers. Water has no national reference, and the app says so.
 - **Bulk import and offline.** Queue dozens of past bills with a cost estimate before starting;

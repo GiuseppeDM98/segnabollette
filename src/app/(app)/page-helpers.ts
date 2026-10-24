@@ -2,6 +2,7 @@ import 'server-only';
 import { notFound, redirect } from 'next/navigation';
 import { getSessionUser, type SessionUser } from '@/lib/auth/session';
 import { DomainError } from '@/lib/errors';
+import type { DashboardRange } from '@/lib/services/dashboard';
 
 /**
  * The user of a protected page. Why again after the layout: the layout passes no data down and
@@ -34,4 +35,19 @@ export function pageNumber(raw: string | string[] | undefined): number {
   if (text === undefined || !/^\d+$/.test(text)) return 1;
   const page = Number(text);
   return Number.isSafeInteger(page) && page >= 1 ? page : 1;
+}
+
+/** `?periodo=` as the query writes it, and the dashboard range it selects. */
+export const PERIOD_QUERIES: Record<DashboardRange, string> = {
+  '12': '12',
+  '24': '24',
+  all: 'tutto',
+};
+
+/** `?periodo=`: 12, 24 or tutto; anything else is the default, 24 months. */
+export function dashboardRange(raw: string | string[] | undefined): DashboardRange {
+  const text = queryValue(raw);
+  if (text === PERIOD_QUERIES['12']) return '12';
+  if (text === PERIOD_QUERIES.all) return 'all';
+  return '24';
 }
