@@ -29,12 +29,10 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: adversarial reading of the whole v1 series done (nine readers and a
-  cross-spec one): 236 findings fixed in place in the specs and the index, 21 owner decisions
-  D-41…D-61 (`doc/v1/00-INDICE.md` § 3), new session rule for production verifications after the
-  merge (WORKFLOW.md § 3).
-  **Next**: `doc/v1/PROMPT-RITIRO.md` with `claude-config/prompts/08_CREA_RITIRO_SPEC.md`, in a
-  session of its own; then spec 01. Still open: none.
+- **Latest (2026-10-24)**: the retirement prompt of the v1 series written,
+  `doc/v1/PROMPT-RITIRO.md` (from `claude-config/prompts/08_CREA_RITIRO_SPEC.md`, measured on the
+  repo before any code; each retirement updates its precedents and measures in place).
+  **Next**: spec 01, from the prompt at its end. Still open: none.
 
 ## Architecture Snapshot (as specified; nothing exists yet)
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →
@@ -107,6 +105,7 @@ None: no code yet.
 ## Key Files
 - `doc/v1/00-INDICE.md` — the series index: theme, decisions D-N, choices T-N, order, shared
   contracts C-N, series rules. `doc/v1/NN-*.md` — one spec per implementation session.
+  `doc/v1/PROMPT-RITIRO.md` — the prompt that retires a spec once it is in service.
 - `COMMENTS.md`, `DEVELOPMENT_GUIDELINES.md` — binding for every line of code.
 
 ## Design Context
