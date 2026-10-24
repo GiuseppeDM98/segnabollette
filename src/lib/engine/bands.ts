@@ -5,7 +5,8 @@ export type BandShares = Record<'F1' | 'F2' | 'F3', number>;
 
 /**
  * The F1/F2/F3 split of a bill from its own readings: each register's growth over the bill's
- * readings, as a share of the total. Null unless all three registers have two dates and grew.
+ * readings, as a share of the total. Null unless all three registers have readings on two
+ * different days, none of them went down and together they grew (one register may stay still).
  * A single-rate offer still prints F1/F2/F3 readings, which is what makes the split possible.
  */
 export function bandSharesOfBill(bill: Pick<EngineBill, 'readings'>): BandShares | null {

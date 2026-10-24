@@ -181,7 +181,8 @@ export async function deleteBill(
   const bill = await billsRepository.getBill(db, userId, billId);
   if (!bill) throw new DomainError('NOT_FOUND');
   // A replaced bill hands the bills it had replaced over to its own replacement, so they stay
-  // out of the figures; a confirmed one brings them back.
+  // out of the figures; a confirmed one brings them back. A replaced bill always has its
+  // replacement (markReplacedQuery sets both columns): the null check only narrows the type.
   const handOver =
     bill.status === 'replaced' && bill.replacedByBillId !== null
       ? billsRepository.reassignReplacedQuery(db, userId, billId, bill.replacedByBillId)
@@ -226,6 +227,8 @@ export async function listBills(
   });
   const supplies = await suppliesRepository.listSupplies(db, userId, { includeArchived: true });
   const supplyById = new Map(supplies.map((supply) => [supply.id, supply]));
+  // A bill without its supply row cannot exist (supplies are deleted with their bills); it would
+  // be skipped rather than shown without a label.
   const bills = rows.slice(0, PAGE_SIZE).flatMap((bill) => {
     const supply = supplyById.get(bill.supplyId);
     return supply ? [{ ...bill, supplyLabel: supply.label, supplyKind: supply.kind }] : [];

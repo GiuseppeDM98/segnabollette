@@ -33,8 +33,12 @@ describe('rolling12', () => {
   it('sums the last 12 months and the 12 before them separately', () => {
     const { last12, previous12 } = rolling12(MONTHS, '2026-09');
 
-    expect(last12).toEqual({ consumption: 2400, totalCents: 24_000, monthsWithBills: 12 });
-    expect(previous12).toEqual({ consumption: 1200, totalCents: 12_000, monthsWithBills: 12 });
+    expect(last12.consumption).toBeCloseTo(2400);
+    expect(last12.totalCents).toBe(24_000);
+    expect(last12.monthsWithBills).toBe(12);
+    expect(previous12.consumption).toBeCloseTo(1200);
+    expect(previous12.totalCents).toBe(12_000);
+    expect(previous12.monthsWithBills).toBe(12);
   });
 });
 

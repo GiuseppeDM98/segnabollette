@@ -438,7 +438,8 @@ export type Extraction = z.infer<typeof ExtractionSchema>;
 
 `prompt.ts` — `EXTRACTION_SYSTEM_PROMPT` (testo esatto, in inglese con il lessico italiano delle
 bollette; checklist in testa: «WARNING: keep the category list in sync with LINE_CATEGORIES in
-src/lib/domain/types.ts»):
+src/lib/domain/types.ts»; e, nel verso opposto, `src/lib/extraction/prompt.ts` entra nell'elenco
+del commento `WARNING` in testa a `src/lib/domain/types.ts`):
 
 ```text
 You extract data from Italian utility bills (bollette) for a personal tracker. You receive one bill

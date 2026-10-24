@@ -29,11 +29,12 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: spec 02 (data model and calculation engine) implemented on
-  `feature/02-data-engine`; guided verification done and closed (E2E of 01 green, seed lines and
-  engine probe on seed A's electricity as expected; no UI, so no tour), documented in
-  `doc/guide/calcoli.md`. Owner decisions taken while implementing: D-62…D-64 in the index.
-  **Next**: PR and merge, then spec 03. Still open: none.
+- **Latest (2026-10-24)**: spec 02 (data model and calculation engine) in service with PR #5 and
+  retired on `docs/v1-ritiro-02` (text in
+  `git log -- doc/v1/02-modello-dei-dati-e-motore-dei-calcoli.md`); `doc/guide/calcoli.md` aligned
+  with the code. The retirement changed tests and comments only (no runtime code), so the guided
+  verification of 02 still holds; spec 05 redoes its closing measure in production. **Next**:
+  spec 03. Still open: none.
 
 ## Architecture Snapshot (database, access, test harness, data model and engine exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);

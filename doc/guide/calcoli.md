@@ -75,6 +75,10 @@ Component: `variable` (per unit consumed), `fixed` (per day/month/year, e.g. «3
 - **Self readings** (`createSelfReadings` in `src/lib/services/readings.ts`): metered supplies
   only, allowed registers only, never after `today` (the caller passes
   `romeToday(Date.now())`); bill dates stay free.
+- **Houses and supplies** (`src/lib/services/houses-supplies.ts`): names and labels are trimmed,
+  then must be 1–60 characters; a blank supplier name is stored as null; the label and
+  photovoltaic errors come together in one `VALIDATION`, checked before the duplicate identifier
+  (`DUPLICATE_IDENTIFIER`); the kind of a supply never changes; an empty patch writes nothing.
 
 ## 4. Overlapping and replaced bills (`src/lib/services/bills.ts`)
 
@@ -98,6 +102,9 @@ deletes it, or the bill that replaced it. Then:
 
 Editing replaces the lines and readings of the bill and updates only the fields that come from
 `BillInput`: `source`, `status`, the replacement link and the supply never change.
+`getBillDetail` returns the lines by `position` and the readings by day, then register
+(`listBillReadings` in `src/lib/db/repositories/readings.ts`); `listBills` pages by 50, newest
+`periodEnd` first.
 
 ## 5. Competence and recalculations (`src/lib/engine/supply-months.ts`)
 
@@ -107,17 +114,19 @@ so each line's months add up to its exact cents; quantities are split pro rata a
 
 A gas bill for September may re-bill August line by line: «Gas» +12 Smc and «Gas (voce di
 ricalcolo)» −10 Smc, both with August as their period and `isRecalculation`. Those lines land in
-August, which becomes 10 (estimated) + 12 − 10 = 12 Smc. Nothing in the engine looks at which
-bill printed a line except for the estimate stamps below.
+August, which becomes 10 (estimated) + 12 − 10 = 12 Smc. The month a line lands in depends only on
+its own period; the bill that printed it matters only for its status (a replaced bill leaves the
+figures), the band split of § 6 and the estimate stamps of § 7.
 
-## 6. Consumption and bands
+## 6. Consumption and bands (`addBill` in `src/lib/engine/supply-months.ts`)
 
 - **Consumption** of a month = Σ of the `commodity` quantities in the supply's consumption unit
   (`consumptionUnitOf`: kWh, Smc, m³), spread by day. Water `network` lines in m³ (sewerage,
   treatment) do not count.
 - **Bands**: a commodity line with a `band` goes to that band. A line without a band takes the
   split of its bill's own readings (`bandSharesOfBill` in `src/lib/engine/bands.ts`): if F1, F2
-  and F3 each have two dates and grew, the shares are Δ register ÷ Σ Δ (80/60/60 kWh → 40/30/30%);
+  and F3 each have readings on two different days, none went down and together they grew, the
+  shares are Δ register ÷ Σ Δ (80/60/60 kWh → 40/30/30%; a register that stayed still gets 0);
   otherwise the line goes to `single`. Single-rate offers still print F1/F2/F3 readings: that is
   what makes the split possible.
 - **`hasCommodityBands`** is true only when a commodity line in the consumption unit spread over
@@ -125,10 +134,10 @@ bill printed a line except for the estimate stamps below.
   market references compare it with the single-rate price; the band split is shown, the offer is
   not called banded.
 
-## 7. Estimated months
+## 7. Estimated months (`stampMonth`, `finishMonth` in `src/lib/engine/supply-months.ts`)
 
 Each commodity line leaves at most one stamp, equal to the **end of its bill's period**, on the
-months it touches (`stampMonth`):
+months it touches:
 
 - `isEstimated` with quantity > 0 (recalculation or not) → stamp «estimated»;
 - a recalculation that is not estimated, or any line with quantity ≤ 0 (the reversal) → stamp
@@ -139,7 +148,7 @@ A month is estimated when it has an «estimated» stamp and no «recalculated» 
 later**. A recalculation that is still estimated (+15 Smc estimated, −10 Smc reversal in the same
 bill) leaves the month estimated: both stamps carry the same date.
 
-## 8. Unit prices and the month total
+## 8. Unit prices and the month total (`finishMonth` in `src/lib/engine/supply-months.ts`)
 
 - `costs`: the month's cents per `CostCategory`.
 - `totalCents` = Σ of every cost category, **`feed_in` included**: the credit for fed-in energy
@@ -163,18 +172,19 @@ commodity 0,100000 €/kWh, total 0,085000 €/kWh.
   nothing instead of producing negative consumption.
 - The engine uses the self readings and the readings of **confirmed** bills only: the readings of
   a replaced bill leave with it.
-- **`readingsConsumption`**: the consumption measured on the days **after the last billed day**
-  (the latest `periodEnd` of the confirmed bills); billed days already have their consumption.
+- **`readingsConsumption`** (`addReadingsConsumption` in `src/lib/engine/supply-months.ts`): the
+  consumption measured on the days **after the last billed day** (the latest `periodEnd` of the
+  confirmed bills); billed days already have their consumption.
   Electricity uses F1+F2+F3 when any of those registers is among the picked readings, otherwise
   `single`.
 - **Gas** counts m³: they become Smc with the C from the latest confirmed bill that prints it, by
   `periodEnd`; 1, with `isReadingsConversionAssumed`, only when no confirmed bill prints it.
 
-## 10. Photovoltaic
+## 10. Photovoltaic (`addPhotovoltaic` in `src/lib/engine/supply-months.ts`)
 
 Supplies with `hasPhotovoltaic` (electricity only) also accept two cumulative registers:
 `feed_in` (the exchange meter, energy sent to the grid) and `production` (the inverter). Per
-month (`addPhotovoltaic`): `feedInKwh` and `productionKwh` from their daily growth;
+month: `feedInKwh` and `productionKwh` from their daily growth;
 `selfConsumptionKwh` = Σ over the days that have both of (production − fed in), at least 0 for
 the month; `houseConsumptionKwh` = billed consumption + self-consumption, only when both exist.
 The fed-in credit on the bill is a `feed_in` line (§ 8).
@@ -192,7 +202,7 @@ year earlier.
 `pnpm db:seed` gives the two seed users invented data through the same services the app uses,
 only to a user without houses: seed A «Casa Fenicottero» with electricity, gas and internet over
 the 14 months before the current one, water in 5 quarterly bills over 15 months, and two self
-readings after the last electricity bill; seed B «Casa Ornitorinco» with one electricity supply
+readings after the last electricity bill (one when seeded on the first of the month); seed B «Casa Ornitorinco» with one electricity supply
 and two bills. The first electricity bill is estimated and the second re-bills it with a
 recalculation pair, so the oldest month ends up actual. The «Canone TV» (900 cents, `outside`)
 is on the electricity bills from January to October, the ten instalments of the real fee.

@@ -452,7 +452,9 @@ Il repository `src/lib/db/repositories/readings.ts` (02) aggiunge
 `createSelfReadings(db, userId, rawInput, options: { today })` (02) cambia così, senza cambiare
 firma: dopo i controlli esistenti legge `listSelfReadingsOn`; per ogni valore di `input.values` riusa
 l'id della riga con lo stesso `register` e lo stesso `value`, altrimenti la inserisce; restituisce
-`readingIds` nell'ordine di `input.values`; se non c'è niente da inserire non chiama `db.batch`.
+`readingIds` nell'ordine di `input.values`; se non c'è niente da inserire non chiama
+`insertReadingsQuery` (oggi la inserisce con un `await` diretto, senza `db.batch`, e Drizzle rifiuta
+`insert().values([])`).
 
 ### 4.6 Interfaccia
 

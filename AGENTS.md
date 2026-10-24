@@ -23,9 +23,13 @@ map the result (`toActionResult`, `toErrorResponse` *(from spec 06)*). `src/lib/
 every service takes `db: Db` first and its other dependencies (`blob`, `extractor`, `now`, `clock`)
 explicitly. `src/lib/db/repositories/*` is the only place that writes SQL (Drizzle).
 `src/lib/domain/*` and `src/lib/engine/*` are pure: no Drizzle, no `next/*`, no `fetch`, no clock
-(they take `today`/`now` as parameters). Gateways: `src/lib/extraction/anthropic-extractor.ts` is the
-only file importing `@anthropic-ai/sdk`; `src/lib/blob/vercel-blob-store.ts` the only server file
-importing `@vercel/blob`; `src/components/charts/recharts.ts` the only file importing `recharts`.
+(they take `today`/`now` as parameters). Services import each repository as a namespace
+(`import * as billsRepository from '@/lib/db/repositories/bills'`, likewise `housesRepository`,
+`suppliesRepository`, `readingsRepository`): a service and its repository share function names
+(`listBills`, `listReadings`) with different signatures. Gateways:
+`src/lib/extraction/anthropic-extractor.ts` is the only file importing `@anthropic-ai/sdk`;
+`src/lib/blob/vercel-blob-store.ts` the only server file importing `@vercel/blob` (both *(from spec
+06)*); `src/components/charts/recharts.ts` *(from spec 04)* the only file importing `recharts`.
 The app reaches external services through `src/lib/container.ts` (`getDb`; `getBlobStore`,
 `getBillExtractor` and their fakes under `E2E_FAKE_SERVICES=1` *(from spec 06)*); CLI scripts in `scripts/` build their
 clients directly and never import `server-only` modules (`env.ts`, `db/client.ts`, `auth/auth.ts`).
@@ -66,8 +70,8 @@ Every repository function has the signature `(db: Db, userId: string, …)` and 
 missing (`NOT_FOUND`, page 404), never 403. `src/lib/db/repositories/scope.test.ts` fails on any
 exported repository function with another signature and on any exported `const`/`let`/`var` (a
 repository exports only `function` declarations and types); the one declared exception is
-`reference-prices.ts` (market data, no user rows). Every new read or write of user data ships the
-pair of tests «own resource passes / someone else's is refused».
+`reference-prices.ts` *(from spec 08)* (market data, no user rows). Every new read or write of
+user data ships the pair of tests «own resource passes / someone else's is refused».
 
 ### 2.5 Money, units and dates
 
@@ -76,10 +80,10 @@ Money is **integer euro cents**, signed (`*_cents`); unit prices are **integer m
 with one `Math.round` at the end; splitting an amount uses `allocateCentsByWeights` (exact sums),
 which lives with `unitPriceMicros`, `centsFromEuro` and `microsFromEuro` in `src/lib/domain/money.ts`.
 Formatting and parsing of numbers and dates live only in `src/lib/format.ts`; components never
-divide by 100 (the chart series in `src/lib/charts/series.ts` are the one other place that converts
-to display units). Calendar days (billing periods, readings, due dates) are `YYYY-MM-DD` strings with
-arithmetic at UTC midnight in `src/lib/domain/dates.ts`; instants (`created_at`) are epoch ms UTC;
-"today" is `romeToday(Date.now())` computed by the caller. Tests run with `TZ=Europe/Rome`.
+divide by 100 (the chart series in `src/lib/charts/series.ts` *(from spec 04)* are the one other
+place that converts to display units). Calendar days (billing periods, readings, due dates) are
+`YYYY-MM-DD` strings with arithmetic at UTC midnight in `src/lib/domain/dates.ts`; instants
+(`created_at`) are epoch ms UTC; "today" is `romeToday(Date.now())` computed by the caller. Tests run with `TZ=Europe/Rome`.
 
 ### 2.6 Foreign keys and deletes
 
@@ -189,12 +193,14 @@ precached by hand; the offline queue is drained by the pages.
 - `src/lib/db/repositories/scope.test.ts` reads the source of every repository and fails on an
   exported function whose parameters do not start with `(db: Db, userId: string` (whitespace
   ignored) or on any exported `const`/`let`/`var` (a typed or wrapped arrow hides its parameters);
-  the only exempt file is `reference-prices.ts`.
+  the only exempt file is `reference-prices.ts` *(from spec 08)*.
 - Anthropic and Blob are never called in tests: fake client for the extractor, disk store and
   fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`) *(from
   spec 06)*.
 - Every test in a spec names the mutation that proves it load-bearing; a test that cannot go red is
   not a test.
+- Quantities are `real` (`0.1 + 0.2` is not `0.3`): assertions on a computed quantity use
+  `toBeCloseTo`, assertions on money (integer cents and micro-euros) use `toBe` (2026-10-24).
 - Playwright on a production build (:3100 open signup, :3101 closed), seed users
   `seed-a@example.test` / `seed-b@example.test`, login through `POST /api/auth/sign-in/email` with
   an `Origin` header; projects `mobile` (390×844) and `desktop`, `closed`, and `pwa` (from spec 09);
@@ -269,7 +275,9 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
   (`z.config(z.locales.it())`) so that `VALIDATION` details are Italian; a schema whose messages
   must stay English writes them explicitly, as `src/lib/env-schema.ts` does.
 - 2026-10-24 — Drizzle `db.batch` takes a non-empty tuple: services build their query list and
-  run it through `runBatch` (`src/lib/services/batch.ts`), which skips an empty list.
+  run it through `runBatch` (`src/lib/services/batch.ts`), which skips an empty list. Likewise
+  `insert().values([])` throws «values() must be called with at least one value» (drizzle-orm
+  0.45.4): a service that may have nothing to insert skips the insert query.
 
 ## 12. Definition of done (per session)
 

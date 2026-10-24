@@ -2,7 +2,7 @@
 
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 30 rilievi, 5 decisioni
 > (D-47, D-49, D-50, D-51, D-52). Pronta per l'implementazione.
-> **Branch**: `feature/03-design-manual-entry` da `main`. **Dipende da**: 02 (in esercizio).
+> **Branch**: `feature/03-design-manual-entry` da `main`. **Dipende da**: 02 (ritirata il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-5, D-7, D-13, D-24, D-28, D-29, D-38,
 > D-39, D-40, D-47, D-49, D-50, D-51, D-52; scelte T-13, T-14, T-16, T-24, T-32; contratti: crea
 > C-14, C-23 (`signUpTestUser`), C-24 (`AppShell`); aggiunge a C-8 (`formatDecimalInput` e le
@@ -228,7 +228,9 @@ forniture hanno la stessa forma (decisione (h)): `requireUser()` dentro `toActio
 ### 4.4 Modelli di voci — `src/components/bills/line-templates.ts` (C-14)
 
 Modulo puro, senza `'use client'`: lo importano sia la pagina server `/bollette/nuova` (che chiama
-`emptyBillInput`) sia il modulo client.
+`emptyBillInput`) sia il modulo client. Si aggiunge `src/components/bills/line-templates.ts`
+all'elenco del commento `WARNING` in testa a `src/lib/domain/types.ts` (un valore nuovo di quelle
+liste va gestito anche qui).
 
 ```ts
 import type { BillInput, BillLineInput } from '@/lib/domain/bill-input';
@@ -406,6 +408,9 @@ Sezioni, in ordine:
 
 ### 4.6 Etichette — in `src/lib/format.ts`
 
+Le mappe di etichette qui sotto entrano nell'elenco del commento `WARNING` in testa a
+`src/lib/domain/types.ts`, come `line-templates.ts` (§ 4.4).
+
 ```ts
 export const CATEGORY_LABELS: Record<LineCategory, string> = {
   commodity: 'Materia prima', sale: 'Altre spese di vendita', network: 'Rete e contatore',
@@ -448,7 +453,8 @@ solo le `confirmed`) e le autoletture (`billId` nullo):
 - `suggestedRegisters(db, userId, supplyId): Promise<ReadingRegister[]>`: `['F1','F2','F3']` se fra
   quelle letture compare F1, F2 o F3, altrimenti `['single']` (gas e acqua sempre `['single']`), più
   `feed_in` e `production` col fotovoltaico; fornitura a canone → `VALIDATION`. È la stessa regola
-  con cui il motore sceglie i registri (02, `usesBands`): un'autolettura `single` su una fornitura
+  con cui il motore sceglie i registri (`usesBands` in `addReadingsConsumption`,
+  `src/lib/engine/supply-months.ts`): un'autolettura `single` su una fornitura
   che ha già letture a fasce sparirebbe dal consumo da letture.
 - `latestReadings(db, userId, supplyId): Promise<Partial<Record<ReadingRegister, { value: number; readOn: IsoDate }>>>`:
   per ogni registro la lettura con la data più recente fra quelle scelte da `pickReadings`.
@@ -540,8 +546,8 @@ lo usano; ciascuno crea dalla UI la sua casa e le sue forniture.
 
 ## 7. Collaudo guidato (WORKFLOW.md § 2)
 
-- **A — Invarianza**: E2E della 01 (con `auth.spec.ts` aggiornato come in § 6) e test della 02
-  verdi.
+- **A — Invarianza**: E2E della 01 (con `auth.spec.ts` aggiornato come in § 6) e test Vitest del
+  modello e del motore verdi.
 - **B — Cambio di contesto**: con seed A si vede la «Casa Fenicottero» con quattro `supply-card` e
   le ultime bollette; con seed B la «Casa Ornitorinco» con una. Esito atteso dichiarato prima.
 - **C — Comportamento nuovo**: tutta la suite verde. Poi uno script Playwright usa e getta
@@ -558,7 +564,7 @@ lo usano; ciascuno crea dalla UI la sua casa e le sue forniture.
   quello di una bolletta di seed B. Esito atteso dichiarato prima: con l'id di B la risposta porta
   `NOT_FOUND` e la riga di B è invariata su `local.db`; con il proprio id `ok`.
 - **E — Casi negativi**: coperti da `isolamento.spec.ts` (URL altrui → 404, Server Action con l'id
-  altrui → `NOT_FOUND`), dai test della 02 su `createSelfReadings` (data futura → `VALIDATION`,
+  altrui → `NOT_FOUND`), da `src/lib/services/readings.test.ts` su `createSelfReadings` (data futura → `VALIDATION`,
   D-47) e da `bill-draft.test.ts` (importo vuoto → errore sul campo); si citano.
 - **F — Giro guidato** (al via dell'owner, con le fixture vive, una pagina per messaggio, sessione
   di seed A già aperta): (1) `/` — il riepilogo si legge al volo? (2) `/bollette/nuova?fornitura=<luce>`
@@ -614,11 +620,11 @@ Contesto, prima di toccare qualsiasi file:
 - Leggi COMMENTS.md e DEVELOPMENT_GUIDELINES.md: il codice che scrivi li segue
 - Leggi doc/v1/00-INDICE.md per intero e poi la spec 03 INTERA
 - Controlla con un grep che i contratti C-2, C-3, C-5…C-13, C-18, C-21 esistano con i nomi e le
-  firme dell'indice (in particolare `createSelfReadings(db, userId, rawInput, { today })` della 02)
+  firme dell'indice (in particolare `createSelfReadings(db, userId, rawInput, { today })` di
+  `src/lib/services/readings.ts`)
 
-Prima di tutto (su `main` aggiornato con `git pull`): scrivi lo stato «in esercizio il <data>,
-PR #N» della spec 02 nella sua riga «Stato» e in § 5 dell'indice (PR mergiata e collaudo
-annotato in CLAUDE.md: regola 5 dell'indice); entra nel commit di questa sessione.
+Prima di tutto: `git pull` su `main`; la 02 è ritirata (2026-10-24, stato in § 5 dell'indice e in
+CLAUDE.md → Latest), quindi non c'è uno stato da scrivere per lei.
 
 Prima della prima modifica: `git branch --show-current` deve dire main; crea
 feature/03-design-manual-entry. Crea SESSION_NOTES.md.
