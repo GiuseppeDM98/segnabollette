@@ -95,8 +95,15 @@ pnpm dlx vercel@latest redeploy <url of the production deployment> --target prod
 Production variables: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET` (new, never the
 local one), `BETTER_AUTH_URL` (exactly the production origin, no trailing `/`, or the origin check
 refuses the sign-in), `SIGNUP_ENABLED`; linking a store adds `BLOB_READ_WRITE_TOKEN` to its environment by itself
-(Vercel CLI 65.2.0, 2026-10-25: only that one, not `BLOB_STORE_ID` nor `BLOB_WEBHOOK_PUBLIC_KEY`). Production and Preview variables are
-«Sensitive» by default: their values cannot be read back.
+(Vercel CLI 65.2.0, 2026-10-25: only that one, not `BLOB_STORE_ID` nor `BLOB_WEBHOOK_PUBLIC_KEY`). A Sensitive
+variable cannot be read back; the dashboard form has a «Sensitive» switch to tick for secrets
+(2026-10-25: two variables created there without it show as «Config» in `env ls`, the others as
+«Secret»; making one Sensitive means creating it again and redeploying).
+
+CLI 65.2.0 (2026-10-25) warns that the positional environment of `env rm` and the `--target` of
+`redeploy` are deprecated in favour of `--environment`; both still work. From Git Bash, `vercel api
+/v13/…` needs `MSYS2_ARG_CONV_EXCL="/v13"` (the shell turns the path into a Windows one;
+`MSYS_NO_PATHCONV=1` breaks the pnpm shim instead).
 
 ## 4. Traps
 
@@ -110,6 +117,15 @@ refuses the sign-in), `SIGNUP_ENABLED`; linking a store adds `BLOB_READ_WRITE_TO
 - `<project>.vercel.app` does not exist until the first production deploy, yet the build validates
   `BETTER_AUTH_URL` (`src/lib/env.ts`): set it to the expected origin first, then compare it with
   the domain Vercel assigned and fix it (with a redeploy) if they differ.
+- The first push of the project (`feature/05-deploy`, 2026-10-25) was not skipped: Vercel built it as
+  a **production** deployment (`VERCEL_ENV=production`, the production alias moved to it), most
+  likely because the project had no production deployment yet (not confirmed in Vercel's docs).
+  The Production Branch was `main` all along: it lives in Settings → **Environments** → Production
+  («Branch Tracking»), no longer in Settings → Git. The next branch push must show «Canceled».
+- The deployment of the merge into `main` (2026-10-25) showed «Canceled» by the Ignored Build Step
+  (`buildSkipped: true`, target production), although the command exits 1 when `VERCEL_ENV` is
+  `production`; cause not found. `vercel redeploy <its url> --target production` built it, and so
+  did the later redeploy. At the next merge, check that `main` builds by itself.
 - The Vercel CLI appends `.vercel` and `.env*` to `.gitignore` whenever it links a project or a
   store or pulls variables: discard that change, since `.env*` cancels the `!.env.example`
   exception. Creating the development store also rewrites `.env.local` with the Development

@@ -80,7 +80,7 @@ con l'account.
   tetto, costo registrato), **D-19** (allegato senza estrazione), **D-20** (storico ignorato),
   **D-21** (acqua non provata su una bolletta vera), **D-40** (file cancellati con l'account).
 - **D-41** (commit e PR prima del merge, collaudo in produzione dopo il merge, esito nel commit
-  della 07: § 8 e § 11), **D-42** (l'estrazione parte solo al clic su «Estrai (circa X $)»),
+  di chiusura su `docs/06-in-esercizio`: § 8 e § 11), **D-42** (l'estrazione parte solo al clic su «Estrai (circa X $)»),
   **D-55** (in locale le foto si caricano dal browser del computer; «Scatta foto» si prova in
   produzione), **D-56** (revisione sul telefono con «Apri il PDF»), **D-59** (ripresa dei
   caricamenti interrotti e abbandono delle estrazioni senza file).
@@ -1167,26 +1167,31 @@ fornitura). «Scarta» in ogni punto dell'interfaccia (caricamento, «Da riveder
 
 ## 8. Messa in esercizio
 
-Ordine (D-41): gate verdi e collaudo § 7 in locale → commit unico e PR (stato «implementata il
+Ordine (D-41): gate verdi e collaudo § 7 in locale → commit dell'implementazione e PR (stato «implementata il
 <data>, branch `feature/06-extraction`» nella riga «Stato» e nell'indice § 5) → migrazione e variabile di produzione → merge
-→ collaudo in produzione nella stessa sessione → esito in `SESSION_NOTES.md`.
+→ collaudo in produzione nella stessa sessione → chiusura: esito nel commit su
+`docs/06-in-esercizio` e la sua PR.
 
 - DDL: `drizzle/0002_*.sql` con `pnpm db:migrate:prod` **prima** del merge (dopo la PR).
 - Variabili, prima del merge: `vercel env add ANTHROPIC_API_KEY production` (l'owner digita la
   chiave personale; il consiglio in SETUP.md: un limite di spesa mensile sull'organizzazione
   Console); `BLOB_READ_WRITE_TOKEN` è già nel progetto di produzione (05).
+- Al push di `feature/06-extraction` il deploy risulta «Canceled» (`vercel ls`): nella 05 il primo
+  push di un branch era andato in produzione, forse perché era il primo deploy del progetto
+  (`doc/guide/deploy.md` § 4); se succede ancora, è un difetto da fermare qui.
 - Merge della PR su `main` (lo fa l'owner) → deploy di produzione; l'agente controlla che il log
-  della build sia verde.
+  della build sia verde. Nella 05 il deploy del merge era risultato «Canceled» dall'ignore step,
+  causa non trovata (`doc/guide/deploy.md` § 4): se succede ancora, `vercel redeploy <url>
+  --target production` all'OK dell'owner, e la causa si cerca e si corregge nel commit di chiusura.
 - Misura di chiusura in produzione, dopo il merge (D-55): dal telefono, «Scatta foto» delle pagine
   di una bolletta vera dell'owner aperta in digitale sullo schermo del computer → la stima → «Estrai
   (circa X $)» solo all'OK dell'owner, col costo detto prima → revisione leggibile sul telefono →
   «Conferma» → la scheda riapre le foto con «Apri»; la bolletta resta (è un dato vero dell'owner,
   nel suo deploy). L'isolamento in produzione non si riprova qui: le iscrizioni sono chiuse, la 05
   l'ha provato con l'account di collaudo e i test E2E coprono le route nuove.
-- Esito, gotchas e stato «in esercizio» della 06 vanno in `SESSION_NOTES.md`, che resta (non
-  tracciato) per il commit della 07: la sessione della 07 comincia scrivendoli (riga «Stato» di
-  questa spec, indice § 5, CLAUDE.md → Latest, `doc/guide/estrazione.md` o AGENTS.md § 11 se ci
-  sono lezioni).
+- Esito, gotchas e stato «in esercizio il <data>, PR #N» della 06 li scrive la chiusura della
+  sessione (riga «Stato» di questa spec, indice § 5, CLAUDE.md → Latest, `doc/guide/estrazione.md`
+  o AGENTS.md § 11 se ci sono lezioni) in un commit su `docs/06-in-esercizio` (D-41).
 
 ## 9. Documentazione
 
@@ -1211,13 +1216,8 @@ Ordine (D-41): gate verdi e collaudo § 7 in locale → commit unico e PR (stato
   `.env.turso-prod` (il token dello store di produzione, che l'owner aggiunge solo per lanciare
   `documents:prune -- --prod`).
 - `README.md`: § What it does (PDF e foto, revisione, file conservati), nota privacy: i file vanno
-  ad Anthropic per l'estrazione e restano nello store privato del proprio deploy; gli screenshot di
-  `doc/screenshots/` presi nella 05 entrano in questo commit.
+  ad Anthropic per l'estrazione e restano nello store privato del proprio deploy.
 - `.env.example`: le due variabili nuove.
-- Dalla 05 (D-41), all'inizio della sessione: l'esito del collaudo in produzione della 05 da
-  `SESSION_NOTES.md` (stato «in esercizio» nella riga «Stato» della 05 e nell'indice § 5,
-  CLAUDE.md → Latest, AGENTS.md § 11 e `doc/guide/deploy.md` se SESSION_NOTES.md riporta lezioni)
-  entra in questo commit.
 
 ## 10. Fuori ambito, dichiarato
 
@@ -1233,11 +1233,8 @@ Modello: Claude Opus 5.5, effort high. Taglia: **L** (due servizi esterni, schem
 ```
 Ciao, in questa sessione implemento la spec doc/v1/06-caricamento-su-blob-ed-estrazione-con-claude.md.
 
-Prima di tutto (`git branch --show-current` deve dire main, aggiornato con `git pull` dopo il
-merge della 05): scrivi l'esito del collaudo in produzione della spec precedente da
-SESSION_NOTES.md (stato «in esercizio» nella sua riga Stato e nell'indice § 5, CLAUDE.md →
-Latest, AGENTS.md § 11 e doc/guide/deploy.md se SESSION_NOTES.md riporta lezioni), poi crea il
-branch feature/06-extraction.
+Prima di tutto (`git branch --show-current` deve dire main, aggiornato con `git pull`): crea il
+branch feature/06-extraction e SESSION_NOTES.md.
 
 Contesto, prima di toccare qualsiasi altro file:
 - Leggi WORKFLOW.md (regole di sessione e collaudo; § 3 dice come si applicano qui)
@@ -1250,8 +1247,6 @@ Contesto, prima di toccare qualsiasi altro file:
 - Controlla con un grep che i contratti C-1…C-14, C-18, C-21…C-24 esistano con i nomi e le firme
   dell'indice
 
-SESSION_NOTES.md esiste già (dalla 05): dopo averne travasato l'esito, lo riusi per questa sessione.
-
 Implementa la spec 06 esattamente come scritta: § 4 è la soluzione, § 6 i test con le mutazioni
 che li provano portanti, § 7 il collaudo in locale (fase per fase, esito atteso prima; ogni
 chiamata reale a Claude parte solo al mio OK sul pulsante «Estrai», con il costo detto prima), § 8
@@ -1263,7 +1258,8 @@ nel repo.
 
 Ordine della chiusura: riassumi il diff; scrivi lo stato «implementata il <data>, branch `feature/06-extraction`» nella riga
 «Stato» della spec e in § 5 dell'indice, aggiorna CLAUDE.md → Latest; chiedimi l'OK per il commit
-(uno solo) e apri la PR; migrazione e variabile di produzione; merge (lo faccio io); collaudo in
-produzione con me; esito, gotchas e stato «in esercizio» in SESSION_NOTES.md, che resta (non
-tracciato) per la sessione della 07.
+dell'implementazione e apri la PR (il deploy del branch deve risultare «Canceled»); migrazione e
+variabile di produzione; merge (lo faccio io; la build di main deve partire da sola); collaudo in
+produzione con me; poi la chiusura della sessione: esito, gotchas e stato «in esercizio» nei loro
+posti, commit su docs/06-in-esercizio e PR (D-41).
 ```

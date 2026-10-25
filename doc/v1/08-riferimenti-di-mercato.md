@@ -80,9 +80,9 @@ pianificazione, mai nel repo).
 - **D-14** (file committati, script lanciato dall'owner), **D-26** (materia senza IVA), **D-32**
   (PUN nel DB, zip a mano), **D-33** (vulnerabili, materia energia), **D-34** (CMEM + vendita gas
   vulnerabili), **D-35** (allineamento), **D-36** (acqua).
-- **D-41** (commit unico e PR prima del merge; dopo il merge, nella stessa sessione, gli import
-  `--prod` e la misura di chiusura in produzione; l'esito in `SESSION_NOTES.md`, che resta, per il
-  commit della 09).
+- **D-41** (commit dell'implementazione e PR prima del merge; dopo il merge, nella stessa sessione,
+  gli import `--prod` e la misura di chiusura in produzione; l'esito nel commit di chiusura su
+  `docs/08-in-esercizio`).
 - **D-44** (D-35 alla lettera: un mese della luce senza nessuna voce `commodity` a fasce si
   confronta con il PUN media mensile e con ARERA fascia unica, anche quando le letture danno
   F1/F2/F3; il dato è `SupplyMonth.hasCommodityBands` della 02).
@@ -524,7 +524,7 @@ stampa i mesi aggiunti e quelli cambiati.
 
 Ordine (D-41):
 1. DDL: `drizzle/0003_*.sql` con `pnpm db:migrate:prod` **prima** del merge (all'OK dell'owner).
-2. Gate verdi, commit unico e PR; stato della spec «implementata il <data>, branch `feature/08-market-references`» (riga «Stato» e
+2. Gate verdi, commit dell'implementazione e PR; stato della spec «implementata il <data>, branch `feature/08-market-references`» (riga «Stato» e
    indice § 5).
 3. Merge della PR (lo fa l'owner) → deploy di produzione; i JSON ARERA arrivano col merge.
 4. Nella stessa sessione, dopo il deploy verde: l'owner lancia `pnpm riferimenti:pun --
@@ -532,8 +532,8 @@ Ordine (D-41):
    bollette dell'owner; lo script stampa l'host di produzione prima di scrivere).
 5. Misura di chiusura, in produzione: il grafico della luce mostra PUN e ARERA, quello del gas CMEM
    e vendita vulnerabili, e nessuna frase «PUN non importato».
-6. Esito, gotchas e stato «in esercizio» in `SESSION_NOTES.md`, che a fine sessione **resta** (non
-   tracciato): entra nel commit della 09, che comincia scrivendolo.
+6. Esito, gotchas e stato «in esercizio» li scrive la chiusura della sessione, in un commit su
+   `docs/08-in-esercizio` e la sua PR (D-41).
 
 Manutenzione (SETUP.md): una volta al mese, su un branch `feature/riferimenti-<AAAA-MM>` creato da
 `main` aggiornato, `pnpm riferimenti:update`, un commit dei soli JSON e una PR verso `main` (il nome
@@ -569,10 +569,6 @@ già importati si sovrascrivono, l'ultimo incompleto resta fuori fino all'import
   attraverso `.env.turso-prod`) e § *Branches* (`feature/riferimenti-<YYYY-MM>` per
   l'aggiornamento mensile) lo dicono già: si controlla che corrispondano a ciò che lo script fa, e
   si corregge solo una differenza.
-- Nel commit di questa sessione entra anche l'esito del collaudo in produzione della 07 (da
-  `SESSION_NOTES.md`): stato «in esercizio» della 07 nella sua riga «Stato» e nell'indice § 5,
-  CLAUDE.md → Latest, e in `doc/guide/estrazione.md` l'esito dell'import (bollette importate, costo
-  reale contro stima).
 
 ## 10. Fuori ambito, dichiarato
 
@@ -589,13 +585,8 @@ Modello: Claude Opus 5.5, effort high. Taglia: **M**.
 ```
 Ciao, in questa sessione implemento la spec doc/v1/08-riferimenti-di-mercato.md.
 
-Prima di tutto: scrivi l'esito del collaudo in produzione della spec precedente da
-SESSION_NOTES.md (stato «in esercizio» della 07 nella sua riga Stato e nell'indice § 5, CLAUDE.md
-→ Latest, e l'esito dell'import delle mie bollette — bollette importate, costo reale contro stima —
-in doc/guide/estrazione.md), poi crea il branch: `git switch main`, `git pull` (main aggiornato
-dopo il merge della 07), `git branch --show-current` deve dire main; crea
-feature/08-market-references. In SESSION_NOTES.md, tolti i blocchi della 07 già scritti, annota
-questa sessione.
+Prima di tutto: `git switch main`, `git pull`, `git branch --show-current` deve dire main; crea
+feature/08-market-references e SESSION_NOTES.md.
 
 Contesto, prima di toccare qualsiasi altro file:
 - Leggi WORKFLOW.md (regole di sessione e collaudo; § 3 dice come si applicano qui)
@@ -619,8 +610,9 @@ AskUserQuestion. Le etichette della serie non entrano nel codice.
 
 Alla fine, nell'ordine di § 8: `pnpm db:migrate:prod` al mio OK; gate verdi; riassumi il diff,
 scrivi lo stato «implementata il <data>, branch `feature/08-market-references`» nella riga «Stato» della spec e in § 5
-dell'indice, aggiorna CLAUDE.md → Latest, chiedimi l'OK per il commit (uno solo) e apri la PR.
+dell'indice, aggiorna CLAUDE.md → Latest, chiedimi l'OK per il commit dell'implementazione e apri la PR.
 Il merge lo faccio io; dopo il deploy verde, nella stessa sessione, lancio gli import del PUN con
---prod e facciamo insieme la misura di chiusura in produzione. Esito, gotchas e stato «in
-esercizio» li scrivi in SESSION_NOTES.md, che resta (non tracciato) per il commit della 09.
+--prod e facciamo insieme la misura di chiusura in produzione. Poi la chiusura della
+sessione: esito, gotchas e stato «in esercizio» nei loro posti, commit su docs/08-in-esercizio e
+PR (D-41).
 ```

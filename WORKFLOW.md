@@ -203,7 +203,8 @@ row can be read.
 
 `main` is the default and the integration branch **and production** (a merged PR deploys, spec 05).
 One branch per spec (`feature/NN-slug`, named in the spec header), one squashed commit, one PR to
-`main`; the monthly ARERA refresh (spec 08) uses `feature/riferimenti-<YYYY-MM>`. No `develop`, no
+`main` (from spec 05, a second branch `docs/<NN>-in-esercizio` for the closing commit after the
+production verification, § Where things are recorded); the monthly ARERA refresh (spec 08) uses `feature/riferimenti-<YYYY-MM>`. No `develop`, no
 preview deployments: the ignored build step of `vercel.json` skips every non-production build
 (verification runs locally, and in production after the merge).
 
@@ -216,13 +217,14 @@ preview deployments: the ignored build step of `vercel.json` skips every non-pro
   repo · `doc/guide/<tema>.md` if it is a domain lesson · WORKFLOW.md if it is a session rule ·
   CLAUDE.md if it is project status · a comment on the right line if it is the why of a line).
   Every item is written to its destination before the file is deleted.
-- **A verification in production happens after the merge** (2026-10-24, specs 05–09): the session
-  makes its one commit and its PR **before** the merge (status «implementata»); after the merge,
-  in the same session, the owner and the agent run the production verification; its outcome, the
-  gotchas it taught and the status «in esercizio» stay in `SESSION_NOTES.md`, which in this case
-  survives the session (untracked), and enter the commit of the **next** session, which starts by
-  writing them. The last spec of a series closes with a short documentation-only session. The
-  rule «one commit per session» stays intact.
+- **A verification in production happens after the merge** (2026-10-24, specs 05–09; revised
+  2026-10-25, owner's decision): the session makes its implementation commit and its PR **before**
+  the merge (status «implementata»); after the merge, in the same session, the owner and the agent
+  run the production verification, then the session closes like any other (session-end prompt):
+  outcome, gotchas and the status «in esercizio» written where they belong, `SESSION_NOTES.md`
+  deleted, one closing commit on `docs/<NN>-in-esercizio` from the updated `main`, and its PR. It
+  is the one exception to rule 1.3: such a session has two commits, the implementation and the
+  closing one. The retirement of the spec comes next, in a session of its own.
 - **The outcome of a verification** goes in `CLAUDE.md § Current Status → Latest`, one line, and
   replaces the previous entry; the session's signals (test counts, E2E runs, skipped phases) go in
   the commit message. During the v1 series the same status is written in the spec's `Stato` line

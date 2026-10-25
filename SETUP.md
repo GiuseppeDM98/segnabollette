@@ -139,7 +139,8 @@ pnpm dlx vercel@latest env ls production
 Without `openssl` (Windows PowerShell has none), the same secret comes from Node:
 `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. The dashboard
 (Settings → Environment Variables) works as well as the CLI: tick **Production only** for each
-variable, since the form proposes Preview and Development too.
+variable, since the form proposes Preview and Development too, and tick **Sensitive** for the
+secrets (`TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`): it is not on by default there.
 
 A `BETTER_AUTH_URL` that differs from the real origin makes Better Auth's origin check refuse every
 sign-in.
@@ -147,7 +148,10 @@ sign-in.
 ## Deploy and first account
 
 1. Merge into `main`: Vercel builds and deploys production. The build log must be green and the
-   function region `dub1`.
+   function region `dub1`. If that deployment shows «Canceled», build it with
+   `pnpm dlx vercel@latest redeploy <its url> --target production`. Make the project's first
+   deployment from `main`: a new project may promote its very first deployment to production even
+   from another branch.
 2. Open `https://<project>.vercel.app` on your phone, sign up with your own account, add a house, a
    supply and a bill.
 3. **Close the door**: registration stays open only for the minutes it takes to create your

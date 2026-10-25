@@ -1,6 +1,6 @@
 # 05 — Messa in esercizio: Vercel, Turso, Blob
 
-> **Stato**: implementata il 2026-10-25, branch `feature/05-deploy` (scritta e riletta in modo
+> **Stato**: in esercizio il 2026-10-25, PR #11 (implementata il 2026-10-25 su `feature/05-deploy`; scritta e riletta in modo
 > adversariale il 2026-10-24: 20 rilievi, 1 decisione, D-41).
 > **Branch**: `feature/05-deploy` da `main` aggiornato dopo il merge della 04. **Dipende da**: 04 (ritirata
 > il 2026-10-24).
@@ -51,7 +51,7 @@ misure di chiusura delle spec 01–04 rifatte in produzione; SETUP.md per chi fa
 | A3 | Database Turso `segnabollette` creato, migrato, con un token; store `segnabollette-files` (privato, `dub1`, Production) e `segnabollette-files-dev` (privato, `dub1`, Development). | Output dei comandi annotato nel collaudo (senza segreti). |
 | A4 | Variabili di produzione: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGNUP_ENABLED`; più quelle che lo store aggiunge da sé. | `vercel env ls production` (nomi, mai valori). |
 | A5 | In produzione: registrazione dell'owner; un account usa e getta di collaudo; inserimento di una bolletta inventata; isolamento fra i due account; dashboard; eliminazione dell'account usa e getta; poi `SIGNUP_ENABLED=false` e `/registrati` chiusa, `POST /api/auth/sign-up/email` rifiutato. | Collaudo § 7 C–E. |
-| A6 | SETUP.md completo per questa fase (§ 4.4); README § Self-hosting (nuova) punta a SETUP.md; due screenshot del README presi dall'account di collaudo. | Revisione; gli screenshot entrano con il commit della 06 (§ 8). |
+| A6 | SETUP.md completo per questa fase (§ 4.4); README § Self-hosting (nuova) punta a SETUP.md; due screenshot del README presi dall'account di collaudo. | Revisione; gli screenshot entrano con il commit di chiusura (§ 8). |
 
 ## 3. Decisioni
 
@@ -61,9 +61,9 @@ misure di chiusura delle spec 01–04 rifatte in produzione; SETUP.md per chi fa
   vuoti: vale nel collaudo C.3).
 - **D-41** (nuova): il collaudo in produzione segue il merge. Commit unico e PR **prima** del merge
   (stato «implementata il <data>, branch `feature/05-deploy`»); dopo il merge, nella stessa sessione, il collaudo in
-  produzione con l'owner; esito, gotchas e stato «in esercizio» si annotano in `SESSION_NOTES.md`,
-  che in questo caso resta in vita (non tracciato), ed entrano nel commit della sessione della 06,
-  che comincia scrivendoli.
+  produzione con l'owner; esito, gotchas e stato «in esercizio» entrano nel commit di chiusura
+  della stessa sessione, su `docs/05-in-esercizio` (D-41 rivista il 2026-10-25, decisione
+  dell'owner; prima restavano in `SESSION_NOTES.md` per il commit della 06).
 - **T-2** (`dub1`, due store), **T-15** (rate limit su DB in produzione), **T-34** (su Turso remoto
   le foreign key sono spente: la cascade di Better Auth verso `users` non scatta).
 - Adottate qui, ribaltabili:
@@ -218,7 +218,7 @@ Il modulo non esporta nulla e chiama `main()` senza guardia: il test importa sol
 **Commit e PR** (fra il passo 5 e il 6, D-41): i gate di WORKFLOW § 3 verdi (fase A di § 7); la
 documentazione di § 9 che appartiene a questo commit; lo stato «implementata il <data>, branch `feature/05-deploy`» nella
 riga «Stato» di questa spec e in § 5 dell'indice; CLAUDE.md → Latest; l'OK dell'owner per il commit
-unico; push di `feature/05-deploy` e PR verso `main`. Esito atteso dichiarato prima: il push crea un
+dell'implementazione; push di `feature/05-deploy` e PR verso `main`. Esito atteso dichiarato prima: il push crea un
 deploy «Canceled» (build ignorata, A1), nessuna anteprima.
 
 6. **Merge della PR** su `main` (lo fa l'owner) → deploy di produzione; l'agente controlla che il log
@@ -232,8 +232,8 @@ deploy «Canceled» (build ignorata, A1), nessuna anteprima.
    pnpm dlx vercel@latest redeploy <url del deploy di produzione> --target production
    ```
 
-Dopo il passo 8: esito di 6–8, gotchas, screenshot e stato «in esercizio» della 05 in
-`SESSION_NOTES.md`, che resta (non tracciato) per il commit della 06 (§ 8).
+Dopo il passo 8: esito di 6–8, gotchas, screenshot e stato «in esercizio» della 05 nel commit di
+chiusura su `docs/05-in-esercizio` (§ 8, § 9).
 
 ### 4.3 Che cosa cambia nel codice
 
@@ -329,7 +329,7 @@ sessione (mai nel repo). Ogni fase dichiara l'esito atteso prima di partire.
      mese fatturato.
   5. Lo script prende due screenshot a 390 px, tema chiaro, sull'account di collaudo: `/` →
      `doc/screenshots/casa.png`, `/forniture/<id>` → `doc/screenshots/fornitura.png` (solo dati
-     inventati; restano non tracciati fino al commit della 06).
+     inventati; restano non tracciati fino al commit di chiusura).
 - **D — Sotto la UI / E — Casi negativi** (coppia proprio/altrui sullo stesso URL): lo script, con
   la sessione di collaudo, apre `/bollette/<id della bolletta di collaudo>` → 200 e la pagina mostra
   11,00 €; l'owner, sul telefono con la sua sessione, apre lo stesso URL → 404.
@@ -346,12 +346,12 @@ sessione (mai nel repo). Ogni fase dichiara l'esito atteso prima di partire.
   e una scheda: che cosa si legge male sul telefono vero? Non copre l'installazione come app (09)
   né la fotocamera (06).
 - **G — Ripristino**: account di collaudo già eliminato; gli script usa e getta (Playwright e
-  `tsx`) si cancellano; gli screenshot restano in `doc/screenshots/` per il commit della 06;
+  `tsx`) si cancellano; gli screenshot restano in `doc/screenshots/` per il commit di chiusura;
   `.env.turso-prod` resta sulla macchina dell'owner (serve alle migrazioni future).
 
 ## 8. Messa in esercizio
 
-È questa spec. Ordine (D-41): passi 1–5 (C0 al passo 2); gate verdi, commit unico e PR (stato
+È questa spec. Ordine (D-41): passi 1–5 (C0 al passo 2); gate verdi, commit dell'implementazione e PR (stato
 «implementata il <data>, branch `feature/05-deploy`»); passo 6 merge dall'owner → deploy; passo 7 collaudo in
 produzione (§ 7 C–F); passo 8 chiusura delle iscrizioni.
 
@@ -360,10 +360,10 @@ parte (regola 5 dell'indice); la 05 rifà in produzione le loro misure di chiusu
 una fallisce, si ferma e lo chiede all'owner.
 
 L'esito di 6–8 (fasi C–F, con i difetti trovati), le gotchas nate dopo il merge, i due screenshot e
-lo stato «in esercizio il <data>» della 05 si annotano in `SESSION_NOTES.md`, che resta in vita
-(non tracciato). La sessione della 06 comincia scrivendoli: riga «Stato» di questa spec, indice
-§ 5, CLAUDE.md → Latest, AGENTS.md § 11 e `doc/guide/deploy.md` se ci sono lezioni, README con gli
-screenshot (§ 9); entrano nel commit della 06.
+lo stato «in esercizio il <data>» della 05 si scrivono nella chiusura della stessa sessione: riga
+«Stato» di questa spec, indice § 5, CLAUDE.md → Latest, AGENTS.md § 11 e `doc/guide/deploy.md` se
+ci sono lezioni, README con gli screenshot (§ 9); entrano nel commit di chiusura su
+`docs/05-in-esercizio` (D-41).
 
 ## 9. Documentazione
 
@@ -385,11 +385,11 @@ Nel commit della 05 (prima del merge):
 - `WORKFLOW.md` § 3: la 05 controlla che il testo dica ciò che fanno gli script (produzione solo da
   `.env.turso-prod`, letto da `pnpm db:migrate:prod` e dagli script con `--prod`, mai variabili
   esportate nella shell; letture di produzione con uno script `tsx` usa e getta con
-  `loadProductionTarget()` e `createDb`, solo `SELECT`) e che in «Where things are recorded»
-  `SESSION_NOTES.md` resti in vita dopo una sessione con collaudo in produzione (D-41); corregge
+  `loadProductionTarget()` e `createDb`, solo `SELECT`) e che «Where things are recorded» descriva
+  il collaudo in produzione dopo il merge (D-41); corregge
   solo una differenza di sostanza, in questo commit.
 
-Nel commit della 06 (da `SESSION_NOTES.md`, § 8):
+Nel commit di chiusura (`docs/05-in-esercizio`, dopo il collaudo in produzione, § 8):
 
 - `README.md`, § What it does: i due screenshot a 390 px (tema chiaro) di `/` e di
   `/forniture/<id>`, presi al passo 7 sull'account di collaudo, in `doc/screenshots/casa.png` e
@@ -435,9 +435,9 @@ non entrano nel codice né nel messaggio di commit.
 
 Poi, nell'ordine di § 8: gate di WORKFLOW § 3 verdi; riassumi il diff, scrivi lo stato
 «implementata il <data>, branch `feature/05-deploy`» nella riga «Stato» di questa spec e in § 5 dell'indice, aggiorna
-CLAUDE.md → Latest, chiedimi l'OK per il commit (uno solo); push e PR verso main (il deploy del
+CLAUDE.md → Latest, chiedimi l'OK per il commit dell'implementazione; push e PR verso main (il deploy del
 branch risulta «Canceled»). Il merge lo faccio io. Dopo il merge: passo 6 (build verde, function in
 dub1), passo 7 il collaudo in produzione di § 7 C–F fase per fase con l'esito atteso dichiarato
 prima, passo 8 la chiusura delle iscrizioni. Esito, gotchas, screenshot e stato «in esercizio»
-vanno in SESSION_NOTES.md, che resta: li scrive la sessione della 06 nel suo commit.
+li scrive la chiusura della sessione, in un commit su docs/05-in-esercizio (D-41).
 ```

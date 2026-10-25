@@ -32,6 +32,11 @@ self-hosted on Vercel + Turso, installable on your phone as a PWA.
 - **Bulk import and offline.** Queue dozens of past bills with a cost estimate before starting;
   photograph a bill or read a meter without signal, and it uploads when you are back online.
 
+<p>
+  <img src="doc/screenshots/casa.png" width="260" alt="The «Casa» page on a phone: the house's spending over the last 12 billed months, the monthly average and the costs by category">
+  <img src="doc/screenshots/fornitura.png" width="260" alt="An electricity supply on a phone: its details and the monthly consumption chart">
+</p>
+
 The user interface is in Italian (the bills, the regulator and the market are Italian). The
 documentation for contributors and agents is in English; the specs in `doc/v1/` are in Italian.
 
