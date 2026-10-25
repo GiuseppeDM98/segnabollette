@@ -10,6 +10,7 @@ import { bills, houses, supplies } from '../../src/lib/db/schema/app';
 import { users } from '../../src/lib/db/schema/auth';
 
 export const SEED_A_STATE = 'playwright/.auth/seed-a.json';
+export const SEED_B_STATE = 'playwright/.auth/seed-b.json';
 export const E2E_DB_URL = 'file:e2e.db';
 /** A saved bill's page: /bollette/<id>, not /bollette/nuova?… nor …/modifica. */
 export const SAVED_BILL_URL = /\/bollette\/(?!nuova)[^/?]+$/;

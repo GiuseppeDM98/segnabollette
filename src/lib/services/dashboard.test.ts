@@ -11,7 +11,7 @@ import { monthEnd, monthRange, monthStart } from '@/lib/domain/dates';
 import type { MonthKey } from '@/lib/domain/types';
 import { confirmBill } from './bills';
 import { getHouseDashboard, getSupplyDashboard } from './dashboard';
-import { createSupply } from './houses-supplies';
+import { archiveSupply, createSupply } from './houses-supplies';
 import { createSelfReadings } from './readings';
 
 const MANUAL = { source: 'manual' } as const;
@@ -241,6 +241,38 @@ describe('getHouseDashboard', () => {
     const electricity = dashboard.supplies.find((entry) => entry.supply.id === supplyId);
     expect(electricity?.lastBilledMonth).toBe(LAST_MONTH);
     expect(electricity?.lastBilled?.totalCents).toBe(1000);
+  });
+
+  it('ends the tiles without the archived supplies but still counts their spending', async () => {
+    const { db, userId } = await setup();
+    const { houseId, supplyId } = await createHouseWithSupply(db, userId);
+    const { supplyId: waterId } = await createSupply(db, userId, {
+      houseId,
+      kind: 'water',
+      label: 'Acqua',
+      supplierName: null,
+      identifier: null,
+      hasPhotovoltaic: false,
+    });
+    // Electricity to last month; the water, billed to six months ago, is then archived.
+    await addMonthlyElectricity(db, userId, supplyId, monthRange('2026-01', LAST_MONTH), 1000);
+    await addQuarterlyWater(
+      db,
+      userId,
+      waterId,
+      [
+        ['2025-11', '2026-01'],
+        ['2026-02', '2026-04'],
+      ],
+      3000,
+    );
+    await archiveSupply(db, userId, waterId, { archived: true, now: 1000 });
+
+    const dashboard = await getHouseDashboard(db, userId, houseId, { today: TODAY, range: '24' });
+
+    expect(dashboard.houseEndMonth).toBe(LAST_MONTH);
+    expect(dashboard.rolling?.last12).toBe(15_000);
+    expect(dashboard.averageMonthlyCents).toBe(1364);
   });
 
   it('has no tiles for a house without bills', async () => {

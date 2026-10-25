@@ -2,8 +2,8 @@
 
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 20 rilievi, 1 decisione
 > (D-41). Pronta per l'implementazione.
-> **Branch**: `feature/05-deploy` da `main` aggiornato dopo il merge della 04. **Dipende da**: 04 (in
-> esercizio).
+> **Branch**: `feature/05-deploy` da `main` aggiornato dopo il merge della 04. **Dipende da**: 04 (ritirata
+> il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-1, D-2, D-4, D-37, D-40, D-41, D-51; scelte
 > T-2, T-15, T-34; contratti usati C-2 (`createDb`); un contratto nuovo: C-22
 > (`readProductionTarget`, `loadProductionTarget`, in `scripts/production-target.ts`).
@@ -418,9 +418,8 @@ Contesto, prima di toccare qualsiasi file:
 - Leggi doc/v1/00-INDICE.md per intero (decisioni D-37, D-40, D-41, scelte T-2, T-15, T-34,
   contratti C-2 e C-22, regole della serie) e poi la spec 05 INTERA
 
-Prima di tutto (su `main` aggiornato con `git pull`): scrivi lo stato «in esercizio il <data>,
-PR #N» della spec 04 nella sua riga «Stato» e in § 5 dell'indice (PR mergiata e collaudo
-annotato in CLAUDE.md: regola 5 dell'indice); entra nel commit di questa sessione.
+Prima di tutto: `git pull` su `main`; la 04 è ritirata (2026-10-24, stato in § 5 dell'indice e in
+CLAUDE.md → Latest), quindi non c'è uno stato da scrivere per lei.
 
 Prima della prima modifica: `git branch --show-current` deve dire main e `git pull` lo porta al
 merge della 04; crea feature/05-deploy. Crea SESSION_NOTES.md.

@@ -1,5 +1,5 @@
 /**
- * Isolation through the pages and the save action. Seed user A reads (and never writes); the
+ * Isolation through the pages and the save action. Seed users A and B read (and never write); the
  * write pair uses a user of its own («Casa Ibis») and tampers with the bound bill id.
  */
 import { expect, test } from '@playwright/test';
@@ -13,6 +13,7 @@ import {
   enterBill,
   gotoReady,
   SEED_A_STATE,
+  SEED_B_STATE,
   seedIds,
   signUpTestUser,
 } from './helpers';
@@ -46,6 +47,22 @@ test.describe('letture di A', () => {
       expect(response?.status(), url).toBe(404);
       await expect(page.getByRole('heading', { name: 'Pagina non trovata' })).toBeVisible();
     }
+    for (const url of urls(own)) {
+      const response = await page.goto(url);
+      expect(response?.status(), url).toBe(200);
+      await expect(page.getByRole('heading', { name: 'Pagina non trovata' })).toHaveCount(0);
+    }
+  });
+});
+
+// The other half of the pair: the very URLs that gave A a 404 open for B, so that 404 came from
+// the owner check and not from an id that does not exist.
+test.describe('letture di B', () => {
+  test.use({ storageState: SEED_B_STATE });
+
+  test('le pagine con gli id di B si aprono per B', async ({ page }) => {
+    const own = await seedIds('seed-b@example.test');
+
     for (const url of urls(own)) {
       const response = await page.goto(url);
       expect(response?.status(), url).toBe(200);

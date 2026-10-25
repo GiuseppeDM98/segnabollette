@@ -30,14 +30,13 @@ test('la fornitura a contatore mostra i quattro grafici, con le letture non anco
 
   const frames = page.getByTestId('chart-frame');
   await expect(frames).toHaveCount(4);
-  for (const title of [
+  // An array checks the order too: consumption, unit price, costs, then year over year.
+  await expect(frames.getByRole('heading', { level: 2 })).toHaveText([
     'Consumi per mese',
     'Costo unitario',
     'Costi per categoria',
     'Anno su anno',
-  ]) {
-    await expect(page.getByRole('heading', { name: title, level: 2 })).toBeVisible();
-  }
+  ]);
   await expect(frames.first().getByRole('list', { name: 'Legenda' })).toContainText(
     'da letture, non ancora fatturato',
   );
@@ -55,6 +54,16 @@ test('con ?periodo=12 ogni grafico ha una tabella di 12 righe', async ({ page })
   await expect(
     page.getByTestId('chart-frame').first().locator('details table tbody tr'),
   ).toHaveCount(24);
+});
+
+test('il gas chiama «Consumo» la serie senza fasce, non «Fascia unica»', async ({ page }) => {
+  const ids = await seedSupplyIds('seed-a@example.test');
+
+  await page.goto(`/forniture/${ids.Gas}`);
+
+  const legend = page.getByTestId('chart-frame').first().getByRole('list', { name: 'Legenda' });
+  await expect(legend).toContainText('Consumo');
+  await expect(legend).not.toContainText('Fascia unica');
 });
 
 test("l'acqua dice che non ha un riferimento nazionale", async ({ page }) => {

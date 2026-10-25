@@ -20,7 +20,7 @@ pianificazione, mai nel repo).
 1. **Il tema** chiede il confronto «contro i prezzi di riferimento del mercato (PUN per la luce,
    PSV per il gas, i prezzi ARERA del servizio di tutela/vulnerabili)». Dopo la 04 il grafico del
    costo unitario ha già il punto d'aggancio (`UnitPriceChart` con `references?: ReferenceLine[]`,
-   oggi vuoto).
+   oggi vuoto, che disegna già linee tratteggiate, colonne della tabella e fonti: § 4.6).
 2. **PUN Index GME** (dal 1° gennaio 2025 al posto del PUN; ARERA 304/2024/R/eel). Pagina «Dati
    storici» MGP:
    `https://www.mercatoelettrico.org/it-it/Home/Esiti/Elettricita/MGP/Statistiche/DatiStorici`; un
@@ -368,24 +368,30 @@ della bolletta `confirmed` della fornitura dell'utente con `calorific_value_gj` 
 `references: ReferenceLine[]` (`loadReferenceSeries(db)`, poi `referenceLinesFor` con `kind` della
 fornitura, `months` mostrati e `calorificValueGj: latestCalorificValueGj`).
 
-`src/components/charts/unit-price-chart.tsx` (04) cambia così:
-- per ogni elemento di `references`, nell'ordine ricevuto, una `Line` con `dataKey` uguale a
-  `key`, nome in legenda = `label`, `dot={false}`, `connectNulls={false}`; le linee `pun` e `cmem`
-  (all'ingrosso) hanno `stroke="var(--color-reference-wholesale)"` e `strokeDasharray="6 4"`, le
-  linee `areraLuce` e `areraGasSale` `stroke="var(--color-reference-arera)"` e
-  `strokeDasharray="2 3"`; il componente sceglie lo stile da `key`;
-- i punti ricevono un campo per ogni `key` da una nuova funzione pura di
-  `src/lib/charts/series.ts`:
+`src/components/charts/unit-price-chart.tsx` sa già disegnare i riferimenti (letto nel codice il
+2026-10-24): per ogni elemento di `references`, nell'ordine ricevuto, una `Line` tratteggiata
+(`strokeDasharray="6 4"`, `dot={false}`, `connectNulls={false}`) con `dataKey` =
+`reference-<key>` e nome in legenda = `label`, colore per posizione (la prima
+`--color-reference-wholesale`, la seconda `--color-reference-arera`); fonde i valori nei punti al
+proprio interno (`values[point.month] ?? null`); aggiunge alla tabella «Vedi i dati» una colonna
+per linea dopo le due dei prezzi (intestazione = `label`, celle `formatUnitPriceValue`, «—» se
+`null`); stampa sotto il grafico ogni `source` distinta, poi `note`. La 08 lo cambia così:
+- la fusione dei valori nei punti esce dal componente e diventa una funzione pura di
+  `src/lib/charts/series.ts`, che il componente chiama al suo posto:
   `withReferences(points: UnitPricePoint[], references: ReferenceLine[]): Array<UnitPricePoint & { [referenceKey: string]: string | number | null }>`
-  (per ogni punto e ogni linea, `values[point.month] ?? null`);
-- la tabella «Vedi i dati» ha una colonna per linea, dopo quelle della 04: intestazione = `label`,
-  celle `formatUnitPriceValue(valore, unit)` (C-8, 04), «—» se `null`;
+  (per ogni punto e ogni linea, il campo `reference-<key>` = `values[point.month] ?? null`; il
+  prefisso resta, così una `key` non può coprire `commodity` o `total`);
+- lo stile si sceglie da `key`, non più dalla posizione: `pun` e `cmem` (all'ingrosso)
+  `stroke="var(--color-reference-wholesale)"` e `strokeDasharray="6 4"`, `areraLuce` e
+  `areraGasSale` `stroke="var(--color-reference-arera)"` e `strokeDasharray="2 3"` (la legenda
+  segue lo stesso tratteggio);
 - `note` accetta anche un array di testi (`note?: string | readonly string[]`): un array si mostra
-  con un paragrafo per elemento; l'acqua continua a passare il testo della 04.
+  con un paragrafo per elemento, dopo le fonti; l'acqua continua a passare il suo testo.
 
 La pagina `/forniture/[id]` passa `references` a `UnitPriceChart` e, per luce e gas, una `note` con,
-nell'ordine: la didascalia fissa di T-31, una riga per ciascuna `source` delle linee restituite
-(senza doppioni), e la frase sul PUN nel caso descritto sotto. La didascalia (T-31):
+nell'ordine: la didascalia fissa di T-31 e la frase sul PUN nel caso descritto sotto. Le fonti non
+entrano nella `note`: le stampa già il componente, una per `source` distinta. La didascalia
+(T-31):
 
 > «La tua materia prima è il solo prezzo dell'energia (o del gas) del tuo contratto, senza IVA. PUN
 > e PSV sono prezzi all'ingrosso, senza perdite di rete, dispacciamento e margine del venditore:
@@ -476,7 +482,7 @@ stampa i mesi aggiunti e quelli cambiati.
 | Unit | `parse-arera.test.ts`: HTML sintetico con due tabelle (2026, 2025) e spazi nei numeri → mesi giusti; €/GJ incoerente di 0,0001 → errore, di 0,00001 → passa; workbook sintetico costruito con `XLSX.utils.aoa_to_sheet` nella forma di § 1.4 (foglio `ott-dic 2026`, riga d'intestazione con «Materia energia» in una colonna diversa da C) → ottobre, novembre, dicembre con gli stessi tre valori; sottointestazione sbagliata → errore che nomina il foglio; workbook senza fogli riconosciuti → errore; gas con due ambiti uguali → valore; con due ambiti diversi → errore; foglio gas senza ambiti → errore; `findAreraFileLinks` con `E2026-smt.xlsx` e `E2025-smt.xlsx` → il 2026, senza link → errore; `assertXlsxResponse('text/html', …)` e byte `<!DOCTYPE` → errore, byte `PK` con `content-type` xlsx → passa; `assertCmemMatches` con 0,000002 €/Smc di differenza → errore; `assertInRange(3, 0.01, 2, 'luce')` → errore. | Leggere sempre la colonna C per la luce → il caso con «Materia energia» spostata fallisce. |
 | Unit | `reference-lines.test.ts` — **pesatura**: luce con `hasCommodityBands` vero, consumo F1/F2/F3 = 50/25/25 e PUN F1 100000, F2 200000, F3 300000 µ€/kWh → 0,175 €/kWh; `single` 100 + F1 100 con PUN `single` 200000 e F1 100000 → 0,15; F1 −10 e F2 50 → solo F2, 0,2; ARERA (valori inventati `single` 220000, F1 300000, F23 200000) con 50/25/25 → 0,25; banda F2 assente nel PUN del mese → `null`; gas con PCS 0,0385 e CMEM 20.000.000 µ€/GJ → 0,77 €/Smc, senza PCS → 0,7704; mese senza consumo → `null`; acqua → `[]`. | Media semplice delle tre fasce invece che pesata sui consumi → 0,2 invece di 0,175. |
 | Unit | `reference-lines.test.ts` — **monoraria (D-44)**: luce con `hasCommodityBands` falso e `consumptionByBand` F1/F2/F3 = 80/60/60 (dalle letture), PUN `single` 200000, F1 100000, F2 200000, F3 300000 → `pun` 0,2 (non 0,19) e `areraLuce` 0,22 (non 0,24). | Ignorare `hasCommodityBands` e pesare sempre `consumptionByBand` → 0,19 e 0,24. |
-| Unit | `src/lib/charts/series.test.ts` esteso: `withReferences` con due punti e una linea `pun` che ha un valore solo nel primo mese → primo punto `pun` = il valore, secondo `null`. | Riempire i buchi con l'ultimo valore noto della linea → il secondo punto ha il valore del primo. |
+| Unit | `src/lib/charts/series.test.ts` esteso: `withReferences` con due punti e una linea `pun` che ha un valore solo nel primo mese → primo punto `reference-pun` = il valore, secondo `null`. | Riempire i buchi con l'ultimo valore noto della linea → il secondo punto ha il valore del primo. |
 | Unit | `scripts/references-no-pun.test.ts`: `git ls-files --cached --others --exclude-standard` non contiene file sotto `data/` con `pun` nel nome, e nessuno di quei file contiene la stringa `PUN INDEX GME` fuori da `scripts/riferimenti/parse-pun.ts`, dai `*.test.ts`, da `doc/v1/` e da `doc/guide/riferimenti.md`. | Creare `data/riferimenti/pun.json` (anche senza `git add`) → fallisce. |
 | Integrazione | `reference-prices.test.ts`: upsert di due mesi con valori diversi, poi di nuovo degli stessi due mesi con altri valori → due righe, ognuna col suo valore nuovo; `loadReferenceSeries` sul DB di test con una riga PUN → la serie contiene quel mese. | `set` con i valori della prima riga invece di `excluded.*` → il secondo mese ha il valore del primo. |
 | Integrazione | `bills.test.ts` esteso: due bollette gas `confirmed` dell'utente A (PCS 0,0390 la più vecchia, nullo la più recente) e una `replaced` con PCS 0,0400 e `period_end` più recente di tutte → `getLatestCalorificValueGj` = 0,0390; la stessa fornitura letta con l'id dell'utente B → `null`. | Togliere il filtro sullo stato → 0,0400. |

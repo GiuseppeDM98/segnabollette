@@ -980,8 +980,8 @@ fornitura). «Scarta» in ogni punto dell'interfaccia (caricamento, «Da riveder
   bolletta»; `?fornitura=` la preseleziona) e `BillUploader mode="extract"`.
 - **Ingressi a «Carica bolletta»** (`/bollette/carica?fornitura=<id>`): nella card di ogni fornitura
   della pagina «Casa» (`data-testid="supply-card"`, D-52) accanto a «Nuova bolletta»; nella scheda
-  della fornitura `/forniture/[id]`, che nell'intestazione aggiunge «Nuova bolletta»
-  (`/bollette/nuova?fornitura=<id>`) e «Carica bolletta»; nell'elenco `/bollette` accanto a «Nuova
+  della fornitura `/forniture/[id]`, nell'intestazione accanto a «Nuova bolletta»
+  (`/bollette/nuova?fornitura=<id>`, già lì dal 2026-10-24); nell'elenco `/bollette` accanto a «Nuova
   bolletta» (senza `fornitura`). Si mostrano solo se `isExtractionConfigured()`.
 - **`/bollette/revisione/[id]`** (dati da `getExtractionReview`): in cima gli avvisi di
   `draft.warnings`. Documento (D-56): da 1024 px due colonne, a sinistra il PDF in `<iframe
