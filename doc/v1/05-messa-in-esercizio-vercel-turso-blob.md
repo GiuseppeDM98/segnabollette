@@ -72,8 +72,9 @@ misure di chiusura delle spec 01–04 rifatte in produzione; SETUP.md per chi fa
   CLAUDE.md (§ Current Status → Stack), in AGENTS.md § 8 e in `doc/guide/deploy.md`; SETUP.md
   consiglia a chi fa il proprio deploy la location più vicina a `dub1` (`aws-eu-west-1`) senza
   nominare quella dell'owner; Vercel resta in `dub1`;
-  (b) ogni build che non sia di produzione si salta, qualunque sia il branch: `ignoreCommand` di
-  `vercel.json` esce con 0 quando `VERCEL_ENV` non è `production` (niente `git.deploymentEnabled`);
+  (b) ogni build che non sia di produzione si salta: `ignoreCommand` di `vercel.json` esce con 0
+  quando il branch è noto e non è `main` (niente `git.deploymentEnabled`; corretto il 2026-10-25:
+  la prima forma, su `VERCEL_ENV`, saltava anche i merge su `main`);
   la Deployment Protection è «Standard Protection» (solo preview), la produzione è aperta;
   (c) le migrazioni di produzione girano **dalla macchina dell'owner prima del merge** che le
   richiede, mai dal build di Vercel;
@@ -100,14 +101,15 @@ misure di chiusura delle spec 01–04 rifatte in produzione; SETUP.md per chi fa
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["dub1"],
-  "ignoreCommand": "[ \"$VERCEL_ENV\" != production ]"
+  "ignoreCommand": "[ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != main ]"
 }
 ```
 
-Il comando esce con 0 (build saltata, deploy «Canceled») per ogni deploy che non sia di
-produzione, qualunque sia il branch (`feature/*`, `docs/*`, Dependabot); con `main` e con
-`vercel redeploy … --target production` `VERCEL_ENV` è `production`, il comando esce con 1 e la
-build parte. Niente `git.deploymentEnabled`.
+Il comando esce con 0 (build saltata, deploy «Canceled») per ogni branch noto che non sia `main`
+(`feature/*`, `docs/*`, Dependabot); con `main`, o senza `VERCEL_GIT_COMMIT_REF`, esce con 1 e la
+build parte. Niente `git.deploymentEnabled`. Corretto il 2026-10-25: la prima forma, `[
+"$VERCEL_ENV" != production ]`, saltava anche i merge su `main`, perché in un deploy da Git
+`VERCEL_ENV` non c'è durante questo passo (`doc/guide/deploy.md` § 4).
 
 `scripts/production-target.ts` (C-22, nessun effetto all'import):
 

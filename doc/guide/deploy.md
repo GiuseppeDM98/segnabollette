@@ -21,13 +21,14 @@
 ### `ignoreCommand`
 
 ```json
-"ignoreCommand": "[ \"$VERCEL_ENV\" != production ]"
+"ignoreCommand": "[ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != main ]"
 ```
 
 Vercel's «Ignored Build Step»: exit 0 skips the build and the deployment shows «Canceled»; exit 1
-builds. `VERCEL_ENV` is `production` for a push to `main` and for `vercel redeploy … --target
-production`, and `preview` for every other branch (`feature/*`, `docs/*`, Dependabot), so the test
-is on the environment, not on the branch name. There is no `git.deploymentEnabled`: the branch
+builds. It skips only a branch that is known and is not `main` (`feature/*`, `docs/*`, Dependabot);
+when `VERCEL_GIT_COMMIT_REF` is missing it builds, so production is never skipped by mistake. Not
+`VERCEL_ENV`: it is not set while the step runs on a Git deployment, and the first version of this
+command, `[ "$VERCEL_ENV" != production ]`, skipped every merge into `main` (2026-10-25). There is no `git.deploymentEnabled`: the branch
 still produces a (cancelled) deployment, which is the visible proof that nothing was built.
 
 ## 2. The production scripts
@@ -117,15 +118,13 @@ CLI 65.2.0 (2026-10-25) warns that the positional environment of `env rm` and th
 - `<project>.vercel.app` does not exist until the first production deploy, yet the build validates
   `BETTER_AUTH_URL` (`src/lib/env.ts`): set it to the expected origin first, then compare it with
   the domain Vercel assigned and fix it (with a redeploy) if they differ.
-- The first push of the project (`feature/05-deploy`, 2026-10-25) was not skipped: Vercel built it as
-  a **production** deployment (`VERCEL_ENV=production`, the production alias moved to it), most
-  likely because the project had no production deployment yet (not confirmed in Vercel's docs).
-  The Production Branch was `main` all along: it lives in Settings → **Environments** → Production
-  («Branch Tracking»), no longer in Settings → Git. The next branch push must show «Canceled».
-- The deployment of the merge into `main` (2026-10-25) showed «Canceled» by the Ignored Build Step
-  (`buildSkipped: true`, target production), although the command exits 1 when `VERCEL_ENV` is
-  `production`; cause not found. `vercel redeploy <its url> --target production` built it, and so
-  did the later redeploy. At the next merge, check that `main` builds by itself.
+- The first Git deployment of a new project goes to **production** whatever its branch, and was
+  not skipped (`feature/05-deploy`, 2026-10-25): push `main` first. The Production Branch lives in
+  Settings → **Environments** → Production («Branch Tracking»), no longer in Settings → Git.
+- A Git deployment does not see `VERCEL_ENV` in the Ignored Build Step, while `vercel redeploy …
+  --target production` does (2026-10-25): with the first `ignoreCommand` two merges into `main`
+  were «Canceled» (`buildSkipped: true`) and only the redeploys built. Test the branch
+  (`VERCEL_GIT_COMMIT_REF`), and after changing the command check that the next merge builds.
 - The Vercel CLI appends `.vercel` and `.env*` to `.gitignore` whenever it links a project or a
   store or pulls variables: discard that change, since `.env*` cancels the `!.env.example`
   exception. Creating the development store also rewrites `.env.local` with the Development

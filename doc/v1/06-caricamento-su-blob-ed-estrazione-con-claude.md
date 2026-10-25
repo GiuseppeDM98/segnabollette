@@ -1176,13 +1176,11 @@ Ordine (D-41): gate verdi e collaudo § 7 in locale → commit dell'implementazi
 - Variabili, prima del merge: `vercel env add ANTHROPIC_API_KEY production` (l'owner digita la
   chiave personale; il consiglio in SETUP.md: un limite di spesa mensile sull'organizzazione
   Console); `BLOB_READ_WRITE_TOKEN` è già nel progetto di produzione (05).
-- Al push di `feature/06-extraction` il deploy risulta «Canceled» (`vercel ls`): nella 05 il primo
-  push di un branch era andato in produzione, forse perché era il primo deploy del progetto
-  (`doc/guide/deploy.md` § 4); se succede ancora, è un difetto da fermare qui.
-- Merge della PR su `main` (lo fa l'owner) → deploy di produzione; l'agente controlla che il log
-  della build sia verde. Nella 05 il deploy del merge era risultato «Canceled» dall'ignore step,
-  causa non trovata (`doc/guide/deploy.md` § 4): se succede ancora, `vercel redeploy <url>
-  --target production` all'OK dell'owner, e la causa si cerca e si corregge nel commit di chiusura.
+- Al push di `feature/06-extraction` il deploy risulta «Canceled» (`vercel ls`); se no, è un
+  difetto da fermare qui.
+- Merge della PR su `main` (lo fa l'owner) → deploy di produzione, che parte da solo
+  (l'`ignoreCommand` corretto il 2026-10-25, `doc/guide/deploy.md` § 4); l'agente controlla che il
+  log della build sia verde. Un deploy di `main` «Canceled» è un difetto: si ferma qui.
 - Misura di chiusura in produzione, dopo il merge (D-55): dal telefono, «Scatta foto» delle pagine
   di una bolletta vera dell'owner aperta in digitale sullo schermo del computer → la stima → «Estrai
   (circa X $)» solo all'OK dell'owner, col costo detto prima → revisione leggibile sul telefono →

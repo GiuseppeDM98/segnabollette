@@ -86,8 +86,8 @@ Then, in the project's dashboard:
 - **Settings → Functions**: after the first production deploy the region must read `dub1`
   (`vercel.json` sets it; new projects default to `iad1`).
 
-`vercel.json` also has an `ignoreCommand` that skips every build that is not a production one,
-whatever the branch: a pushed feature branch shows a «Canceled» deployment instead of a preview
+`vercel.json` also has an `ignoreCommand` that skips the build of every branch other than `main`:
+a pushed feature branch shows a «Canceled» deployment instead of a preview
 (which would fail anyway, without preview variables). `main` is production; you verify a change
 locally, and in production after the merge.
 

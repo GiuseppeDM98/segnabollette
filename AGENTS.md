@@ -180,8 +180,8 @@ dati»), colours only as `var(--color-…)` tokens in `fill`/`stroke`, stacked c
 ## 8. Deploy, Blob and PWA *(stubs; guides `doc/guide/deploy.md`, `doc/guide/pwa.md` from spec 09)*
 
 Vercel Hobby in `dub1`, production = `main`, every non-production build skipped by the
-`ignoreCommand` of `vercel.json` (exit 0 when `VERCEL_ENV` is not `production`: no preview
-deployments, whatever the branch); production open, Deployment Protection «Standard» (previews
+`ignoreCommand` of `vercel.json` (exit 0 only for a known branch other than `main`: no preview
+deployments; `VERCEL_ENV` is not set during that step, 2026-10-25); production open, Deployment Protection «Standard» (previews
 only); Turso in `aws-eu-west-1`. Production migrations run from the owner's machine before the
 merge (`pnpm db:migrate:prod`); every script that touches production goes through
 `scripts/production-target.ts` (`loadProductionTarget()`, `.env.turso-prod`). Two **private** Blob

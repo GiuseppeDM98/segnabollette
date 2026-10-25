@@ -35,9 +35,9 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   registration closed after the owner's account; the closing checks of specs 01–04 redone in
   production, the phone tour only partial for lack of real data. The rule for a verification in
   production now ends with a closing commit on `docs/<NN>-in-esercizio` (WORKFLOW.md § 3, D-41).
-  **Still open**: why the merge deployment of `main` was skipped, and whether a branch push now
-  shows «Canceled» (`doc/guide/deploy.md` § 4: checked at spec 06); the owner's call on making
-  `BETTER_AUTH_SECRET` Sensitive. **Next**: retire spec 05, then spec 06.
+  The `ignoreCommand` skipped every merge into `main`: it now tests the branch, not `VERCEL_ENV`
+  (`doc/guide/deploy.md` § 4). **Still open**: the owner's call on making `BETTER_AUTH_SECRET`
+  Sensitive. **Next**: retire spec 05, then spec 06.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI and the dashboard exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
