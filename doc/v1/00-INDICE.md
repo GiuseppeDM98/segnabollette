@@ -12,7 +12,8 @@
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
 > `08_CREA_RITIRO_SPEC.md`). **La 01 (PR #3), la 02 (PR #5), la 03 (PR #7) e la 04 (PR #9)
-> sono in esercizio e ritirate il 2026-10-24**; prossimo passo: la 05.
+> sono in esercizio e ritirate il 2026-10-24**; la 05 è implementata il 2026-10-25 (merge,
+> collaudo in produzione e chiusura delle iscrizioni in corso).
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -292,7 +293,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #5; ritirata il 2026-10-24 |
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #7; ritirata il 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #9; ritirata il 2026-10-24 |
-| 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | scritta 2026-10-24; riletta 2026-10-24 |
+| 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | implementata il 2026-10-25, branch `feature/05-deploy` |
 | 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 | scritta 2026-10-24; riletta 2026-10-24 |
 | 07 | Import multiplo | `feature/07-bulk-import` | 06 | scritta 2026-10-24; riletta 2026-10-24 |
 | 08 | Riferimenti di mercato | `feature/08-market-references` | 07 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -303,7 +304,8 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24): prossimo passo il prompt in fondo alla 05.
+La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24); la 05 è implementata (2026-10-25): dopo
+il suo collaudo in produzione, il prompt in fondo alla 06.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 

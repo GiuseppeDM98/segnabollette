@@ -4,10 +4,11 @@ Track your household utility bills and prices — electricity, gas, water, inter
 waste tax — and see whether your offer is a good one. Multi-user with closable registration,
 self-hosted on Vercel + Turso, installable on your phone as a PWA.
 
-> **Status (2026-10-24)**: access (sign-up, sign-in, closable registration), houses and supplies,
-> bills typed by hand, self readings, settings and the charts per supply and per house work
-> locally, on the data model and the calculation engine; deployment, extraction and the rest of the v1 are specified in
-> [`doc/v1/`](doc/v1/) and are being implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
+> **Status (2026-10-25)**: access (sign-up, sign-in, closable registration), houses and supplies,
+> bills typed by hand, self readings, settings and the charts per supply and per house run in
+> production on Vercel + Turso, on the data model and the calculation engine; extraction and the
+> rest of the v1 are specified in [`doc/v1/`](doc/v1/) and are being implemented one spec at a
+> time. Not affiliated with any utility, ARERA or GME.
 
 ## What it does
 
@@ -47,6 +48,12 @@ Next.js 16 · React 19 · TypeScript · pnpm · Turso (libSQL) + Drizzle · Bett
 Vitest · Playwright · Recharts · Tailwind 4 · Vercel Blob · `@anthropic-ai/sdk` · Serwist · Dexie ·
 Vercel (Hobby).
 
+## Self-hosting
+
+Each household runs its own copy: a Vercel Hobby project in `dub1`, a Turso database and two private
+Blob stores, with registration closed after the first account. [`SETUP.md`](SETUP.md) walks from
+the clone to the deployment, the environment variables and the limits of the free plans.
+
 ## Local development
 
 Node ≥ 22 and pnpm 11 (`corepack enable`; on Windows, if that fails with EPERM, `corepack enable
@@ -72,12 +79,12 @@ E2E run needs `pnpm exec playwright install chromium`.
 | [`AGENTS.md`](AGENTS.md) | Repo-wide conventions, isolation, money and dates, testing, gotchas |
 | [`doc/guide/calcoli.md`](doc/guide/calcoli.md) | The data model and the calculation engine: competence, bands, estimates, unit prices |
 | [`doc/guide/app.md`](doc/guide/app.md) | Pages, Server Actions, the bill form, self-readings, theme, end-to-end test rules |
+| [`doc/guide/deploy.md`](doc/guide/deploy.md) | Vercel, Turso and Blob choices, the production scripts, limits, rotating the secrets |
+| [`SETUP.md`](SETUP.md) | From clone to your own deployment on Vercel + Turso + Blob |
 | [`DESIGN.md`](DESIGN.md), [`PRODUCT.md`](PRODUCT.md) | The visual system (tokens, type, components) and the product voice |
 | [`WORKFLOW.md`](WORKFLOW.md) | Session rules and the guided-verification protocol |
 | [`doc/v1/00-INDICE.md`](doc/v1/00-INDICE.md) | The v1 series: decisions, order, shared contracts, one spec per session |
 | [`COMMENTS.md`](COMMENTS.md), [`DEVELOPMENT_GUIDELINES.md`](DEVELOPMENT_GUIDELINES.md) | Binding code and comment guidelines |
-
-`SETUP.md` (from clone to your own deployment on Vercel + Turso + Blob) arrives with spec 05.
 
 ## Data sources and licences
 

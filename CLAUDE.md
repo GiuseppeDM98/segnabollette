@@ -27,13 +27,15 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 - **Stack (decided 2026-10-24)**: Next.js 16 (App Router, `src/proxy.ts`,
   `next build --webpack`), React 19, TypeScript 7, pnpm 11, Turso + Drizzle (`@libsql/client`),
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
-  `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
-  `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: spec 04 in service (PR #9) and retired; the dashboard lives in
-  `doc/guide/app.md` § 9 and `doc/guide/calcoli.md` § 13. The retirement changed code: the bill
-  form's decimals now divide inside `formatDecimalInput` (`scale`), so the earlier verification
-  holds for the code before it and is redone after the deploy. **Next**: spec 05 (production).
-  Still open: none.
+  `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Production on Vercel Hobby in `dub1`
+  (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
+  owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
+  SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
+- **Latest (2026-10-25)**: spec 05 implemented on `feature/05-deploy`: Vercel project in `dub1`
+  (previews skipped), Turso migrated and checked, two private Blob stores, production variables,
+  SETUP.md and `doc/guide/deploy.md`. **Next**: merge, first production deploy, the production verification
+  (which also redoes the closing checks of specs 01–04) and closing registration; their outcome
+  stays in SESSION_NOTES.md for the commit of spec 06. Still open: none.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI and the dashboard exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
@@ -114,9 +116,8 @@ use, never redistributed).
 None.
 
 ## Not yet present (do not assume it exists)
-- SETUP.md: born in spec 05.
-- `doc/guide/*` beyond `calcoli.md` and `app.md`: each guide is born with its spec (deploy 05,
-  estrazione 06, riferimenti 08, pwa 09).
+- `doc/guide/*` beyond `calcoli.md`, `app.md` and `deploy.md`: each guide is born with its spec
+  (estrazione 06, riferimenti 08, pwa 09).
 - Password reset and email verification: no outbound email.
 - Water bills: never tried on a real bill (the owner's water is in the condominium fees); the first
   real one comes with the new house.
