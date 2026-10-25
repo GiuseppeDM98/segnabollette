@@ -553,7 +553,10 @@ già importati si sovrascrivono, l'ultimo incompleto resta fuori fino all'import
   rispettandone le condizioni d'uso e lanciare `pnpm riferimenti:pun -- <zip> --prod` (legge
   `.env.turso-prod`); l'avviso di D-58: «The imported PUN is visible to every user of this
   deployment. GME licenses it for private use only: before opening sign-ups to anyone else, check
-  the GME terms of use (https://www.mercatoelettrico.org/it-it/Home/CondizioniUtilizzo/).».
+  the GME terms of use (https://www.mercatoelettrico.org/it-it/Home/CondizioniUtilizzo/).»; da
+  *Coming next* si toglie la voce «Market references».
+- `doc/guide/deploy.md` § 2: `riferimenti:pun -- <zip> --prod` perde «*(arrives with the market
+  references)*».
 - `CLAUDE.md`: Latest; § Key Features (riferimenti) invariata salvo i dettagli nuovi; § Not yet
   present: le voci su 4 ottobre, STG, «cliente tipo», PCS per mese, acqua e scaricamento automatico
   del PUN ci sono già e restano; si toglie «riferimenti 08» dall'elenco delle guide non ancora nate.

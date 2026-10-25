@@ -3,7 +3,7 @@
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 40 rilievi, 5 decisioni
 > (D-41, D-42, D-55, D-56, D-59). Pronta per l'implementazione.
 > **Branch**: `feature/06-extraction` da `main` aggiornato dopo il merge della 05. **Dipende da**: 05
-> (in esercizio).
+> (ritirata il 2026-10-25).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-2, D-6, D-7, D-9, D-15, D-16, D-17, D-19,
 > D-20, D-21, D-40, D-41, D-42, D-55, D-56, D-59; scelte T-2, T-6, T-11, T-17…T-23, T-33, T-34;
 > contratti C-1 (variabili nuove), C-2 (`documents`, `extractions`), C-5 (codici nuovi), C-8
@@ -1212,7 +1212,8 @@ Ordine (D-41): gate verdi e collaudo § 7 in locale → commit dell'implementazi
   `BLOB_READ_WRITE_TOKEN` in `.env.local`, cancellazione di `.env.vercel-dev`); in *Updating*,
   `pnpm documents:prune -- --prod` con la terza riga facoltativa `BLOB_READ_WRITE_TOKEN` di
   `.env.turso-prod` (il token dello store di produzione, che l'owner aggiunge solo per lanciare
-  `documents:prune -- --prod`).
+  `documents:prune -- --prod`); da *Coming next* si toglie la voce «Anthropic».
+- `doc/guide/deploy.md` § 2: `documents:prune -- --prod` perde «*(arrives with the Blob upload)*».
 - `README.md`: § What it does (PDF e foto, revisione, file conservati), nota privacy: i file vanno
   ad Anthropic per l'estrazione e restano nello store privato del proprio deploy.
 - `.env.example`: le due variabili nuove.
@@ -1232,7 +1233,8 @@ Modello: Claude Opus 5.5, effort high. Taglia: **L** (due servizi esterni, schem
 Ciao, in questa sessione implemento la spec doc/v1/06-caricamento-su-blob-ed-estrazione-con-claude.md.
 
 Prima di tutto (`git branch --show-current` deve dire main, aggiornato con `git pull`): crea il
-branch feature/06-extraction e SESSION_NOTES.md.
+branch feature/06-extraction e SESSION_NOTES.md. La 05 è ritirata (2026-10-25, stato in § 5
+dell'indice e in CLAUDE.md → Latest), quindi non c'è uno stato da scrivere per lei.
 
 Contesto, prima di toccare qualsiasi altro file:
 - Leggi WORKFLOW.md (regole di sessione e collaudo; § 3 dice come si applicano qui)

@@ -75,7 +75,7 @@ From the repository root:
 ```bash
 pnpm dlx vercel@latest login
 pnpm dlx vercel@latest link --yes --project segnabollette
-pnpm dlx vercel@latest git connect
+pnpm dlx vercel@latest git connect   # only if link did not connect your GitHub repository
 ```
 
 Then, in the project's dashboard:
@@ -148,10 +148,10 @@ sign-in.
 ## Deploy and first account
 
 1. Merge into `main`: Vercel builds and deploys production. The build log must be green and the
-   function region `dub1`. If that deployment shows «Canceled», build it with
-   `pnpm dlx vercel@latest redeploy <its url> --target production`. Make the project's first
-   deployment from `main`: a new project may promote its very first deployment to production even
-   from another branch.
+   function region `dub1`. A «Canceled» deployment of `main` means the ignored build step is wrong
+   (`doc/guide/deploy.md` § 4); meanwhile `pnpm dlx vercel@latest redeploy <its url> --target
+   production` builds it. Make the project's first deployment from `main`: a new project may
+   promote its very first deployment to production even from another branch.
 2. Open `https://<project>.vercel.app` on your phone, sign up with your own account, add a house, a
    supply and a bill.
 3. **Close the door**: registration stays open only for the minutes it takes to create your
@@ -187,6 +187,6 @@ that starts on a schema not yet migrated fails at its first query.
 Sections that later versions add to this file:
 
 - **Anthropic** — the API key for the bill extraction, on an organization of your own.
-- **Market prices** — importing the PUN Index GME into your database from a file you download by
+- **Market references** — importing the PUN Index GME into your database from a file you download by
   hand (private use under the GME terms: check them before opening registration to anyone else).
 - **Install on your phone** — the PWA, the camera and the offline queue.

@@ -44,8 +44,14 @@ function NavBar({ pathname }: { pathname: string }) {
                   active ? 'text-on-brand' : 'text-on-brand-soft'
                 }`}
               >
+                {/* Why 6 px below the edge: flush with it, the paper-coloured tick read as a
+                    piece of the page cutting into the cloth (2026-10-25). */}
                 {active && (
-                  <span aria-hidden="true" className="absolute top-0 h-0.5 w-8 bg-on-brand" />
+                  <span
+                    aria-hidden="true"
+                    data-testid="nav-active-tick"
+                    className="absolute top-1.5 h-0.5 w-8 rounded-full bg-on-brand"
+                  />
                 )}
                 <Icon />
                 {label}

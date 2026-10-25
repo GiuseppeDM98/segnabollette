@@ -43,6 +43,32 @@ test('la fornitura a contatore mostra i quattro grafici, con le letture non anco
   await expect(page.getByTestId('kpi-tile')).toHaveCount(2);
 });
 
+test("l'ultima etichetta dei mesi resta dentro ogni grafico", async ({ page }) => {
+  const ids = await seedSupplyIds('seed-a@example.test');
+
+  for (const path of [`/forniture/${ids.Luce}`, '/']) {
+    await page.goto(path);
+    const overflows = await page.locator('svg.recharts-surface').evaluateAll((charts) =>
+      charts.map((chart) => {
+        const right = chart.getBoundingClientRect().right;
+        const months = [...chart.querySelectorAll('text')].filter((text) =>
+          /^[a-z]{3} \d{4}$/.test(text.textContent?.trim() ?? ''),
+        );
+        return months.length === 0
+          ? null
+          : Math.max(...months.map((month) => month.getBoundingClientRect().right - right));
+      }),
+    );
+
+    expect(overflows.length).toBeGreaterThan(0);
+    // The line chart puts its last month on the plot's edge: the margin must hold half a label.
+    for (const overflow of overflows) {
+      expect(overflow).not.toBeNull();
+      expect(overflow).toBeLessThanOrEqual(0);
+    }
+  }
+});
+
 test('con ?periodo=12 ogni grafico ha una tabella di 12 righe', async ({ page }) => {
   const ids = await seedSupplyIds('seed-a@example.test');
 

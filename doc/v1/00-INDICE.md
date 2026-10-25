@@ -12,7 +12,7 @@
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
 > `08_CREA_RITIRO_SPEC.md`). **La 01 (PR #3), la 02 (PR #5), la 03 (PR #7) e la 04 (PR #9)
-> sono in esercizio e ritirate il 2026-10-24**; la 05 è in esercizio il 2026-10-25 (PR #11).
+> sono in esercizio e ritirate il 2026-10-24; la 05 (PR #11) il 2026-10-25.**
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -292,8 +292,8 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #5; ritirata il 2026-10-24 |
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #7; ritirata il 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #9; ritirata il 2026-10-24 |
-| 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | in esercizio il 2026-10-25, PR #11 |
-| 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 | scritta 2026-10-24; riletta 2026-10-24 |
+| 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | in esercizio il 2026-10-25, PR #11; ritirata il 2026-10-25 |
+| 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 (ritirata il 2026-10-25) | scritta 2026-10-24; riletta 2026-10-24 |
 | 07 | Import multiplo | `feature/07-bulk-import` | 06 | scritta 2026-10-24; riletta 2026-10-24 |
 | 08 | Riferimenti di mercato | `feature/08-market-references` | 07 | scritta 2026-10-24; riletta 2026-10-24 |
 | 09 | PWA, fotocamera e coda offline | `feature/09-pwa-offline` | 08 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -303,8 +303,8 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24); la 05 è in esercizio (2026-10-25): il
-suo ritiro, poi il prompt in fondo alla 06.
+La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24), la 05 il 2026-10-25: prossimo passo, il
+prompt in fondo alla 06.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 
@@ -331,7 +331,7 @@ suo ritiro, poi il prompt in fondo alla 06.
 | C-19 | Riferimenti: `fasciaOfHour(date, hour)`, `isNationalHoliday`, `easterSunday` (`fasce.ts`); `computePunMonthly(prices)`, `PunBand` (`pun.ts`); `ReferenceSeries`, `loadReferenceSeries(db)` (`series.ts`); `referenceLinesFor({ kind, months, series, calorificValueGj })`, `STANDARD_CALORIFIC_VALUE_GJ` (`reference-lines.ts`); `ReferenceLine` resta della 04 (C-15) | `src/lib/references/*` | 08 | — |
 | C-20 | Coda offline: `offlineDb` (Dexie `segnabollette-offline`, tabelle `pendingBillUploads`, `pendingSelfReadings`, voci con `userId`), `QueueDeps`, `browserQueueDeps(userId)`, `enqueueBillUpload`, `enqueueSelfReading`, `drainQueue(deps)`, `retryItem(kind, id, deps)`, `removeItem`, `clearUserQueue(userId)`, `RETRY_DELAYS_MS`, `NETWORK_RETRY_DELAY_MS`, `QUEUE_LOCK_NAME`; `QueueUserProvider`, `useQueueDeps`, `useQueueItems`, `useQueueTriggers` (`src/components/offline/`); route `POST /api/readings` | `src/lib/offline/*` | 09 | — |
 | C-21 | Seed: `SEED_USERS` (due utenti) e `seedDatabase(db)` (01; la 02 lo estende con i dati senza cambiarne la firma); `buildSeedBills(kind, supplyId, months)` (02). Gli utenti seed sono in sola lettura per Playwright (AGENTS.md § 9) | `scripts/seed-data.ts`, `scripts/seed.ts` | 01 (utenti), 02 (dati) | 03+, E2E |
-| C-22 | Produzione dagli script: `readProductionTarget(env: Readonly<Record<string, string \| undefined>>): { url; authToken }` e `loadProductionTarget()` (legge `.env.turso-prod`); gli script che scrivono in produzione lo fanno solo dietro `--prod` | `scripts/production-target.ts` | 05 | 06 (`documents:prune`), 08 (`riferimenti:pun`) |
+| C-22 | Produzione dagli script: `readProductionTarget(env: Readonly<Record<string, string \| undefined>>): { url; authToken }` e `loadProductionTarget()` (legge `.env.turso-prod`); gli script che scrivono in produzione lo fanno solo dietro `--prod` | `scripts/production-target.ts` | 05 | 06 (`documents:prune`), 07 (le letture di produzione del collaudo), 08 (`riferimenti:pun`) |
 | C-23 | Helper E2E: `signUpTestUser(page, prefix): Promise<{ email; password }>` (registra dalla UI un utente nuovo per ogni test che scrive dati) | `tests/e2e/helpers.ts` | 03 | 04+ |
 | C-24 | `AppShell` (componente client) con props `{ children }` (03), `reviewCount: number` (06), `userId: string` (09), montato dal layout `(app)` dopo la guardia; cresce solo con props calcolate dal layout e componenti client al suo interno, e non ha un'intestazione (guida `doc/guide/app.md` § 4) | `src/components/shell/app-shell.tsx` | 03 | 06, 09 |
 

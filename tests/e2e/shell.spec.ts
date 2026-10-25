@@ -49,6 +49,19 @@ test('«Casa» è attiva solo su /', async ({ page }) => {
   ).toHaveAttribute('aria-current', 'page');
 });
 
+test('sul telefono la tacca della voce attiva sta dentro la barra, staccata dal bordo', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'the bottom bar exists only below 1024 px');
+  await page.goto('/');
+  const bar = await page.getByTestId('nav-bar').boundingBox();
+  const tick = await page.getByTestId('nav-bar').getByTestId('nav-active-tick').boundingBox();
+  if (!bar || !tick) throw new Error('no bar or tick box');
+
+  // Flush with the edge, the paper-coloured tick reads as the page cutting into the cloth.
+  expect(tick.y - bar.y).toBeGreaterThanOrEqual(4);
+});
+
 test('la barra sta in basso sul telefono e a lato sul computer', async ({ page }, testInfo) => {
   await page.goto('/');
   const box = await page.getByRole('navigation', { name: 'Principale' }).boundingBox();

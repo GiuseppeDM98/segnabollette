@@ -179,7 +179,7 @@ dati»), colours only as `var(--color-…)` tokens in `fill`/`stroke`, stacked c
 
 ## 8. Deploy, Blob and PWA *(stubs; guides `doc/guide/deploy.md`, `doc/guide/pwa.md` from spec 09)*
 
-Vercel Hobby in `dub1`, production = `main`, every non-production build skipped by the
+Vercel Hobby in `dub1`, production = `main`, the build of every other branch skipped by the
 `ignoreCommand` of `vercel.json` (exit 0 only for a known branch other than `main`: no preview
 deployments; `VERCEL_ENV` is not set during that step, 2026-10-25); production open, Deployment Protection «Standard» (previews
 only); Turso in `aws-eu-west-1`. Production migrations run from the owner's machine before the
@@ -282,7 +282,9 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`
   touched; `tsx --env-file-if-exists` (not `--env-file`, which crashes when the file is missing).
 - 2026-10-24 — A throwaway `tsx` script outside the repo (the agent's scratchpad) resolves `@/…`
   with `--tsconfig tsconfig.json` but not bare packages: it may import only `@/lib/…` modules (and
-  use `client.execute` for raw SQL), never `drizzle-orm` directly.
+  use `client.execute` for raw SQL), never `drizzle-orm` directly. A throwaway Playwright script
+  there is a `.cjs` that loads it with `createRequire('<repo>/package.json')('@playwright/test')`
+  (2026-10-25).
 - 2026-10-24 — `src/lib/domain/bill-input.ts` sets zod's Italian locale globally
   (`z.config(z.locales.it())`) so that `VALIDATION` details are Italian; a schema whose messages
   must stay English writes them explicitly, as `src/lib/env-schema.ts` does.
@@ -304,7 +306,8 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`
   Server Action (also `.bind`), never a closure written in the page; a `'use server'` file
   exports only async functions, so action schemas live in `schemas.ts` beside it.
 - 2026-10-24 — Windows, Git Bash: an argument `/` given to `node` arrives as
-  `C:/Program Files/Git/` (set `MSYS_NO_PATHCONV=1`); stopping the agent's background task of
+  `C:/Program Files/Git/` (set `MSYS_NO_PATHCONV=1`; it breaks the pnpm shim, so `pnpm dlx vercel
+  api` takes `MSYS2_ARG_CONV_EXCL` instead, 2026-10-25); stopping the agent's background task of
   `pnpm start` leaves the `node` child listening, so the port stays busy until that process is killed.
 - 2026-10-24 — Recharts 3.10.1 with React 19 needs `react-is` 19.3.1 installed beside it (a peer
   dependency nothing in `src` imports): do not remove it as unused.
@@ -325,6 +328,10 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`
 - 2026-10-25 — Windows without WSL has no Turso CLI: the dashboard (app.turso.tech) creates the
   database and a token (read and write, no expiration); PowerShell has no `openssl`, the auth
   secret comes from `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+- 2026-10-25 — Vercel after the first deploy: the first Git deployment of a new project goes to
+  production whatever its branch; the Ignored Build Step of a Git deployment does not see
+  `VERCEL_ENV`; the dashboard's «Sensitive» switch is off by default; CLI 65.2.0 deprecates the
+  positional environment of `env rm` and `redeploy --target`. Details in `doc/guide/deploy.md` § 3–4.
 
 ## 12. Definition of done (per session)
 
