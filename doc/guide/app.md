@@ -227,13 +227,13 @@ the overlap panel from the start (the review knows them); manual entry learns th
   `overlap-panel`, `line-group`,
   `group-subtotal`, `arithmetic-warnings`, `form-errors`, `field-error`, `reading-row`,
   `self-reading-form`, `lower-reading-warning`, `delete-account`, `confirm-dialog`, `nav-bar`,
-  `side-bar`, `chart-frame`, `kpi-tile`, `supply-last-month`.
+  `nav-active-tick`, `side-bar`, `chart-frame`, `kpi-tile`, `supply-last-month`.
 - `dashboard.spec.ts` only reads seed A (no decoy word); `seedSupplyIds(email)` gives the seed
   supplies' ids by name. `a11y.spec.ts` opens every `<details>` before axe, so the charts' data
   tables are checked too.
 - README screenshots (`doc/screenshots/`): a 390×844 viewport at scale 2, light theme, an account
-  with invented data only, and never `fullPage`: the fixed bottom bar would land in the middle of
-  the image (2026-10-25).
+  with invented data only, never `fullPage` (the fixed bottom bar would land in the middle of the
+  image) and from a production build: `next dev` draws its indicator over the bar (2026-10-25).
 - Italian numbers in assertions: `it-IT` groups thousands only from five digits, so `1100 kWh`,
   not `1.100` (2026-10-24), as `formatQuantity` prints them.
 
@@ -266,9 +266,10 @@ print «0,47 €»); quantities `formatQuantity`; the tiles take cents and micro
   `md` (a `ResponsiveContainer` without a parent height draws nothing), the HTML legend, notes,
   and `<details><summary>Vedi i dati</summary>` with a table of one row per month (per bar),
   every cell formatted by `format.ts`; the table region is focusable for sideways scrolling.
-- `chart-parts.tsx`: axis, grid and cursor styles, `CHART_MARGIN` (20 px on the right for the last
-  month label), `HatchPattern` and `StripePattern`, `ChartLegend`, `ChartTooltipBox` (value first,
-  then the series name, a line key in the series colour).
+- `chart-parts.tsx`: axis, grid and cursor styles, `CHART_MARGIN` (32 px on the right: the line
+  chart centres its last month label on the plot's edge, and 20 px cut it at 390 px, 2026-10-25),
+  `HatchPattern`, `StripePattern`, `ChartLegend`, `ChartTooltipBox` (value first, then the series
+  name, a line key in the series colour); `dashboard.spec.ts` keeps every month label inside its chart.
 - `ConsumptionChart`: bands F1/F2/F3/F23 and `single` stacked («Fascia unica» for electricity,
   «Consumo» for gas and water), then «da letture, non ancora fatturato» on the same stack
   (striped, bordered in `--color-readings`), «Autoconsumo» on the stack and «Immessa in rete» as a

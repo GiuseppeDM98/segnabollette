@@ -654,8 +654,9 @@ primary) confirmation.
 
 ### Navigation
 - **Bottom bar (below 1024 px):** cloth; items 64 px tall, icon above an 11 px 700 label.
-  Inactive `on-brand-soft`; active `on-brand` with a 2 px × 32 px `on-brand` tick on the top edge
-  and `aria-current="page"`.
+  Inactive `on-brand-soft`; active `on-brand` with a 2 px × 32 px `on-brand` tick with rounded ends,
+  6 px below the top edge (flush with the edge, the paper-coloured tick read as a piece of the page
+  cutting into the cloth; 2026-10-25), and `aria-current="page"`.
 - **Sidebar (1024 px and up):** cloth, 224 px; the logo and "Segnabollette" in 16 px 800 at the
   top, then rows of icon and 15 px 700 label, 44 px tall, 2 px corners. Inactive `on-brand-soft`,
   hover and active `on-brand`; the active row has a 2 px `on-brand` tick on its right edge, the

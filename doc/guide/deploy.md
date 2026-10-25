@@ -77,7 +77,8 @@ turso db create segnabollette
 turso db show segnabollette --url
 turso db tokens create segnabollette
 
-# Vercel project (repository root)
+# Vercel project (repository root); CLI 65.2.0's link also connects the GitHub repository,
+# git connect only if it did not (2026-10-25)
 pnpm dlx vercel@latest link --yes --project segnabollette
 pnpm dlx vercel@latest git connect
 
@@ -99,12 +100,16 @@ refuses the sign-in), `SIGNUP_ENABLED`; linking a store adds `BLOB_READ_WRITE_TO
 (Vercel CLI 65.2.0, 2026-10-25: only that one, not `BLOB_STORE_ID` nor `BLOB_WEBHOOK_PUBLIC_KEY`). A Sensitive
 variable cannot be read back; the dashboard form has a «Sensitive» switch to tick for secrets
 (2026-10-25: two variables created there without it show as «Config» in `env ls`, the others as
-«Secret»; making one Sensitive means creating it again and redeploying).
+«Secret»; making one Sensitive means creating it again and redeploying). In this deployment
+`BETTER_AUTH_SECRET` stays not Sensitive (owner's decision, 2026-10-25).
 
 CLI 65.2.0 (2026-10-25) warns that the positional environment of `env rm` and the `--target` of
 `redeploy` are deprecated in favour of `--environment`; both still work. From Git Bash, `vercel api
 /v13/…` needs `MSYS2_ARG_CONV_EXCL="/v13"` (the shell turns the path into a Windows one;
-`MSYS_NO_PATHCONV=1` breaks the pnpm shim instead).
+`MSYS_NO_PATHCONV=1` breaks the pnpm shim instead). `vercel ls` does not name the commit a deployment
+built; `MSYS2_ARG_CONV_EXCL="/v6" pnpm dlx vercel@latest api "/v6/deployments?app=segnabollette&limit=8"`
+does (`readyState`, `target`, `meta.githubCommitRef`, `meta.githubCommitSha`, `source` git or
+cli): that is how a merge is proved built from Git rather than redeployed (2026-10-25).
 
 ## 4. Traps
 
@@ -124,7 +129,8 @@ CLI 65.2.0 (2026-10-25) warns that the positional environment of `env rm` and th
 - A Git deployment does not see `VERCEL_ENV` in the Ignored Build Step, while `vercel redeploy …
   --target production` does (2026-10-25): with the first `ignoreCommand` two merges into `main`
   were «Canceled» (`buildSkipped: true`) and only the redeploys built. Test the branch
-  (`VERCEL_GIT_COMMIT_REF`), and after changing the command check that the next merge builds.
+  (`VERCEL_GIT_COMMIT_REF`), and after changing the command check that the next merge builds: the
+  push of the fix to `main` built from Git («Ready», 2026-10-25).
 - The Vercel CLI appends `.vercel` and `.env*` to `.gitignore` whenever it links a project or a
   store or pulls variables: discard that change, since `.env*` cancels the `!.env.example`
   exception. Creating the development store also rewrites `.env.local` with the Development

@@ -640,7 +640,8 @@ Nella sessione della 09:
   aggiornato: restano notifiche push, dashboard offline, Web Share Target e badge; si aggiungono
   «modifiche offline di bollette già salvate», «sincronizzazione in background su iOS (non esiste)»
   e «apertura dell'app a freddo senza rete (la coda vale per la pagina già aperta)» (D-60).
-- `SETUP.md`: sezione *Install on your phone*.
+- `SETUP.md`: sezione *Install on your phone*; da *Coming next* si toglie la sua voce, e la
+  sezione intera se resta vuota.
 - `README.md`: § What it does (installabile, offline).
 - `WORKFLOW.md` § 3: la riga `pnpm icons` è vera; il progetto `pwa` nella riga dei browser test.
 

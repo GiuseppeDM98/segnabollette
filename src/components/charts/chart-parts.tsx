@@ -11,8 +11,12 @@ export const AXIS_TICK = {
   fontSize: 11,
   fontFamily: 'var(--font-print)',
 };
-/** Room on the right for the last month label, which the axis centres on its bar. */
-export const CHART_MARGIN = { top: 8, right: 20, bottom: 0, left: 0 };
+/**
+ * Room on the right for the last month label, which the axis centres on its bar or, in the line
+ * chart, on the plot's right edge: «ott 2026» at 11 px needs about 27 px past that edge (20 cut
+ * its last digit at 390 px, 2026-10-25).
+ */
+export const CHART_MARGIN = { top: 8, right: 32, bottom: 0, left: 0 };
 export const AXIS_LINE = { stroke: 'var(--color-rule-strong)' };
 export const GRID_STROKE = 'var(--color-rule)';
 export const ZERO_LINE_STROKE = 'var(--color-ink-muted)';

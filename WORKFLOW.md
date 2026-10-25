@@ -166,10 +166,10 @@ one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.
   unit and repository tests use a fresh temp **file** per test with the real migrations
   (`createTestDb()`, never `:memory:` — AGENTS.md § Gotchas); Playwright uses `file:e2e.db`
   rebuilt by its global setup. Production Turso is reached only through `.env.turso-prod`
-  (gitignored, spec 05), read by `pnpm db:migrate:prod` and by the scripts that take `--prod`
+  (gitignored, 2026-10-25), read by `pnpm db:migrate:prod` and by the scripts that take `--prod`
   (`riferimenti:pun`, `documents:prune`); never by exporting variables into the shell. Without
   `--prod` those scripts refuse a database URL that does not start with `file:`.
-- **Blob**: development uses its own private store (`segnabollette-files-dev`, spec 05), never the
+- **Blob**: development uses its own private store (`segnabollette-files-dev`, 2026-10-25), never the
   production one; tests and Playwright never touch Blob (fake store behind the container).
 - **Anthropic**: tests and Playwright never call it (fake extractor behind the container, fixture
   extractions in `tests/fixtures/extractions/`). A real extraction happens only in a guided
@@ -195,18 +195,21 @@ one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.
 `pnpm db:studio` on `local.db`; a throwaway `tsx` script with `createDb({ url: 'file:local.db' })`
 (never `src/lib/db/client.ts`, which is server-only); in
 production a throwaway `tsx` script with `loadProductionTarget()` and `createDb`, `SELECT` only,
-printing counts and ids, never the owner's names or emails (spec 05). Blob: `vercel blob list --prefix users/`
+printing counts and ids, never the owner's names or emails (2026-10-25). Blob: `vercel blob list --prefix users/`
 on the store of the environment in question. Never judge an outcome from the page alone when a
 row can be read.
 
 ### Branches
 
-`main` is the default and the integration branch **and production** (a merged PR deploys, spec 05).
+`main` is the default and the integration branch **and production** (a merged PR deploys, since 2026-10-25).
 One branch per spec (`feature/NN-slug`, named in the spec header), one squashed commit, one PR to
-`main` (from spec 05, a second branch `docs/<NN>-in-esercizio` for the closing commit after the
+`main` (since 2026-10-25, a second branch `docs/<NN>-in-esercizio` for the closing commit after the
 production verification, § Where things are recorded); the monthly ARERA refresh (spec 08) uses `feature/riferimenti-<YYYY-MM>`. No `develop`, no
-preview deployments: the ignored build step of `vercel.json` skips every non-production build
-(verification runs locally, and in production after the merge).
+preview deployments: the ignored build step of `vercel.json` skips the build of every branch other
+than `main` (verification runs locally, and in production after the merge). A fix found after the
+closing commit goes on its own branch `fix/<slug>`, one squashed commit and a PR, like any change
+to `main` (2026-10-25: the `ignoreCommand` fix `4b5ee0a` went to `main` directly, a one-off the
+owner accepted).
 
 ### Where things are recorded
 

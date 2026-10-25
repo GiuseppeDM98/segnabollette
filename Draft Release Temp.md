@@ -3,6 +3,8 @@
 > 2026-10-24 – 2026-10-25
 
 - Added the look of the whole app: a savings-passbook design with aligned figures and clear tables, light and dark themes, and a five-item navigation bar at the bottom on phones and at the side on computers.
+- Fixed the last month under every chart, whose final digit was cut off on phones.
+- Fixed the mark of the active item in the bottom bar: it now sits inside the bar instead of looking like a piece of the page cutting into it.
 
 **Casa**
 
@@ -37,3 +39,4 @@
 
 - Added a setup guide that takes you from the clone to your own deployment on Vercel, Turso and private file storage in Europe, ending with registration closed after your account.
 - Added a production migration command that reads its database from a file of its own and refuses to run against a local database by mistake.
+- Fixed automatic deployments: a merge into the main branch now builds production, while other branches are still skipped.

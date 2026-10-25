@@ -31,13 +31,13 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
   owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
   SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-25)**: spec 05 in service (PR #11): production on Vercel in `dub1` with
-  registration closed after the owner's account; the closing checks of specs 01–04 redone in
-  production, the phone tour only partial for lack of real data. The rule for a verification in
-  production now ends with a closing commit on `docs/<NN>-in-esercizio` (WORKFLOW.md § 3, D-41).
-  The `ignoreCommand` skipped every merge into `main`: it now tests the branch, not `VERCEL_ENV`
-  (`doc/guide/deploy.md` § 4). **Still open**: the owner's call on making `BETTER_AUTH_SECRET`
-  Sensitive. **Next**: retire spec 05, then spec 06.
+- **Latest (2026-10-25)**: spec 05 in service (PR #11) and retired; production lives in
+  `doc/guide/deploy.md` and SETUP.md, and the fixed `ignoreCommand` built `main` from a Git push.
+  The retirement changed code: the charts' right margin (the last month label is no longer cut at
+  390 px) and the bottom bar's active tick, now 6 px inside the cloth (DESIGN.md); README
+  screenshots retaken locally. The production verification holds for the code before this change
+  and is redone after the deploy; the phone tour, partial for lack of real data, comes back with
+  the first real bills. **Still open**: none. **Next**: spec 06 (extraction).
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI and the dashboard exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
@@ -115,9 +115,7 @@ Vercel Blob (private) · Turso · Vercel Hobby · ARERA open data (CC BY-SA 4.0)
 use, never redistributed).
 
 ## Known Issues (Active)
-- At 390 px the last month label of a chart's axis is clipped at the right edge, and a small light
-  mark shows above the active item of the bottom bar (`doc/screenshots/casa.png`, seen 2026-10-25;
-  no fix decided yet).
+None.
 
 ## Not yet present (do not assume it exists)
 - `doc/guide/*` beyond `calcoli.md`, `app.md` and `deploy.md`: each guide is born with its spec
