@@ -30,14 +30,12 @@ nel messaggio del commit della spec: `git log -1 --format=%B <hash>`); per 05–
 `feature/08-market-references`, `feature/09-pwa-offline`) E il deploy di produzione di quel merge
 verde su Vercel (`vercel ls`: «Ready»; i deploy dei branch sono «Canceled» per l'`ignoreCommand`
 di `vercel.json` e non contano) E la misura di chiusura di § 8 della spec rifatta in produzione
-dopo il merge, con l'esito scritto. Dalla 05 quell'esito, lo stato «in esercizio il <data>» e le
-gotchas stanno in `SESSION_NOTES.md` (non tracciato, sopravvissuto alla sessione, D-41): se il file
-manca o non porta l'esito della misura di chiusura della <NN>, il segnale manca. Il ritiro è la
-«sessione successiva» di D-41: comincia scrivendo quell'esito dove la § 8 della spec lo manda
-(riga «Stato», indice § 5, CLAUDE.md → Latest, la guida del tema o AGENTS.md § 11 se ci sono
-lezioni, gli screenshot del README per la 05) e lo porta nel suo commit; il «Prima di tutto:
-scrivi l'esito … della spec <NN>» nel prompt della spec seguente diventa un rimando da ripuntare
-al passo 2. La 05 ha un segnale in più: le misure di chiusura di 01–04 rifatte in produzione (sua
+dopo il merge, con l'esito scritto. Dalla 05 (D-41, rivista il 2026-10-25) quell'esito, lo
+stato «in esercizio il <data>, PR #N» e le gotchas li porta il commit di chiusura della sessione
+stessa, sul branch `docs/<NN>-in-esercizio` mergiato su `main` (`git log origin/main --merges
+--format="%h %ad %s" --date=short | grep "docs/<NN>-in-esercizio"`; il messaggio del commit,
+`git log -1 --format=%B <hash>`, riporta l'esito fase per fase): se quella PR manca, o la riga
+«Stato» della spec non dice «in esercizio», il segnale manca. La 05 ha un segnale in più: le misure di chiusura di 01–04 rifatte in produzione (sua
 § 7 C–E). La 09 è l'ultima: il suo segnale è il giro F1–F4 sui due telefoni, e il suo ritiro è
 la sessione di chiusura di soli documenti della sua § 8 (che ne fa anche i compiti: «v1 completa»
 in CLAUDE.md e README); F5 (il toast «Nuova versione disponibile» dopo un deploy nuovo) resta per
@@ -181,12 +179,11 @@ ORDINE DI LAVORO
    chiude con un grep, non con una riga: la riga `> **Stato**: …` in testa alla spec, nella
    forma della regola 4 di `00-INDICE.md § 7` (scritta · in implementazione il <data>, branch ·
    implementata il <data>, branch `feature/NN-…` · in esercizio il <data>, PR #N · ritirata il
-   <data>), che sparisce con la spec: l'«in esercizio» che il ritiro scrive per primo resta nel
-   suo commit; la colonna Stato della tabella `doc/v1/00-INDICE.md § 5` (la riga diventa «in
+   <data>), che sparisce con la spec: l'«in esercizio» resta nel commit di chiusura che lo ha
+   scritto (D-41); la colonna Stato della tabella `doc/v1/00-INDICE.md § 5` (la riga diventa «in
    esercizio il <data>, PR #N; ritirata il <data>»); la colonna «Dipende da» della stessa tabella
    e l'intestazione «**Dipende da**: <NN> (in esercizio)» della spec seguente, che diventa «<NN>
-   (ritirata il <data>)»; il prompt in fondo alla spec seguente («Prima di tutto: scrivi …
-   della spec <NN>»), ormai fatto dal ritiro; il riepilogo in testa a `00-INDICE.md` («Prossimo
+   (ritirata il <data>)»; il riepilogo in testa a `00-INDICE.md` («Prossimo
    passo»); `CLAUDE.md § Current Status → Latest` (una riga che SOSTITUISCE la precedente: «spec
    <NN> ritirata il <data>; next: …»); la riga «**Status (<data>)**» di `README.md`, solo quando
    cambia ciò che l'app fa per chi la usa (05: in produzione; 09: v1 completa). Se era l'ultima spec, dillo

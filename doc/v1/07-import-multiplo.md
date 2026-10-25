@@ -3,7 +3,7 @@
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 19 rilievi, 2 decisioni
 > (D-41, D-57). Pronta per l'implementazione.
 > **Branch**: `feature/07-bulk-import` da `main` aggiornato dopo il merge della 06. **Dipende da**: 06
-> (in esercizio: il suo esito in produzione si scrive all'inizio di questa sessione, D-41).
+> (in esercizio: il suo esito in produzione l'ha scritto il commit di chiusura della 06, D-41).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-7, D-15, D-17, D-18, D-24, D-41, D-42,
 > D-57, D-59; scelte T-14, T-17, T-22, T-23; contratti: usa C-4, C-5, C-7, C-8 (`formatUsd` della
 > 06), C-14, C-16, C-18, C-22 (`loadProductionTarget`), C-23 (`signUpTestUser`); estende C-1
@@ -45,9 +45,10 @@
 ## 3. Decisioni
 
 - **D-7**, **D-15**, **D-17** (nessun tetto, ma la stima), **D-18**, **D-24**.
-- **D-41** (collaudo in produzione dopo il merge): la sessione chiude con il commit unico e la PR
+- **D-41** (collaudo in produzione dopo il merge): la sessione fa il commit dell'implementazione e la PR
   (stato «implementata il <data>, branch `feature/07-bulk-import`»); dopo il merge, nella stessa sessione, il collaudo F in produzione (l'import
-  vero); il suo esito e lo stato «in esercizio» entrano nel commit della 08.
+  vero); il suo esito e lo stato «in esercizio» entrano nel commit di chiusura su
+  `docs/07-in-esercizio`.
 - **D-42** (estrazione solo al clic): qui il clic è «Avvia estrazione» o «Riprendi», che mostrano la
   stima; la bolletta caricata da sola nell'E2E passa da «Estrai (circa X $)» della 06.
 - **D-57**: nelle bollette di un lotto il pulsante di `BillForm` si chiama «Conferma e passa alla
@@ -386,8 +387,9 @@ con `globalThis.IS_REACT_ACT_ENVIRONMENT = true`; `navigator.wakeLock` finto con
 - **F — L'import delle bollette passate dell'owner, insieme** (in **produzione, dopo il merge e il
   deploy di produzione verde**: i branch `feature/*` non hanno deploy; al via dell'owner, sul
   computer):
-  1. l'owner raccoglie i PDF in una cartella sua (fuori dal repo) e li sceglie in
-     `https://<dominio>/bollette/importa`;
+  1. l'owner indica in chat la cartella delle sue bollette storiche (l'agente gliel'ha chiesta a
+     inizio sessione; il percorso resta in chat, mai in un file tracciato né in SESSION_NOTES.md;
+     decisione dell'owner del 2026-10-25) e le sceglie in `https://<dominio>/bollette/importa`;
   2. la pagina mostra la stima: **l'agente la ripete in chat con il numero di bollette e chiede
      l'OK esplicito** prima di «Avvia estrazione» (atteso: circa 0,30 $ a bolletta);
   3. durante la coda l'agente segue gli stati in sola lettura del DB di produzione con uno script
@@ -398,7 +400,7 @@ con `globalThis.IS_REACT_ACT_ENVIRONMENT = true`; `navigator.wakeLock` finto con
      avvisi; le sovrapposizioni si decidono una per una (D-24);
   5. alla fine: numero di bollette confermate, scartate, fallite; costo reale del lotto (`select
      sum(cost_micro_usd) from extractions where batch_id = ?`, con lo stesso script) contro la
-     stima; l'esito va in `SESSION_NOTES.md` (D-41).
+     stima; l'esito va nel commit di chiusura (D-41).
   Che cosa NON copre: la coda offline (09).
 - **G — Ripristino**: in locale, prima del commit, la bolletta `internet-armadillo` confermata in C
   si elimina dalla UI, le estrazioni dei lotti di A e di B si scartano, `.e2e-blob/` si svuota e lo
@@ -410,22 +412,22 @@ con `globalThis.IS_REACT_ACT_ENVIRONMENT = true`; `navigator.wakeLock` finto con
 
 - Nessuna migrazione. Una variabile nuova solo per Playwright, `E2E_EXTRACTOR_DELAY_MS` (in
   `playwright.config.ts`; mai su Vercel né in `.env.example`, come `E2E_FAKE_SERVICES`).
-- Ordine (D-41): gate verdi, A, C, D e la parte locale di G; commit unico (stato «implementata il
+- Ordine (D-41): gate verdi, A, C, D e la parte locale di G; commit dell'implementazione (stato «implementata il
   <data>, branch `feature/07-bulk-import`») e PR; merge dall'owner e deploy di produzione verde; poi, nella stessa sessione, il
   collaudo F in produzione e la parte di G in produzione.
 - Misura di chiusura: il collaudo F, in produzione dopo il merge (è anche l'import vero).
 - L'esito di F (bollette confermate, scartate, fallite; costo reale contro la stima, con la data),
-  il numero della PR, i gotchas e lo stato «in esercizio» vanno in `SESSION_NOTES.md`, che resta
-  (non tracciato) per la sessione della 08: li scrive per prima cosa nel suo commit (riga «Stato» di
-  questa spec, indice § 5, CLAUDE.md → Latest, la riga «stima contro costo reale» in
-  `doc/guide/estrazione.md`, AGENTS.md se ci sono lezioni).
+  il numero della PR, i gotchas e lo stato «in esercizio» li scrive la chiusura della sessione
+  (riga «Stato» di questa spec, indice § 5, CLAUDE.md → Latest, la riga «stima contro costo reale»
+  in `doc/guide/estrazione.md`, AGENTS.md se ci sono lezioni) in un commit su
+  `docs/07-in-esercizio` (D-41).
 
 ## 9. Documentazione
 
 - `doc/guide/estrazione.md`: sezione «Import multiplo» (lotti senza tabella, coda dal browser,
   traduzione delle risposte di `/run` e pausa su `unavailable`, ripresa dei lotti e dei caricamenti
   interrotti, Wake Lock, ordine di revisione, la stima per bolletta). La cifra misurata in F la
-  aggiunge il commit della 08 (§ 8).
+  aggiunge il commit di chiusura (§ 8).
 - `CLAUDE.md`: Latest («07 implementata, PR aperta; l'import delle bollette passate si fa in
   produzione dopo il merge»); § Key Features (import multiplo); § Not yet present: «Bulk import from
   a folder or a mailbox; multi-page photographed bills inside a bulk import (one by one from
@@ -448,11 +450,10 @@ Modello: Claude Opus 5.5, effort high. Taglia: **M**.
 ```
 Ciao, in questa sessione implemento la spec doc/v1/07-import-multiplo.md.
 
-Prima di tutto: scrivi l'esito del collaudo in produzione della spec precedente da SESSION_NOTES.md
-(stato «in esercizio» nella sua riga Stato e nell'indice § 5, CLAUDE.md → Latest, le lezioni in
-AGENTS.md o in doc/guide/ se SESSION_NOTES.md ne riporta), poi crea il branch:
-`git branch --show-current` deve dire main, aggiornato con il merge della 06 (`git pull`); crea
-feature/07-bulk-import. Poi svuota SESSION_NOTES.md e usalo per le note di questa sessione.
+Prima di tutto: `git branch --show-current` deve dire main, aggiornato con `git pull`; crea
+feature/07-bulk-import e SESSION_NOTES.md. Chiedimi dove sono le mie bollette storiche (una
+cartella mia, fuori dal repo): il percorso resta in chat, mai in un file tracciato né in
+SESSION_NOTES.md, e serve alla fase F; non aprirle prima della fase F.
 
 Contesto, prima di toccare il codice:
 - Leggi WORKFLOW.md (regole di sessione e collaudo; § 3 dice come si applicano qui)
@@ -470,9 +471,9 @@ Le bollette vere non entrano mai nel repo.
 
 Alla fine, in quest'ordine: riassumi il diff; scrivi lo stato «implementata il <data>, branch
 `feature/07-bulk-import`» nella riga «Stato» della spec e in § 5 dell'indice e aggiorna CLAUDE.md → Latest; chiedimi l'OK per il commit
-(uno solo) e poi apri la PR. Dopo il mio merge e il deploy di produzione verde, nella stessa
+dell'implementazione e poi apri la PR. Dopo il mio merge e il deploy di produzione verde, nella stessa
 sessione, la fase F: l'import vero delle mie bollette passate in produzione; la stima la ripeti in
-chat e parte solo al mio OK; poi la parte di G in produzione. L'esito di F, il numero della PR, i
-gotchas e lo stato «in esercizio» vanno in SESSION_NOTES.md, che resta: li scrive la sessione della
-08 (§ 8).
+chat e parte solo al mio OK; poi la parte di G in produzione. Poi la chiusura della sessione:
+esito di F, numero della PR, gotchas e stato «in esercizio» nei loro posti, commit su
+docs/07-in-esercizio e PR (§ 8, D-41).
 ```

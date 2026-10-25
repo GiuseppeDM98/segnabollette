@@ -231,6 +231,9 @@ the overlap panel from the start (the review knows them); manual entry learns th
 - `dashboard.spec.ts` only reads seed A (no decoy word); `seedSupplyIds(email)` gives the seed
   supplies' ids by name. `a11y.spec.ts` opens every `<details>` before axe, so the charts' data
   tables are checked too.
+- README screenshots (`doc/screenshots/`): a 390×844 viewport at scale 2, light theme, an account
+  with invented data only, and never `fullPage`: the fixed bottom bar would land in the middle of
+  the image (2026-10-25).
 - Italian numbers in assertions: `it-IT` groups thousands only from five digits, so `1100 kWh`,
   not `1.100` (2026-10-24), as `formatQuantity` prints them.
 

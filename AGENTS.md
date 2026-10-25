@@ -331,5 +331,5 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`
 Gates green (§ 10), the spec's § 7 verification done with the expected outcome stated first and the
 outcome written in CLAUDE.md → Latest, the spec's `Stato` line and `doc/v1/00-INDICE.md § 5`
 updated, § 9 documentation written, SESSION_NOTES.md folded and deleted, one commit after the
-owner's OK (specs 05–09: the production outcome stays in SESSION_NOTES.md and enters the next
-session's commit, WORKFLOW.md § 3).
+owner's OK (specs 05–09: the implementation commit before the merge, then the production
+verification and a closing commit on `docs/<NN>-in-esercizio`, WORKFLOW.md § 3).

@@ -49,10 +49,10 @@
 
 - **D-9** (PWA come segnaprezzi), **D-28** (autolettura a mano: in coda anche quella), **D-39**
   (tema: i colori del manifest seguono DESIGN.md).
-- **D-41** (collaudo in produzione dopo il merge): commit unico e PR prima del merge (stato
+- **D-41** (collaudo in produzione dopo il merge): commit dell'implementazione e PR prima del merge (stato
   «implementata il <data>, branch `feature/09-pwa-offline`»); dopo il merge, nella stessa sessione, il giro F sui telefoni;
-  esito, gotchas e stato «in esercizio» restano in `SESSION_NOTES.md` (non tracciato) e li scrive
-  una breve sessione di chiusura di soli documenti, che dichiara la v1 completa (§ 8).
+  esito, gotchas e stato «in esercizio» nel commit di chiusura su `docs/09-in-esercizio`; poi una
+  breve sessione di chiusura di soli documenti dichiara la v1 completa (§ 8).
 - **D-42** (estrazione solo al clic): la coda carica i file, chiama `…/uploaded` e si ferma;
   l'estrazione compare `queued` in «Da rivedere» con «Estrai (circa X $)».
 - **D-47** (autolettura nel futuro rifiutata): `POST /api/readings` passa
@@ -612,15 +612,15 @@ chiusura, § 8). La fotocamera del telefono non si prova in sviluppo (D-55).
 ## 8. Messa in esercizio
 
 - Nessuna migrazione; nessuna variabile.
-- Ordine (D-41): gate verdi e collaudo locale (A, C, D), commit unico e PR (stato «implementata il
+- Ordine (D-41): gate verdi e collaudo locale (A, C, D), commit dell'implementazione e PR (stato «implementata il
   <data>, branch `feature/09-pwa-offline`» nella riga Stato, nell'indice § 5 e in CLAUDE.md → Latest); merge dall'owner → il
   deploy di produzione pubblica `sw.js`, manifest e icone; nella stessa sessione il giro F1–F4 sui
-  due telefoni (misura di chiusura) e G; esito, gotchas e stato «in esercizio» in `SESSION_NOTES.md`,
-  che resta (non tracciato).
+  due telefoni (misura di chiusura) e G; esito, gotchas e stato «in esercizio» nella chiusura della
+  sessione (riga Stato, indice § 5, CLAUDE.md → Latest, lezioni in `doc/guide/pwa.md` e AGENTS.md
+  § 11), commit su `docs/09-in-esercizio` e PR (D-41).
 - La 09 è l'ultima della serie: una breve **sessione di chiusura di soli documenti** (branch
-  `docs/v1-chiusura` da `main` aggiornato, prompt in § 11) scrive l'esito del giro F (stato «in
-  esercizio» nella riga Stato e nell'indice § 5, CLAUDE.md → Latest «v1 completa», README.md lo
-  stato «v1 completa», lezioni in `doc/guide/pwa.md` e AGENTS.md § 11), fa il suo commit e la sua PR;
+  `docs/v1-chiusura` da `main` aggiornato, prompt in § 11) scrive CLAUDE.md → Latest «v1
+  completa» e in README.md lo stato «v1 completa», fa il suo commit e la sua PR;
   dopo il merge, F5 con l'owner. L'esito di F5 resta in `SESSION_NOTES.md` per la prima sessione
   dopo la v1 (se il toast non compare, quella sessione lo scrive in CLAUDE.md § Known Issues).
 
@@ -664,11 +664,8 @@ Modello: Claude Opus 5.5, effort high. Taglia: **M**.
 ```
 Ciao, in questa sessione implemento la spec doc/v1/09-pwa-fotocamera-e-coda-offline.md.
 
-Prima di tutto: scrivi l'esito del collaudo in produzione della spec precedente (08) da
-SESSION_NOTES.md (stato «in esercizio» nella sua riga Stato e nell'indice § 5, CLAUDE.md → Latest,
-doc/guide e AGENTS.md se ci sono lezioni), su `main` aggiornato dopo il merge della 08
-(`git switch main`, `git pull`; `git branch --show-current` deve dire main), poi crea il branch
-feature/09-pwa-offline. Poi svuota SESSION_NOTES.md e usalo per questa sessione.
+Prima di tutto: `git switch main`, `git pull`; `git branch --show-current` deve dire main; crea il
+branch feature/09-pwa-offline e SESSION_NOTES.md.
 
 Contesto, prima di toccare qualsiasi altro file:
 - Leggi WORKFLOW.md (regole di sessione e collaudo; § 3 dice come si applicano qui)
@@ -689,10 +686,11 @@ entrano nel codice.
 
 Alla fine, in quest'ordine: gate verdi; riassumi il diff; scrivi lo stato «implementata il <data>,
 branch `feature/09-pwa-offline`» nella riga «Stato» della spec e in § 5 dell'indice, aggiorna CLAUDE.md → Latest; chiedimi
-l'OK per il commit (uno solo) e apri la PR. Dopo il mio merge e il deploy di produzione facciamo
+l'OK per il commit dell'implementazione e apri la PR. Dopo il mio merge e il deploy di produzione facciamo
 insieme il giro F1–F4 di § 7 sui telefoni e G (l'estrazione reale la avvio io con «Estrai» solo
-dopo che mi hai detto il costo, circa 0,30 $, e ti ho dato l'OK). Esito, gotchas e stato «in
-esercizio» vanno in SESSION_NOTES.md, che resta (non tracciato) per la sessione di chiusura.
+dopo che mi hai detto il costo, circa 0,30 $, e ti ho dato l'OK). Poi la chiusura
+della sessione: esito, gotchas e stato «in esercizio» nei loro posti, commit su
+docs/09-in-esercizio e PR (D-41).
 ```
 
 Sessione di chiusura (soli documenti, dopo il giro F). Modello: Claude Opus 5.5, effort medium.
@@ -702,11 +700,10 @@ Taglia: **S**.
 Ciao, in questa sessione chiudo la serie v1: è la sessione di soli documenti di
 doc/v1/09-pwa-fotocamera-e-coda-offline.md § 8.
 
-Prima di tutto: scrivi l'esito del collaudo in produzione della spec 09 da SESSION_NOTES.md (stato
-«in esercizio» nella sua riga Stato e nell'indice § 5, CLAUDE.md → Latest «v1 completa», README.md
-lo stato «v1 completa», doc/guide/pwa.md e AGENTS.md § 11 se ci sono lezioni), su `main` aggiornato
-(`git switch main`, `git pull`; `git branch --show-current` deve dire main), poi crea il branch
-docs/v1-chiusura. Poi svuota SESSION_NOTES.md e usalo per questa sessione.
+Prima di tutto: su `main` aggiornato (`git switch main`, `git pull`; `git branch --show-current`
+deve dire main) crea il branch docs/v1-chiusura e SESSION_NOTES.md. Scrivi CLAUDE.md → Latest
+«v1 completa» e in README.md lo stato «v1 completa» (l'esito della 09 l'ha già scritto il suo
+commit di chiusura, D-41).
 
 Leggi WORKFLOW.md e la spec 09 § 7 (F5) e § 8. Nessun codice. Controlla con
 `grep -n "Stato" doc/v1/*.md` che stato e indice dicano la stessa cosa, e la misura dei caratteri di

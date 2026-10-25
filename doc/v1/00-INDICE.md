@@ -12,8 +12,7 @@
 > 236 rilievi corretti nelle spec e qui, 21 decisioni nuove dell'owner (D-41…D-61). **Prompt di
 > ritiro: generato il 2026-10-24** in una sessione a sé (`doc/v1/PROMPT-RITIRO.md`, da
 > `08_CREA_RITIRO_SPEC.md`). **La 01 (PR #3), la 02 (PR #5), la 03 (PR #7) e la 04 (PR #9)
-> sono in esercizio e ritirate il 2026-10-24**; la 05 è implementata il 2026-10-25 (merge,
-> collaudo in produzione e chiusura delle iscrizioni in corso).
+> sono in esercizio e ritirate il 2026-10-24**; la 05 è in esercizio il 2026-10-25 (PR #11).
 
 ## 1. Il tema, con le parole dell'owner (2026-10-24)
 
@@ -172,7 +171,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | D-12 | Repo **`segnabollette`**, app **«Segnabollette»**. | tutte |
 | D-13 | Spec in `doc/v1/` con `00-INDICE.md` (convenzione Hub: NN-slug.md, D-N/T-N/C-N, `PROMPT-RITIRO.md` generato con il prompt 08 dopo la lettura adversariale). DESIGN.md e PRODUCT.md nascono nella spec della UI (03) con la skill impeccable; fino ad allora CLAUDE.md li dichiara in § Not yet present. | tutte, 03 |
 | D-14 | I riferimenti di mercato sono **file committati** in `data/` aggiornati da uno script `pnpm riferimenti:update` lanciato dall'owner, **non un cron** (come l'ISTAT di segnaprezzi). Vale per i dati ARERA; il PUN segue D-32. | 08 |
-| D-41 | (2026-10-24, lettura adversariale) **Collaudo in produzione dopo il merge**: dalla 05 alla 09 la sessione fa commit unico e PR **prima** del merge (stato «implementata»); dopo il merge, nella stessa sessione, il collaudo in produzione con l'owner; esito, gotchas e stato «in esercizio» restano in `SESSION_NOTES.md` (non tracciato, che in questo caso sopravvive alla sessione) ed entrano nel commit della sessione **successiva**, che comincia scrivendoli; per la 09, ultima, una breve sessione di chiusura di soli documenti. La regola «un solo commit per sessione» resta intatta (WORKFLOW.md § 3). | 05–09 |
+| D-41 | (2026-10-24, lettura adversariale) **Collaudo in produzione dopo il merge**: dalla 05 alla 09 la sessione fa il commit dell'implementazione e la PR **prima** del merge (stato «implementata»); dopo il merge, nella stessa sessione, il collaudo in produzione con l'owner; poi la chiusura della sessione: esito, gotchas e stato «in esercizio» scritti nei loro posti, `SESSION_NOTES.md` eliminato, un commit di chiusura su `docs/<NN>-in-esercizio` da `main` aggiornato e la sua PR (**rivista il 2026-10-25**, decisione dell'owner: prima l'esito restava in `SESSION_NOTES.md` per il commit della sessione successiva). È l'unica eccezione a «un solo commit per sessione» (WORKFLOW.md § 3); il ritiro della spec segue in una sessione a sé. | 05–09 |
 
 ### 3.3 Estrazione con Claude (2026-10-24)
 
@@ -293,7 +292,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | 02 | Modello dei dati e motore dei calcoli | `feature/02-data-engine` | 01 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #5; ritirata il 2026-10-24 |
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #7; ritirata il 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #9; ritirata il 2026-10-24 |
-| 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | implementata il 2026-10-25, branch `feature/05-deploy` |
+| 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | in esercizio il 2026-10-25, PR #11 |
 | 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 | scritta 2026-10-24; riletta 2026-10-24 |
 | 07 | Import multiplo | `feature/07-bulk-import` | 06 | scritta 2026-10-24; riletta 2026-10-24 |
 | 08 | Riferimenti di mercato | `feature/08-market-references` | 07 | scritta 2026-10-24; riletta 2026-10-24 |
@@ -304,8 +303,8 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24); la 05 è implementata (2026-10-25): dopo
-il suo collaudo in produzione, il prompt in fondo alla 06.
+La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24); la 05 è in esercizio (2026-10-25): il
+suo ritiro, poi il prompt in fondo alla 06.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 
@@ -350,8 +349,8 @@ questa tabella e OGNI spec viva che lo cita (testo e prompt in fondo).
    AGENTS.md ≤ 1000 righe (obiettivo 600), `doc/guide/<tema>.md` ≤ 500 righe. Chi sfora non taglia
    in chiusura: lo dice e propone lo scorporo (prompt 05/06).
 4. **Stato**: ogni spec apre con la riga `> **Stato**: …` (scritta · in implementazione il <data>,
-   branch · implementata il <data>, branch `feature/NN-…` (il commit unico precede la PR, quindi il
-   numero della PR lo scrive la sessione successiva) · in esercizio il <data>, PR #N · ritirata il
+   branch · implementata il <data>, branch `feature/NN-…` (il commit precede la PR, quindi il
+   numero della PR lo scrive il commit di chiusura, D-41) · in esercizio il <data>, PR #N · ritirata il
    <data>); lo stesso
    stato sta in § 5 qui e, per la spec corrente, in `CLAUDE.md § Current Status` → Latest. Si
    chiude con `grep -n "Stato" doc/v1/*.md` che dice la stessa cosa ovunque.
@@ -359,7 +358,7 @@ questa tabella e OGNI spec viva che lo cita (testo e prompt in fondo).
    misura di chiusura della spec rifatta in produzione (ogni spec la dichiara in § 8). Per 01–04,
    che vivono prima del deploy: PR mergiata su `main` E il collaudo di § 7 annotato in CLAUDE.md;
    la 05 rifà in produzione le misure di chiusura di 01–04. Dalla 05 la misura in produzione si
-   fa dopo il merge e il suo esito entra nel commit della sessione successiva (D-41).
+   fa dopo il merge e il suo esito entra nel commit di chiusura della stessa sessione (D-41).
 6. **Ritiro**: una spec in esercizio si ritira con `doc/v1/PROMPT-RITIRO.md` (generato il
    2026-10-24 con `claude-config/prompts/08_CREA_RITIRO_SPEC.md`, in una sessione a sé fra la
    lettura adversariale e la spec 01): verifica criterio per criterio, travaso in AGENTS.md /

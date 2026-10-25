@@ -31,11 +31,13 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
   owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
   SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-25)**: spec 05 implemented on `feature/05-deploy`: Vercel project in `dub1`
-  (previews skipped), Turso migrated and checked, two private Blob stores, production variables,
-  SETUP.md and `doc/guide/deploy.md`. **Next**: merge, first production deploy, the production verification
-  (which also redoes the closing checks of specs 01–04) and closing registration; their outcome
-  stays in SESSION_NOTES.md for the commit of spec 06. Still open: none.
+- **Latest (2026-10-25)**: spec 05 in service (PR #11): production on Vercel in `dub1` with
+  registration closed after the owner's account; the closing checks of specs 01–04 redone in
+  production, the phone tour only partial for lack of real data. The rule for a verification in
+  production now ends with a closing commit on `docs/<NN>-in-esercizio` (WORKFLOW.md § 3, D-41).
+  **Still open**: why the merge deployment of `main` was skipped, and whether a branch push now
+  shows «Canceled» (`doc/guide/deploy.md` § 4: checked at spec 06); the owner's call on making
+  `BETTER_AUTH_SECRET` Sensitive. **Next**: retire spec 05, then spec 06.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI and the dashboard exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
@@ -89,7 +91,7 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   total), costs by category (fed-in credit below zero), year over year with the 12-month tiles —
   and on «Casa» the house costs, two tiles and the last billed month on each card; 12 / 24 months /
   everything, a data table under every chart. → `doc/guide/app.md` § 9, `doc/guide/calcoli.md` § 13.
-- **Production** (05): Vercel, Turso, two private Blob stores, SETUP.md. → `doc/guide/deploy.md`.
+- **Production** (exists since 2026-10-25): Vercel, Turso, two private Blob stores, SETUP.md. → `doc/guide/deploy.md`.
 - **Extraction** (06): PDF or up to 10 photos to private Blob, Claude Opus 5.5, review and confirm,
   files reopened from the bill, cost recorded. → `doc/guide/estrazione.md`.
 - **Bulk import** (07): browser-driven queue with a cost estimate before starting.
@@ -113,7 +115,9 @@ Vercel Blob (private) · Turso · Vercel Hobby · ARERA open data (CC BY-SA 4.0)
 use, never redistributed).
 
 ## Known Issues (Active)
-None.
+- At 390 px the last month label of a chart's axis is clipped at the right edge, and a small light
+  mark shows above the active item of the bottom bar (`doc/screenshots/casa.png`, seen 2026-10-25;
+  no fix decided yet).
 
 ## Not yet present (do not assume it exists)
 - `doc/guide/*` beyond `calcoli.md`, `app.md` and `deploy.md`: each guide is born with its spec
