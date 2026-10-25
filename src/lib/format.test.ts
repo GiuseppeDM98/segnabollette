@@ -62,6 +62,12 @@ describe('formatDecimalInput', () => {
     expect(formatDecimalInput(0.1, 20)).toBe('0,1');
   });
 
+  it('turns stored cents, micro-euros and basis points into the shown decimal', () => {
+    expect(formatDecimalInput(4730, 2, 100)).toBe('47,3');
+    expect(formatDecimalInput(99_000, 6, 1_000_000)).toBe('0,099');
+    expect(formatDecimalInput(1000, 2, 100)).toBe('10');
+  });
+
   it('reads back a pro-rata fraction exactly', () => {
     expect(parseDecimalInput(formatDecimalInput(30 / 365, 20))).toBe(30 / 365);
   });

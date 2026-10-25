@@ -52,7 +52,7 @@ const NOT_A_NUMBER = 'Numero non valido';
 const tooManyDigits = (digits: number) => `Al massimo ${digits} decimali`;
 
 function numberText(value: number | null, digits: number, scale = 1): string {
-  return value === null ? '' : formatDecimalInput(value / scale, digits);
+  return value === null ? '' : formatDecimalInput(value, digits, scale);
 }
 
 export function draftFromInput(

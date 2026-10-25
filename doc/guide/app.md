@@ -134,7 +134,8 @@ the overlap panel from the start (the review knows them); manual entry learns th
 
 - **Draft as strings** (`bill-draft.ts`): `draftFromInput(input, { blankAmounts })` turns the
   `BillInput` into strings the inputs own — cents and micro-euros through `formatDecimalInput`
-  (`src/lib/format.ts`, Italian comma, no thousands separator, no trailing zeros — «30,5» —, at
+  (`src/lib/format.ts`, which also does the division by its `scale`, 2026-10-24: the form never
+  divides; Italian comma, no thousands separator, no trailing zeros — «30,5» —, at
   most 2 decimals for euro, 6 for unit prices; quantities and readings keep 20 digits and are never
   rounded, so a fee pro rata 30/365 comes back identical); `inputFromDraft(draft)` parses back with `parseDecimalInput`, collects field errors
   by path («Importo obbligatorio», «Totale obbligatorio», «Valore obbligatorio» for a reading,
@@ -207,7 +208,11 @@ the overlap panel from the start (the review knows them); manual entry learns th
   `<prefix>-<nanoid>@example.test`), `gotoReady` / `waitForHydration` (waits for
   `body[data-hydrated]`, set by `src/components/hydration-mark.tsx`: a form filled before
   hydration would submit natively), `createHouse`, `createSupply` (returns the id), `enterBill`,
-  `seedIds(email)` (ids of a seed user's first house, supply and bill, read from `e2e.db`).
+  `seedIds(email)` (ids of a seed user's first house, supply and bill, read from `e2e.db`),
+  `SEED_A_STATE` and `SEED_B_STATE` (the two seed sessions saved by the global setup).
+- An isolation read is a pair on the same URLs: A gets a 404 on B's ids, and B opens them under
+  its own session, so the 404 comes from the owner check and not from an id that does not exist
+  (`isolamento.spec.ts`, 2026-10-24).
 - Seed users A and B are read-only: they serve `shell`, the isolation reads, the theme (a cookie
   of the browser, nothing in the database) and `a11y`. Every test that writes signs up its own
   user and builds its house through the UI.
@@ -299,6 +304,8 @@ print «0,47 €»); quantities `formatQuantity`; the tiles take cents and micro
   stamp is the only motion); one axis per chart. SVG pattern ids come from `useId` stripped to
   `[A-Za-z0-9_-]`, since they are referenced as `url(#…)`.
 - Every chart has its table; axe runs on the pages with the tables open.
+- A new chart is drawn after loading the `dataviz` skill, whose rules (axes, legends, tooltips,
+  contrast, the table) apply inside these constraints and the tokens of DESIGN.md.
 
 **Pages** — `/forniture/[id]`: a metered supply shows consumption, unit price, costs, year over
 year (four `chart-frame`); a flat fee costs and year over year (two, one tile). The year-over-year

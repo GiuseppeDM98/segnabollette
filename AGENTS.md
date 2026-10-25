@@ -302,6 +302,8 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
 - 2026-10-24 — Windows, Git Bash: an argument `/` given to `node` arrives as
   `C:/Program Files/Git/` (set `MSYS_NO_PATHCONV=1`); stopping the agent's background task of
   `pnpm start` leaves the `node` child listening, so the port stays busy until that process is killed.
+- 2026-10-24 — Recharts 3.10.1 with React 19 needs `react-is` 19.3.1 installed beside it (a peer
+  dependency nothing in `src` imports): do not remove it as unused.
 - 2026-10-24 — Each Playwright run builds for production: four in a row beside `next dev` and Chrome
   exhausted 16 GB, and Claude Code reaped the background `pnpm dev`. Its orphan `next dev` kept
   answering on :3000 with its workers dead (`POST /api/auth/sign-in/email` → 500, «Jest worker

@@ -29,9 +29,10 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   Better Auth 1.7, zod 4, Biome, Vitest, Playwright, Recharts, Tailwind 4, Vercel Blob (private),
   `@anthropic-ai/sdk` with `claude-opus-5-5`, Serwist, Dexie. Vercel Hobby in `dub1`, Turso in
   `aws-eu-west-1`. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-24)**: spec 04 (dashboard and charts) implemented on `feature/04-dashboard`,
-  guided verification done and closed with nothing open. Documented in `doc/guide/app.md` § 9 and
-  `doc/guide/calcoli.md` § 13. **Next**: merge the PR, retire spec 04, then spec 05 (production).
+- **Latest (2026-10-24)**: spec 04 in service (PR #9) and retired; the dashboard lives in
+  `doc/guide/app.md` § 9 and `doc/guide/calcoli.md` § 13. The retirement changed code: the bill
+  form's decimals now divide inside `formatDecimalInput` (`scale`), so the earlier verification
+  holds for the code before it and is redone after the deploy. **Next**: spec 05 (production).
   Still open: none.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI and the dashboard exist; the rest as specified)

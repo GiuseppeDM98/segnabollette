@@ -213,8 +213,10 @@ Nothing is dated after the day of the seed.
 - **Series**: each supply is built once by `buildSupplyMonths`, from the earlier of the shown range's
   start and 23 months before its **oldest month** (the oldest `periodStart` of a confirmed bill's
   line or `readOn` of a reading, never later than the current month: bill dates are free, and a
-  bill dated in the future must not empty «Tutto») up to the current month. The range (12 or 24
-  months ending this month, or everything from the oldest month) is a slice of it, so changing
+  bill dated in the future must not empty «Tutto») up to the current month. On «Casa» that oldest
+  month is the house's, the oldest across all its supplies, archived ones included: every supply
+  is built over the same months, so the house has one entry per month. The range (12 or 24
+  months ending this month, or everything from that oldest month) is a slice of it, so changing
   the range never changes the tiles.
 - **Last billed month** of a supply: the latest month with `billedDays` ≥ half its days (a bill
   that touches a month by a few days does not make it the reference). The year-over-year chart and

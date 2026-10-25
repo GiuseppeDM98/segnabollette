@@ -115,9 +115,11 @@ export function parseDecimalInput(text: string): number | null {
  * A number as a form field shows it: rounded to `maxFractionDigits` (the field's precision), then
  * the shortest text that reads back as the same number, with the Italian decimal comma and no
  * thousands separators or trailing zeros (1234.5 → '1234,5', 30/365 at 20 digits → itself).
+ * `scale` is how many stored units make one shown unit (100 for cents and for VAT basis points,
+ * 1_000_000 for micro-euros): the division happens here, so that the bill form never divides.
  */
-export function formatDecimalInput(value: number, maxFractionDigits: number): string {
-  return String(Number(value.toFixed(maxFractionDigits))).replace('.', ',');
+export function formatDecimalInput(value: number, maxFractionDigits: number, scale = 1): string {
+  return String(Number((value / scale).toFixed(maxFractionDigits))).replace('.', ',');
 }
 
 // WARNING: these maps follow the lists in src/lib/domain/types.ts; a new value there needs its
