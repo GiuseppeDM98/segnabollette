@@ -129,7 +129,7 @@ busy timeout is `timeout: 5000` for `file:` URLs). Schema: `src/lib/db/schema/au
 written by hand), `app.ts` (app tables), barrel `index.ts`.
 Schema changes only through `pnpm db:generate` + a committed migration in `drizzle/`; never
 `drizzle-kit push`. Production migrations run from the owner's machine **before** the merge that
-needs them (`pnpm db:migrate:prod` *(from spec 05)*, reads `.env.turso-prod`). Multi-statement writes use
+needs them (`pnpm db:migrate:prod`, reads `.env.turso-prod`; `doc/guide/deploy.md` § 2). Multi-statement writes use
 `db.batch([...])` (an implicit transaction), never interactive transactions (5 s lock on Turso).
 Tests use a fresh temp **file** per test with the real migrations (`createTestDb()`), never
 `:memory:` (it silently empties after a failed transaction).
@@ -177,12 +177,16 @@ token). Theme from the `theme` cookie (`system|light|dark`). Pages turn a foreig
 dati»), colours only as `var(--color-…)` tokens in `fill`/`stroke`, stacked charts with
 `stackOffset="sign"`, no Recharts animation (guide `doc/guide/app.md` § 9). `data-testid` on what Playwright drives.
 
-## 8. Deploy, Blob and PWA *(from specs 05, 06, 09 — stubs; guides `doc/guide/deploy.md`, `doc/guide/pwa.md`)*
+## 8. Deploy, Blob and PWA *(stubs; guides `doc/guide/deploy.md`, `doc/guide/pwa.md` from spec 09)*
 
-Vercel Hobby in `dub1`, production = `main`, every non-production build skipped by the ignored
-build step of `vercel.json` (no preview deployments, whatever the branch); Turso in
-`aws-eu-west-1`. Two **private** Blob stores: `segnabollette-files` (Production) and
-`segnabollette-files-dev` (Development); never `vercel blob create-store --yes`. Files go from the
+Vercel Hobby in `dub1`, production = `main`, every non-production build skipped by the
+`ignoreCommand` of `vercel.json` (exit 0 when `VERCEL_ENV` is not `production`: no preview
+deployments, whatever the branch); production open, Deployment Protection «Standard» (previews
+only); Turso in `aws-eu-west-1`. Production migrations run from the owner's machine before the
+merge (`pnpm db:migrate:prod`); every script that touches production goes through
+`scripts/production-target.ts` (`loadProductionTarget()`, `.env.turso-prod`). Two **private** Blob
+stores in `dub1`: `segnabollette-files` (Production) and `segnabollette-files-dev` (Development);
+never `vercel blob create-store --yes`. *(From specs 06 and 09)* files go from the
 browser straight to Blob (`upload()` + `handleUpload()`; function bodies stop at 4.5 MB); nothing
 depends on `onUploadCompleted` (it never fires on localhost): the server verifies each file before
 using it. Serwist needs `next build --webpack`; `/api/*` is never cached; the offline page is
@@ -228,7 +232,7 @@ precached by hand; the offline queue is drained by the pages.
 ## 10. Commands *(see WORKFLOW.md § 3 for the table and the gate order)*
 
 `pnpm typecheck`, `pnpm lint` (`lint:fix` writes), `pnpm test`, `pnpm build`, then `pnpm test:e2e`.
-Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrate:prod` (05),
+Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`. Later:
 `fixture:bills`, `documents:prune` (06), `riferimenti:update`, `riferimenti:pun` (08), `icons` (09).
 
 ## 11. Gotchas (measured; add the date to every new one)
@@ -309,6 +313,18 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`. Later: `db:migrat
   answering on :3000 with its workers dead (`POST /api/auth/sign-in/email` → 500, «Jest worker
   encountered 2 child process exceptions»): kill the project's `node` processes and restart
   `pnpm dev`; a tour script stops when the sign-in is not 200 instead of opening `/accedi`.
+- 2026-10-25 — Vercel CLI 65.2.0: `vercel link --yes --project` also connects the GitHub repository
+  (no `git connect` needed) and writes `VERCEL_OIDC_TOKEN` into `.env.local`; `blob create-store
+  --environment development` rewrites `.env.local` with the Development variables (the development
+  store's `BLOB_READ_WRITE_TOKEN`, local values kept). Both append `.vercel` and `.env*` to
+  `.gitignore` (CRLF): `.env*` cancels the `!.env.example` exception, so `git checkout --
+  .gitignore` after every such command. Linking a Blob store adds only `BLOB_READ_WRITE_TOKEN`.
+- 2026-10-25 — `<project>.vercel.app` is assigned only by the first production deploy, but
+  `src/lib/env.ts` validates `BETTER_AUTH_URL` at build: set it to the expected
+  `https://<project>.vercel.app` before the first deploy and check the assigned domain after it.
+- 2026-10-25 — Windows without WSL has no Turso CLI: the dashboard (app.turso.tech) creates the
+  database and a token (read and write, no expiration); PowerShell has no `openssl`, the auth
+  secret comes from `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 
 ## 12. Definition of done (per session)
 

@@ -1,7 +1,7 @@
 # 05 — Messa in esercizio: Vercel, Turso, Blob
 
-> **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 20 rilievi, 1 decisione
-> (D-41). Pronta per l'implementazione.
+> **Stato**: implementata il 2026-10-25, branch `feature/05-deploy` (scritta e riletta in modo
+> adversariale il 2026-10-24: 20 rilievi, 1 decisione, D-41).
 > **Branch**: `feature/05-deploy` da `main` aggiornato dopo il merge della 04. **Dipende da**: 04 (ritirata
 > il 2026-10-24).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-1, D-2, D-4, D-37, D-40, D-41, D-51; scelte

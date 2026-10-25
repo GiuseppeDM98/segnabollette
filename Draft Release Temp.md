@@ -1,6 +1,6 @@
 # Draft release
 
-> 2026-10-24 – 2026-10-24
+> 2026-10-24 – 2026-10-25
 
 - Added the look of the whole app: a savings-passbook design with aligned figures and clear tables, light and dark themes, and a five-item navigation bar at the bottom on phones and at the side on computers.
 
@@ -32,3 +32,8 @@
 - Added accounts with email and password: sign up, sign in and sign out, with sessions that last six months so the app rarely asks you to log in again.
 - Added closable registration: each installation decides whether new accounts are accepted, and when it is closed the sign-up page says so and the server refuses new accounts too.
 - Added private pages: everything except sign-in and sign-up needs an account, and after signing in you land back on the page you asked for.
+
+**Deploy**
+
+- Added a setup guide that takes you from the clone to your own deployment on Vercel, Turso and private file storage in Europe, ending with registration closed after your account.
+- Added a production migration command that reads its database from a file of its own and refuses to run against a local database by mistake.
