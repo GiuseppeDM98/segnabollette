@@ -12,6 +12,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     <Page title="Rivedi la bolletta">
       <ExtractionReview
         extractionId={review.extraction.id}
+        batchId={review.extraction.batchId}
         documents={review.documents.map((document) => ({
           id: document.id,
           contentType: document.contentType,

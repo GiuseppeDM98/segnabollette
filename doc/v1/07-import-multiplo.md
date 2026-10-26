@@ -1,7 +1,7 @@
 # 07 — Import multiplo
 
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 19 rilievi, 2 decisioni
-> (D-41, D-57). Pronta per l'implementazione.
+> (D-41, D-57). Implementata il 2026-10-26, branch `feature/07-bulk-import`.
 > **Branch**: `feature/07-bulk-import` da `main` aggiornato dopo il merge della 06. **Dipende da**: 06
 > (ritirata il 2026-10-26).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-7, D-15, D-17, D-18, D-24, D-41, D-42,

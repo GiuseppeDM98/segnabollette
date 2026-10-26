@@ -27,7 +27,11 @@ export function getBlobStore(): BlobStore {
 }
 
 export function getBillExtractor(): BillExtractor {
-  if (env.E2E_FAKE_SERVICES) return createFakeExtractor('tests/fixtures/extractions');
+  if (env.E2E_FAKE_SERVICES) {
+    return createFakeExtractor('tests/fixtures/extractions', {
+      delayMs: env.E2E_EXTRACTOR_DELAY_MS,
+    });
+  }
   if (!env.ANTHROPIC_API_KEY) {
     throw new DomainError(
       'EXTRACTION_UNAVAILABLE',

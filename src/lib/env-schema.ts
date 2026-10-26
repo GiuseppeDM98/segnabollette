@@ -39,6 +39,11 @@ export const EnvSchema = z
       .transform((value) => (value ? value : undefined)),
     /** Where the Playwright fake Blob store keeps its files. */
     E2E_BLOB_DIR: z.string().default('.e2e-blob'),
+    /**
+     * How long the Playwright fake extractor waits before answering: the bulk import's «reload»
+     * test needs time to interrupt a queue that is still running.
+     */
+    E2E_EXTRACTOR_DELAY_MS: z.coerce.number().int().min(0).default(0),
   })
   .superRefine((env, ctx) => {
     if (env.TURSO_DATABASE_URL.startsWith('libsql://') && !env.TURSO_AUTH_TOKEN) {

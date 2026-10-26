@@ -13,6 +13,9 @@ const serverEnv = {
   E2E_FAKE_SERVICES: '1',
   // Read by the client bundle at build time: uploads go to the local fake store.
   NEXT_PUBLIC_E2E_FAKE_SERVICES: '1',
+  // Every fake extraction answers after 1.5 s, so the bulk import's «reload» test can interrupt a
+  // queue that is still running; the fixtures that fail answer at once.
+  E2E_EXTRACTOR_DELAY_MS: '1500',
 };
 
 export default defineConfig({

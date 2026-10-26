@@ -55,6 +55,11 @@ export default async function BillsPage({
               Carica bolletta
             </Link>
           )}
+          {isExtractionConfigured() && (
+            <Link href="/bollette/importa" className={buttonClass('secondary')}>
+              Importa più bollette
+            </Link>
+          )}
           {pending.length > 0 && (
             <Link href="/bollette/da-rivedere" className={buttonClass('secondary')}>
               Da rivedere ({pending.length})

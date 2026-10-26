@@ -44,6 +44,7 @@ for (const theme of THEMES) {
           '/bollette/nuova',
           '/bollette/carica',
           '/bollette/da-rivedere',
+          '/bollette/importa',
           `/bollette/nuova?fornitura=${supplyId}`,
           `/bollette/${billId}`,
           `/bollette/${billId}/modifica`,

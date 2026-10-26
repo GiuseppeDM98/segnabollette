@@ -57,9 +57,9 @@ Secrets only in `.env.local`, `.env.turso-prod` (both gitignored) and Vercel; `.
 every variable a developer or a deployment sets (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
 `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGNUP_ENABLED`; `ANTHROPIC_API_KEY`,
 `BLOB_READ_WRITE_TOKEN`), with development defaults and empty secrets; the test-only switches
-(`E2E_FAKE_SERVICES`, `NEXT_PUBLIC_E2E_FAKE_SERVICES`, `E2E_BLOB_DIR`, `E2E_EXTRACTOR_DELAY_MS`
-*(from spec 07)*) are set only by `playwright.config.ts` or take their test default (`E2E_BLOB_DIR`
-= `.e2e-blob`) (and, for a local verification with the fakes, on the command
+(`E2E_FAKE_SERVICES`, `NEXT_PUBLIC_E2E_FAKE_SERVICES`, `E2E_BLOB_DIR`, `E2E_EXTRACTOR_DELAY_MS`)
+are set only by `playwright.config.ts` or take their test default (`E2E_BLOB_DIR` = `.e2e-blob`,
+`E2E_EXTRACTOR_DELAY_MS` = 0; Playwright sets 1500) (and, for a local verification with the fakes, on the command
 line of that run, never in `.env.local`), and `VERCEL_ENV` only by Vercel. `src/lib/env-schema.ts` is the
 zod schema, `src/lib/env.ts` the server-only instance and the only reader of `process.env` in the
 app, except `process.env.NODE_ENV` and the `NEXT_PUBLIC_*` variables read literally in client code
@@ -170,7 +170,8 @@ extractor checks `stop_reason` first, then validates with `ExtractionSchema.safe
 timeout covers only the wait for the headers) and `maxRetries: 0`. No `temperature` (400 since API
 version 2026-10-21), no prefill, no forced `tool_choice`, no reasoning requested inside the schema.
 The schema has no nullable fields (sentinels). An extraction starts only when the owner clicks
-«Estrai», after seeing the estimate. No automatic retry: failures show «Riprova». Tokens and cost are
+«Estrai» (in a bulk import «Avvia estrazione» or «Riprendi»), after seeing the estimate; opening or
+reloading a page never starts one. No automatic retry: failures show «Riprova». Tokens and cost are
 recorded (and summed across retries) on every call that returned usage. Nothing reaches the bill
 tables without the owner's confirmation in the review. Files: one PDF (≤ 10 MB, ≤ 40 pages, not
 encrypted) or up to 10 photos converted to JPEG in the browser (≤ 5 MB each, ≤ 20 MB together),
@@ -206,6 +207,10 @@ precached by hand; the offline queue is drained by the pages.
 ## 9. Testing
 
 - Unit tests next to the module (`*.test.ts`), AAA, names as sentences. Every pure module has one.
+  `*.dom.test.ts` run in happy-dom (Vitest project `dom`); every other test in node (project
+  `unit`). A hook is mounted without a testing library: a probe component made with
+  `createElement`, `createRoot` of `react-dom/client` inside `act`, `IS_REACT_ACT_ENVIRONMENT`
+  set (`src/components/import/use-wake-lock.dom.test.ts`).
 - Repositories and services against `createTestDb()` (temp file, real migrations, foreign keys on)
   and `createTestUser(db, overrides?)`, both in `src/lib/db/testing/create-test-db.ts`; builders and
   probes for service tests (`billInput`, `commodityLine`, `createHouseWithSupply`,
@@ -366,6 +371,12 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`
 - 2026-10-25 — A component placed both in a page and in a column (`BillForm` in the review) lays
   itself out with container queries (`@container`, `@md:`, `@3xl:`), not `md:`: the window's
   width says nothing about the column's.
+- 2026-10-26 — Windows: `pnpm dev` started from a path whose letter case differs from the real
+  folder's (`Documents\Github` for `Documents\GitHub`) reloads every page forever («[Fast Refresh]
+  rebuilding» after each request, even on /accedi). Start it from the path with the real case
+  (`(Get-Item .).GetDirectories()` or Explorer shows it); `pnpm test:e2e` is not affected.
+- 2026-10-26 — `@vercel/cli-config` (under `@vercel/blob`) pins zod 4.1.11: an override in
+  `pnpm-workspace.yaml` forces 4.6.7 (`doc/guide/dipendenze.md`); drop it when a release fixes it.
 
 ## 12. Definition of done (per session)
 

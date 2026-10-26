@@ -3,7 +3,7 @@
  * WHERE): the run and the confirmation, so that two clicks never start two paid calls nor create
  * two bills. The end of a run is conditional too: it lands only on the run that claimed the row.
  */
-import { and, asc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import type { Db } from '@/lib/db/create-db';
 import { extractions } from '@/lib/db/schema/app';
 import type { ExtractionErrorCode, ExtractionStatus } from '@/lib/domain/types';
@@ -57,6 +57,47 @@ export async function listExtractions(
       and(
         eq(extractions.userId, userId),
         options.statuses === undefined ? undefined : inArray(extractions.status, options.statuses),
+      ),
+    )
+    .orderBy(asc(extractions.createdAt), asc(extractions.id));
+}
+
+/**
+ * A batch has no table of its own: it is the batch_id its extractions share. Its open
+ * extractions are the ones still waiting for the owner; uploading ones are not open yet, and
+ * confirmed and discarded ones are closed.
+ */
+const OPEN_STATUSES: ExtractionStatus[] = ['queued', 'running', 'extracted', 'failed'];
+
+/** The open extractions of one batch, oldest first. */
+export async function listExtractionsOfBatch(
+  db: Db,
+  userId: string,
+  batchId: string,
+): Promise<ExtractionRow[]> {
+  return db
+    .select()
+    .from(extractions)
+    .where(
+      and(
+        eq(extractions.userId, userId),
+        eq(extractions.batchId, batchId),
+        inArray(extractions.status, OPEN_STATUSES),
+      ),
+    )
+    .orderBy(asc(extractions.createdAt), asc(extractions.id));
+}
+
+/** Every open extraction that belongs to a batch, oldest first. */
+export async function listBatchedExtractions(db: Db, userId: string): Promise<ExtractionRow[]> {
+  return db
+    .select()
+    .from(extractions)
+    .where(
+      and(
+        eq(extractions.userId, userId),
+        isNotNull(extractions.batchId),
+        inArray(extractions.status, OPEN_STATUSES),
       ),
     )
     .orderBy(asc(extractions.createdAt), asc(extractions.id));

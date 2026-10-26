@@ -56,7 +56,14 @@ export default async function UploadBillPage({
     : undefined;
 
   return (
-    <Page title="Carica una bolletta">
+    <Page
+      title="Carica una bolletta"
+      actions={
+        <Link href="/bollette/importa" className={buttonClass('secondary')}>
+          Importa più bollette
+        </Link>
+      }
+    >
       <p className="max-w-prose text-ink-soft">
         Il file resta privato nel tuo archivio. Claude legge la bolletta solo quando premi «Estrai»,
         e prima di salvare controlli tu ogni voce.

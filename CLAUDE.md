@@ -31,16 +31,16 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
   owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
   SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-26)**: spec 06 retired (in service since 2026-10-26, PR #14): upload,
-  extraction, review and files live in `doc/guide/estrazione.md`, the short rules in AGENTS.md § 6
-  and § 8. The retirement changed code: `AppShell`'s `reviewCount` is required, and new tests prove
-  «Allega il file» end to end and the file deletion with a supply, a house and an account; the
-  production verification held for the code before and is redone after the deploy. **Still open**:
-  a re-billed month, the «IVA inclusa» warning and the summary-only prompt example await their
-  first real bill (`doc/guide/estrazione.md` § 11); the local guided tour of the extraction was
-  skipped by the owner. **Next**: spec 07.
+- **Latest (2026-10-26)**: spec 07 implemented, PR open, branch `feature/07-bulk-import`: the bulk
+  import (`/bollette/importa`, `doc/guide/estrazione.md` § 13). Local verification: A, C, D and G
+  passed; the guided tour skipped by the owner. Dependencies audited (`doc/guide/dipendenze.md`);
+  an override in `pnpm-workspace.yaml` forces zod 4.6.7 under `@vercel/cli-config`, the owner's
+  exception to WORKFLOW rule 8. **Next**: the owner's past bills in production after the merge
+  (phase F), then the closing commit.
+  **Still open** from 06: a re-billed month, the «IVA inclusa» warning and the summary-only prompt
+  example await their first real bill (`doc/guide/estrazione.md` § 11).
 
-## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI, the dashboard and the extraction exist; the rest as specified)
+## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI, the dashboard, the extraction and the bulk import exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
   `src/lib/db/create-db.ts` (`createDb`, `prepareLocalDatabase`) + `client.ts` (server singleton),
   `schema/auth.ts` (Better Auth tables) and `schema/app.ts` (app tables), migrations in `drizzle/`;
@@ -73,6 +73,10 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`toErrorResponse` in `src/lib/http/error-status.ts`), pages `/bollette/carica`,
   `/bollette/da-rivedere`, `/bollette/revisione/[id]`, components in `src/components/upload/*`;
   `scripts/make-bill-fixtures.ts`, `scripts/prune-documents.ts` + `src/lib/db/maintenance/prune.ts`.
+- **Bulk import** (exists): page `/bollette/importa`, `src/components/import/*` (`BulkImporter`,
+  `useWakeLock`), the pure queue `src/lib/import/queue-runner.ts` (`runQueue`,
+  `toQueueItemResult`); batch services in `src/lib/services/extractions.ts` (`listBatches`,
+  `listBatchExtractions`, `nextExtractionToReview`, `listImportSupplies`).
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →
   `src/lib/db/repositories` (Drizzle only, `(db, userId, …)`); pure `src/lib/domain` (types, dates,
   money, bill input and checks) and `src/lib/engine` (monthly series). Gateways:
@@ -103,7 +107,11 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
 - **Extraction** (exists since 2026-10-25): PDF or up to 10 photos to private Blob, Claude Opus 5.5
   only at the click on «Estrai» after the estimate, review and confirm, files reopened from the bill,
   cost recorded. → `doc/guide/estrazione.md`.
-- **Bulk import** (07): browser-driven queue with a cost estimate before starting.
+- **Bulk import** (implemented 2026-10-26): up to 50 bills at once, duplicates skipped in the
+  browser, the estimate before «Avvia estrazione», a queue of two run by the browser with the
+  screen kept on, a pause when Anthropic does not answer, batches resumed from «Lotti in sospeso»,
+  the review from the oldest bill with «Conferma e passa alla prossima». →
+  `doc/guide/estrazione.md` § 13.
 - **Market references** (08): ARERA files committed (CC BY-SA), PUN from a hand-downloaded GME zip
   into the database only. → `doc/guide/riferimenti.md`.
 - **PWA** (09): manifest, service worker, offline queue for bills and self-readings. →
@@ -134,6 +142,8 @@ None.
 - Water bills: never tried on a real bill (the owner's water is in the condominium fees); the first
   real one comes with the new house.
 - Bills covering more than one supply in one document ("dual"): only the first supply is extracted.
+- Bulk import from a folder or a mailbox; multi-page photographed bills inside a bulk import (one by
+  one from /bollette/carica).
 - Prompt caching for the extraction; Message Batches API for the bulk import.
 - Self-readings from a photo of the meter: self-readings are typed by hand.
 - Seasonal withdrawal profiles for gas (consumption is spread evenly per day).
