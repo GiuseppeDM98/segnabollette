@@ -361,3 +361,58 @@ enter the repository: they stay in the owner's folder and are tried only in a gu
 
 The service tests use the same pieces (`src/lib/extraction/testing/`): `tempBlobStore`,
 `uploadFixture`, `runFixture`, `scriptedExtractor` (outcomes in turn, after an optional hook).
+
+## 13. Bulk import
+
+`/bollette/importa` (`src/components/import/bulk-importer.tsx`) brings in past bills by the dozen.
+It reuses every route of § 1; what it adds is a **batch**, a queue driven by the browser and the
+order of the review.
+
+- **A batch has no table.** It is the `batch_id` its extractions share: a `nanoid()` made by the
+  browser at «Carica N file», checked by `createExtraction` (`/^[A-Za-z0-9_-]{21}$/`, otherwise
+  `VALIDATION` «Identificativo del lotto non valido.»). Its *open* extractions are the `queued`,
+  `running`, `extracted` and `failed` ones; `uploading` ones do not count yet (the next creation
+  abandons them, § 8, or `documents:prune` after 24 h), `confirmed` and `discarded` are closed. The
+  *resumable* ones are the `queued` plus the `failed` with `unavailable`. Services in
+  `src/lib/services/extractions.ts`: `listBatches` («Lotti in sospeso», newest first, with counts
+  and what resuming costs), `listBatchExtractions` (one batch, review order),
+  `nextExtractionToReview`, `listImportSupplies` (archived supplies too, last: past bills often
+  belong to a closed supply). Their repositories are `listExtractionsOfBatch` and
+  `listBatchedExtractions`; the files of every batch come from one `listDocumentsOfExtractions`.
+- **Choose and upload.** Up to 50 files, each one a whole bill (a bill photographed in several
+  pages goes through `/bollette/carica`); one supply for the whole batch, or «Riconosci dalla
+  bolletta». Photos are converted as in § 1; every file is hashed in the browser and a second copy
+  of the same bytes is marked «doppione di <name>» before any call (two creations with one SHA-256
+  would race for the unique index). Then three at a time: create, upload, verify. The answers become
+  rows: «pronta» («PDF, N pagine» or «Foto»), «già presente» (the file is in a bill:
+  `DUPLICATE_DOCUMENT`, with «Apri la bolletta»), «già caricata» (a live extraction holds it),
+  «file non valido: …» (`DOCUMENT_INVALID`), «non caricato: …» with «Riprova» (the same step and
+  batch: an interrupted creation answers as the same `uploading` upload and resumes, § 8).
+- **The estimate before anything runs.** «N bollette pronte · P pagine PDF · F foto · costo
+  stimato circa X $» is the sum of what `…/uploaded` answered (§ 5) for each bill; only «Avvia
+  estrazione» starts the queue.
+- **The queue** (`src/lib/import/queue-runner.ts`, pure): `runQueue` runs at most two at a time,
+  in the order the files were chosen (a browser keeps six connections per origin, and each run is
+  a separate 300 s function). `toQueueItemResult` reads each answer of `…/run`: 200 is the
+  extraction's own outcome; 401 (session expired), any 5xx (503 `EXTRACTION_UNAVAILABLE`, a 504
+  from Vercel), a body that is not JSON and a fetch that throws all become `unavailable`; 409
+  `EXTRACTION_BUSY` and 404 fail that row only. The first `unavailable` stops new starts — the
+  runs in flight finish — and the page says «Anthropic non risponde: riprendi più tardi» with
+  «Riprendi», which runs the ones never started, then the ones the service turned away. A pause is
+  not a retry: nothing runs again without the click.
+- **Resuming.** A page closed or reloaded halfway leaves its runs going on the server (they finish
+  on their own; a function that died is taken over after six minutes, § 7, and a «Riprendi» before
+  then gets `EXTRACTION_BUSY`, which does not pause). `/bollette/importa` lists the batch in «Lotti
+  in sospeso» with «Riprendi (N in coda, circa X $)» → `/bollette/importa?lotto=<id>`, which shows
+  the rows and their estimate and runs them only at its own «Riprendi».
+- **The screen stays on** while the queue runs (`src/components/import/use-wake-lock.ts`, the
+  Screen Wake Lock API where it exists: Chromium, Safari ≥ 16.4). The browser drops the lock when
+  the page is hidden, so it is asked again when the page comes back; a refusal is ignored.
+- **The review, oldest first.** `/bollette/da-rivedere?lotto=<id>` lists the batch by the extracted
+  period start (no period last), then creation, then id: recalculations and overlaps are
+  decided best from the oldest bill. In the review of a bill of a batch the form's only button is
+  «Conferma e passa alla prossima»: `confirmExtractionAction` answers with `nextPath`, the next
+  bill of the batch to review or, after the last, the batch's list, and `BillForm` follows it;
+  «Scarta» goes back to the batch's list. A bill uploaded alone keeps «Conferma» and its own page.
+- **Blob Hobby**: each file of a batch is one advanced operation (upload) out of 2,000 a month.
+

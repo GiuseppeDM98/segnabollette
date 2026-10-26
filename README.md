@@ -5,9 +5,9 @@ waste tax — and see whether your offer is a good one. Multi-user with closable
 self-hosted on Vercel + Turso, installable on your phone as a PWA.
 
 > **Status (2026-10-26)**: access (sign-up, sign-in, closable registration), houses and supplies,
-> bills typed by hand or uploaded and extracted by Claude, self readings, settings and the charts
-> per supply and per house run in production on Vercel + Turso + Blob, on the data model and the
-> calculation engine; the rest of the v1 is specified in [`doc/v1/`](doc/v1/) and is being
+> bills typed by hand or uploaded and extracted by Claude (one at a time or in bulk), self readings,
+> settings and the charts per supply and per house run in production on Vercel + Turso + Blob, on
+> the data model and the calculation engine; the rest of the v1 is specified in [`doc/v1/`](doc/v1/) and is being
 > implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
 
 ## What it does
@@ -29,8 +29,13 @@ self-hosted on Vercel + Turso, installable on your phone as a PWA.
   each chart with its figures as a table.
 - **Against the market.** Your commodity price next to the PUN Index GME, the PSV (ARERA's CMEM) and
   ARERA's prices for vulnerable customers. Water has no national reference, and the app says so.
-- **Bulk import and offline.** Queue dozens of past bills with a cost estimate before starting;
-  photograph a bill or read a meter without signal, and it uploads when you are back online.
+- **Bulk import.** Choose up to 50 past bills at once (a PDF or a photo each): files already
+  stored or chosen twice are skipped, the app shows what extracting the rest would cost, and only
+  then runs them two at a time from your browser, keeping the screen on. A queue that stops (the
+  service is down, the page was closed) resumes later; you review the bills from the oldest, one
+  after another.
+- **Offline.** Photograph a bill or read a meter without signal, and it uploads when you are back
+  online.
 
 <p>
   <img src="doc/screenshots/casa.png" width="260" alt="The «Casa» page on a phone: the house's spending over the last 12 billed months, the monthly average and the costs by category">

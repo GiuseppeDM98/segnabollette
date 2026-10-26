@@ -371,7 +371,7 @@ describe('duplicates', () => {
     const first = await createExtraction(
       ctx.db,
       ctx.userId,
-      { supplyId: null, batchId: 'lotto-1', files },
+      { supplyId: null, batchId: 'lottoUnoLottoUnoLotto', files },
       { blob: ctx.blob, now: NOW },
     );
     if (!('extractionId' in first)) throw new Error('expected a new extraction');
@@ -381,7 +381,7 @@ describe('duplicates', () => {
     const second = await createExtraction(
       ctx.db,
       ctx.userId,
-      { supplyId: null, batchId: 'lotto-2', files },
+      { supplyId: null, batchId: 'lottoDueLottoDueLotto', files },
       { blob: ctx.blob, now: NOW },
     );
 

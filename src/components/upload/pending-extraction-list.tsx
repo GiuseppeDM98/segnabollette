@@ -6,15 +6,28 @@ import { useState } from 'react';
 import { discardExtractionAction } from '@/app/(app)/bollette/revisione/[id]/actions';
 import { FormErrors } from '@/components/ui/field';
 import { buttonClass, panelClass } from '@/components/ui/styles';
-import { formatInstant, formatUsd } from '@/lib/format';
+import { formatUsd } from '@/lib/format';
 import { resultMessages } from '@/lib/parse-input';
-import type { PendingExtraction } from '@/lib/services/extractions';
 import { apiMessages, requestRun } from './extraction-api';
 
 /** A running extraction older than this is dead and can be retried or discarded (as on the server). */
 const STALE_RUN_MS = 360_000;
 
-function statusText(extraction: PendingExtraction): string {
+/** One extraction waiting for the owner, as «Da rivedere» shows it (all of them, or one batch's). */
+export interface PendingListItem {
+  id: string;
+  status: 'queued' | 'running' | 'extracted' | 'failed';
+  errorCode: string | null;
+  errorMessage: string | null;
+  startedAt: number | null;
+  estimatedCostMicroUsd: number | null;
+  /** The supply, or the file in a batch; null reads «da assegnare». */
+  title: string | null;
+  /** The figure on the right: when it was uploaded, or where its period starts in a batch. */
+  detail: { prefix: string; figure: string } | null;
+}
+
+function statusText(extraction: PendingListItem): string {
   switch (extraction.status) {
     case 'queued':
       return 'in coda';
@@ -32,7 +45,7 @@ export function PendingExtractionList({
   extractions,
   now,
 }: {
-  extractions: PendingExtraction[];
+  extractions: PendingListItem[];
   /** The server's instant of the page: a run older than six minutes is dead. */
   now: number;
 }) {
@@ -81,14 +94,17 @@ export function PendingExtractionList({
               className="flex flex-col gap-2 border-b border-rule px-3 py-3 last:border-b-0"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                {extraction.supplyLabel ? (
-                  <span className="font-semibold">{extraction.supplyLabel}</span>
+                {extraction.title ? (
+                  <span className="font-semibold">{extraction.title}</span>
                 ) : (
                   <span className="text-ink-soft">da assegnare</span>
                 )}
-                <span className="figures text-sm text-ink-soft">
-                  {formatInstant(extraction.createdAt)}
-                </span>
+                {extraction.detail && (
+                  <span className="text-sm text-ink-soft">
+                    {extraction.detail.prefix}
+                    <span className="figures">{extraction.detail.figure}</span>
+                  </span>
+                )}
               </div>
               <p className={extraction.status === 'failed' ? 'text-danger' : 'text-ink-soft'}>
                 {isWorking && extraction.status !== 'extracted'

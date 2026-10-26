@@ -28,6 +28,7 @@ import type {
   DocumentContentType,
   ExtractionErrorCode,
   ExtractionStatus,
+  IsoDate,
   MonthKey,
   SupplyKind,
 } from '@/lib/domain/types';
@@ -53,6 +54,8 @@ const STALE_RUN_MS = 360_000;
 const RUN_DEADLINE_MS = 280_000;
 const MAX_FILES = 10;
 const ACCEPTED_TYPES: readonly string[] = ['application/pdf', 'image/jpeg'];
+/** A batch id is a nanoid made by the browser: 21 characters of the URL-safe alphabet. */
+const BATCH_ID_PATTERN = /^[A-Za-z0-9_-]{21}$/;
 
 export interface UploadFile {
   sha256: string;
@@ -259,6 +262,9 @@ export async function createExtraction(
   input: { supplyId: string | null; batchId: string | null; files: UploadFile[] },
   deps: { blob: BlobStore; now: number },
 ): Promise<CreateExtractionResult> {
+  if (input.batchId !== null && !BATCH_ID_PATTERN.test(input.batchId)) {
+    throw new DomainError('VALIDATION', undefined, ['Identificativo del lotto non valido.']);
+  }
   assertFiles(input.files);
   if (input.supplyId !== null) {
     const supply = await suppliesRepository.getSupply(db, userId, input.supplyId);
@@ -656,7 +662,7 @@ export async function confirmExtraction(
   userId: string,
   extractionId: string,
   payload: { input: unknown; newSupply: SupplyInput | null },
-): Promise<{ billId: string }> {
+): Promise<{ billId: string; batchId: string | null }> {
   // A second «Conferma» finds the row already confirmed: it never creates a second bill.
   const claimed = await extractionsRepository.claimExtractionForConfirm(db, userId, extractionId);
   if (!claimed) {
@@ -693,7 +699,8 @@ export async function confirmExtraction(
       resultJson: null,
     }),
   ]);
-  return { billId };
+  // The batch tells the review where to go next: the following bill of the same import.
+  return { billId, batchId: claimed.batchId };
 }
 
 export async function discardExtraction(
@@ -776,6 +783,204 @@ export async function listPendingExtractions(db: Db, userId: string): Promise<Pe
       },
     ];
   });
+}
+
+// Batches: a bulk import gives its extractions one batch_id, made by the browser. There is no
+// batch table: a batch lives as long as one of its extractions is open (queued, running,
+// extracted or failed).
+
+type OpenStatus = PendingExtraction['status'];
+
+function isOpenStatus(status: ExtractionStatus): status is OpenStatus {
+  return PENDING_STATUSES.some((open) => open === status);
+}
+
+/**
+ * What the queue can still run without a new upload: the ones waiting, and the ones that failed
+ * because the service was down (any other failure needs the owner's look, not a run in bulk).
+ */
+function isResumable(row: ExtractionRow): boolean {
+  return row.status === 'queued' || (row.status === 'failed' && row.errorCode === 'unavailable');
+}
+
+export interface BatchSummary {
+  batchId: string;
+  /** The oldest creation among the batch's open extractions. */
+  createdAt: number;
+  counts: Record<OpenStatus, number>;
+  resumableCount: number;
+  resumableEstimateMicroUsd: number;
+}
+
+export interface BatchExtractionRow {
+  id: string;
+  status: 'queued' | 'running' | 'extracted' | 'failed';
+  errorCode: string | null;
+  errorMessage: string | null;
+  /** "PDF, 3 pagine", "PDF" when the page count is unknown, or "Foto". */
+  fileLabel: string;
+  /** The extracted billing period start; null until extracted. */
+  periodStart: IsoDate | null;
+  createdAt: number;
+  startedAt: number | null;
+  /** Only for queued and failed rows, the ones that can still be run. */
+  estimatedCostMicroUsd: number | null;
+}
+
+function fileLabelOf(documents: readonly DocumentRow[]): string {
+  const pdf = documents.find((document) => document.contentType === 'application/pdf');
+  if (!pdf) return 'Foto';
+  if (pdf.pageCount === null) return 'PDF';
+  return `PDF, ${pdf.pageCount} ${pdf.pageCount === 1 ? 'pagina' : 'pagine'}`;
+}
+
+/** The period start Claude read, from the stored result; the schema's sentinel '' is no period. */
+function extractedPeriodStart(resultJson: string | null): IsoDate | null {
+  if (resultJson === null) return null;
+  const result: unknown = JSON.parse(resultJson);
+  if (typeof result !== 'object' || result === null || !('periodStart' in result)) return null;
+  const { periodStart } = result;
+  return typeof periodStart === 'string' && periodStart !== '' ? periodStart : null;
+}
+
+/** Review order: by extracted period start (no period last), then creation, then id. */
+function compareForReview(a: BatchExtractionRow, b: BatchExtractionRow): number {
+  if (a.periodStart !== b.periodStart) {
+    if (a.periodStart === null) return 1;
+    if (b.periodStart === null) return -1;
+    return a.periodStart < b.periodStart ? -1 : 1;
+  }
+  if (a.createdAt !== b.createdAt) return a.createdAt - b.createdAt;
+  if (a.id === b.id) return 0;
+  return a.id < b.id ? -1 : 1;
+}
+
+function documentsByExtraction(documents: readonly DocumentRow[]): Map<string, DocumentRow[]> {
+  const byExtraction = new Map<string, DocumentRow[]>();
+  for (const document of documents) {
+    if (document.extractionId === null) continue;
+    const own = byExtraction.get(document.extractionId) ?? [];
+    own.push(document);
+    byExtraction.set(document.extractionId, own);
+  }
+  return byExtraction;
+}
+
+/** The batches with something still open, newest first; one query for every batch's files. */
+export async function listBatches(db: Db, userId: string): Promise<BatchSummary[]> {
+  const rows = await extractionsRepository.listBatchedExtractions(db, userId);
+  const documents = documentsByExtraction(
+    await documentsRepository.listDocumentsOfExtractions(
+      db,
+      userId,
+      rows.filter(isResumable).map((row) => row.id),
+    ),
+  );
+  const batches = new Map<string, BatchSummary>();
+  for (const row of rows) {
+    const status = row.status;
+    if (row.batchId === null || !isOpenStatus(status)) continue;
+    const batch = batches.get(row.batchId) ?? {
+      batchId: row.batchId,
+      createdAt: row.createdAt,
+      counts: { queued: 0, running: 0, extracted: 0, failed: 0 },
+      resumableCount: 0,
+      resumableEstimateMicroUsd: 0,
+    };
+    batch.createdAt = Math.min(batch.createdAt, row.createdAt);
+    batch.counts[status] += 1;
+    if (isResumable(row)) {
+      batch.resumableCount += 1;
+      batch.resumableEstimateMicroUsd += estimateOf(
+        documents.get(row.id) ?? [],
+      ).estimatedCostMicroUsd;
+    }
+    batches.set(row.batchId, batch);
+  }
+  return [...batches.values()].sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/**
+ * The open extractions of a batch in review order. Another user's batch id, or an unknown one,
+ * gives an empty list.
+ */
+export async function listBatchExtractions(
+  db: Db,
+  userId: string,
+  batchId: string,
+): Promise<BatchExtractionRow[]> {
+  const rows = await extractionsRepository.listExtractionsOfBatch(db, userId, batchId);
+  const documents = documentsByExtraction(
+    await documentsRepository.listDocumentsOfExtractions(
+      db,
+      userId,
+      rows.map((row) => row.id),
+    ),
+  );
+  return rows
+    .flatMap((row): BatchExtractionRow[] => {
+      const status = row.status;
+      if (!isOpenStatus(status)) return [];
+      const own = documents.get(row.id) ?? [];
+      const canRun = status === 'queued' || status === 'failed';
+      return [
+        {
+          id: row.id,
+          status,
+          errorCode: row.errorCode,
+          errorMessage: row.errorMessage,
+          fileLabel: fileLabelOf(own),
+          periodStart: extractedPeriodStart(row.resultJson),
+          createdAt: row.createdAt,
+          startedAt: row.startedAt,
+          estimatedCostMicroUsd: canRun ? estimateOf(own).estimatedCostMicroUsd : null,
+        },
+      ];
+    })
+    .sort(compareForReview);
+}
+
+/** The next bill of the batch waiting for its review, after the one just confirmed. */
+export async function nextExtractionToReview(
+  db: Db,
+  userId: string,
+  { batchId, afterExtractionId }: { batchId: string; afterExtractionId: string },
+): Promise<string | null> {
+  const rows = await listBatchExtractions(db, userId, batchId);
+  const next = rows.find((row) => row.status === 'extracted' && row.id !== afterExtractionId);
+  return next?.id ?? null;
+}
+
+export interface ImportSupply {
+  id: string;
+  kind: SupplyKind;
+  label: string;
+  houseName: string;
+  archived: boolean;
+}
+
+/**
+ * Every supply a batch may be assigned to, archived ones too (past bills often belong to a
+ * closed supply): active first, then archived, each by house name and label.
+ */
+export async function listImportSupplies(db: Db, userId: string): Promise<ImportSupply[]> {
+  const supplies = await suppliesRepository.listSupplies(db, userId, { includeArchived: true });
+  const houses = await housesRepository.listHouses(db, userId);
+  const houseNameById = new Map(houses.map((house) => [house.id, house.name]));
+  return supplies
+    .map((supply) => ({
+      id: supply.id,
+      kind: supply.kind,
+      label: supply.label,
+      houseName: houseNameById.get(supply.houseId) ?? '',
+      archived: supply.archivedAt !== null,
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.archived) - Number(b.archived) ||
+        a.houseName.localeCompare(b.houseName, 'it') ||
+        a.label.localeCompare(b.label, 'it'),
+    );
 }
 
 /** The badge on «Bollette». */

@@ -30,6 +30,8 @@ interface ReviewSupply {
 
 export interface ExtractionReviewProps {
   extractionId: string;
+  /** A bill of a bulk import: confirming goes on to the next one of the batch. */
+  batchId: string | null;
   documents: Array<{ id: string; contentType: DocumentContentType }>;
   draft: ReviewDraft;
   supplies: ReviewSupply[];
@@ -40,6 +42,7 @@ export interface ExtractionReviewProps {
 /** The bill as Claude read it, next to the document, to be checked and confirmed. */
 export function ExtractionReview({
   extractionId,
+  batchId,
   documents,
   draft,
   supplies,
@@ -102,7 +105,7 @@ export function ExtractionReview({
       setErrors(resultMessages(result));
       return;
     }
-    router.push('/bollette/da-rivedere');
+    router.push(batchId ? `/bollette/da-rivedere?lotto=${batchId}` : '/bollette/da-rivedere');
   }
 
   const [pdf] = documents.filter((document) => document.contentType === 'application/pdf');
@@ -298,7 +301,8 @@ export function ExtractionReview({
             supply={formSupply}
             initialValue={{ ...draft.input, supplyId: formSupply.id }}
             overlaps={formSupply.id === draft.matchedSupplyId ? overlaps : undefined}
-            submitLabel="Conferma"
+            // In a batch the only button moves on: the owner reviews the bills one after another.
+            submitLabel={batchId ? 'Conferma e passa alla prossima' : 'Conferma'}
             onSubmit={onSubmit}
           />
         ) : (

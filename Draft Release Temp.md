@@ -40,6 +40,12 @@
 - Added closable registration: each installation decides whether new accounts are accepted, and when it is closed the sign-up page says so and the server refuses new accounts too.
 - Added private pages: everything except sign-in and sign-up needs an account, and after signing in you land back on the page you asked for.
 
+**Import**
+
+- Added «Importa più bollette»: choose up to 50 past bills at once, a PDF or a photo each, and the app skips files already stored or chosen twice, then shows what extracting the rest would cost («3 bollette pronte · 3 pagine PDF · 0 foto · costo stimato circa 0,90 $»). Extraction starts only at «Avvia estrazione» and runs two bills at a time from your browser, keeping the screen on.
+- Added pausing and resuming: when Anthropic does not answer the queue stops with «Riprendi», and a batch left halfway, because the page was closed, waits in «Lotti in sospeso» with what finishing it would cost.
+- Added the review of a batch from its oldest bill: each bill has «Conferma e passa alla prossima», which opens the next one until the batch is done.
+
 **Deploy**
 
 - Added a setup guide that takes you from the clone to your own deployment on Vercel, Turso and private file storage in Europe, with your own Anthropic API key and a spending limit, ending with registration closed after your account.

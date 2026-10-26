@@ -1,12 +1,13 @@
 /**
  * Isolation through the pages and the save action. Seed users A and B read (and never write); the
  * write pair uses a user of its own («Casa Ibis») and tampers with the bound bill id; the upload
- * pairs register two users of their own, P and Q.
+ * pairs register two users of their own, P and Q; the batch pair a user of its own, read by seed A.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { type BrowserContext, expect, test } from '@playwright/test';
 import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 import { createDb } from '../../src/lib/db/create-db';
 import { bills } from '../../src/lib/db/schema/app';
 import {
@@ -189,4 +190,56 @@ test.describe('estrazioni di P', () => {
     expect((await pPage.goto(`/bollette/revisione/${extractionId}`))?.status()).toBe(200);
     expect((await qPage.goto(`/bollette/revisione/${extractionId}`))?.status()).toBe(404);
   });
+});
+
+// A batch of a user registered here, read through the batch pages by its owner (positive control)
+// and by seed A, who only reads: another user's batch id gives an empty list, never its rows.
+test('le pagine di un lotto mostrano le righe solo al suo proprietario', async ({
+  page,
+  browser,
+}) => {
+  await signUpTestUser(page, 'isolamento-lotto');
+  const batchId = nanoid();
+  const bytes = readFileSync('tests/fixtures/bills/acqua-castoro.pdf');
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const created = await page.request.post('/api/extractions', {
+    data: {
+      supplyId: null,
+      batchId,
+      files: [{ sha256, contentType: 'application/pdf', sizeBytes: bytes.length }],
+    },
+  });
+  expect(created.status()).toBe(201);
+  const body = (await created.json()) as {
+    extractionId: string;
+    documents: Array<{ documentId: string; pathname: string }>;
+  };
+  const [document] = body.documents;
+  if (!document) throw new Error('no planned document');
+  const query = new URLSearchParams({
+    documentId: document.documentId,
+    pathname: document.pathname,
+  });
+  expect(
+    (await page.request.put(`/api/e2e/blob?${query.toString()}`, { data: bytes })).status(),
+  ).toBe(204);
+  expect((await page.request.post(`/api/extractions/${body.extractionId}/uploaded`)).status()).toBe(
+    200,
+  );
+
+  await gotoReady(page, `/bollette/da-rivedere?lotto=${batchId}`);
+  await expect(page.getByTestId('pending-extraction')).toHaveCount(1);
+  await expect(page.getByTestId('pending-extraction')).toContainText('in coda');
+
+  const seedA = await browser.newContext({ storageState: SEED_A_STATE });
+  try {
+    const intruder = await seedA.newPage();
+    await intruder.goto(`/bollette/da-rivedere?lotto=${batchId}`);
+    await expect(intruder.getByText('Nessuna bolletta da rivedere in questo lotto.')).toBeVisible();
+    await expect(intruder.getByTestId('pending-extraction')).toHaveCount(0);
+    await intruder.goto(`/bollette/importa?lotto=${batchId}`);
+    await expect(intruder.getByText('Nessuna bolletta in questo lotto.')).toBeVisible();
+  } finally {
+    await seedA.close();
+  }
 });

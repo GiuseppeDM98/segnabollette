@@ -21,7 +21,8 @@ logo).
 | `/bollette` | `fornitura=<supplyId>`, `pagina=<n>` | Bills, newest first, 50 a page |
 | `/bollette/nuova` | `fornitura=<supplyId>` | Without the query: the choice of the non-archived supplies; with it: `BillForm` (an archived supply opens too: past bills of a closed supply) |
 | `/bollette/carica` | — | `BillUploader`: a PDF or photos to extract (`doc/guide/estrazione.md`) |
-| `/bollette/da-rivedere` | — | Extractions queued, running, extracted or failed, with their actions |
+| `/bollette/importa` | `lotto=<batchId>` | `BulkImporter`: «Lotti in sospeso» and a new batch of up to 50 bills; with the query, that batch's rows and «Riprendi» (`doc/guide/estrazione.md` § 13) |
+| `/bollette/da-rivedere` | `lotto=<batchId>` | Extractions queued, running, extracted or failed, with their actions; with the query, one batch from its oldest period (another user's batch: an empty list) |
 | `/bollette/revisione/[id]` | — | The document beside `BillForm` prefilled by the extraction, «Conferma» / «Scarta» |
 | `/bollette/[id]` | — | The bill: facts, lines grouped by category with subtotals, readings, «Documenti» (its files, «Allega») |
 | `/bollette/[id]/modifica` | — | `BillForm` on the confirmed bill; a replaced bill redirects to its page |
@@ -236,7 +237,7 @@ the overlap panel from the start (the review knows them); manual entry learns th
   user and builds its house through the UI.
 - Decoy words differ per file: Quokka (`forniture`), Capibara (`bolletta-manuale`), Tucano
   (`letture`), Koala (`impostazioni`), Ibis (`isolamento`), Lontra (`auth`), Pellicano
-  (`estrazione`). A new file picks a new animal.
+  (`estrazione`), Gazza (`import`). A new file picks a new animal.
 - `a11y.spec.ts` runs axe (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`) on every page, light and
   dark, in both projects; a new page is added to its list.
 - `data-testid` on what the tests drive: `supply-card`, `supply-row`, `supply-form`,
@@ -246,7 +247,8 @@ the overlap panel from the start (the review knows them); manual entry learns th
   `group-subtotal`, `arithmetic-warnings`, `form-errors`, `field-error`, `reading-row`,
   `self-reading-form`, `lower-reading-warning`, `delete-account`, `confirm-dialog`, `nav-bar`,
   `nav-active-tick`, `side-bar`, `chart-frame`, `kpi-tile`, `supply-last-month`,
-  `extraction-warnings`, `pending-extraction`, `review-badge`, `bill-document`, `extraction-spend`.
+  `extraction-warnings`, `pending-extraction`, `review-badge`, `bill-document`, `extraction-spend`,
+  `import-row`, `import-estimate`, `pending-batch`.
 - `dashboard.spec.ts` only reads seed A (no decoy word); `seedSupplyIds(email)` gives the seed
   supplies' ids by name. `a11y.spec.ts` opens every `<details>` before axe, so the charts' data
   tables are checked too.
