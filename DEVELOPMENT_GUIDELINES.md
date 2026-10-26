@@ -235,7 +235,7 @@ docs: add API authentication section to README
 
 **Rules**:
 - Subject line: max 72 characters, imperative mood, no period
-- Body (when needed): explain WHY, not what — the diff shows the what
+- Body: one line per change of the session, with its type (§ Commit Scope); add the WHY where the diff cannot show it
 - Reference issue tracker IDs when relevant: `fix: handle null address (#142)`
 
 ---
