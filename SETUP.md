@@ -140,7 +140,8 @@ pnpm dlx vercel@latest env add ANTHROPIC_API_KEY production     # tick Sensitive
 ```
 
 Without the key the app still stores files attached to a bill by hand; without
-`BLOB_READ_WRITE_TOKEN` the upload pages say the file store is not configured and offer manual entry.
+`BLOB_READ_WRITE_TOKEN` there are no files at all. Either way the upload page says «Estrazione non
+configurata su questa installazione» and offers manual entry.
 
 ## Environment variables
 

@@ -458,12 +458,13 @@ l'id della riga con lo stesso `register` e lo stesso `value`, altrimenti la inse
 
 ### 4.6 Interfaccia
 
-- `BillUploader` (06): se `navigator.onLine === false`, oppure se la `fetch` di
-  `POST /api/extractions` lancia (errore di rete), «Carica» → `enqueueBillUpload({ supplyId, files },
+- `BillUploader` (06): se `navigator.onLine === false`, oppure se `POST /api/extractions` fallisce
+  per la rete (`postJson` di `src/components/upload/extraction-api.ts` non lancia: risponde
+  `{ ok: false, status: 0, code: 'NETWORK' }`), «Carica» → `enqueueBillUpload({ supplyId, files },
   useQueueDeps())` (con i file già convertiti) → messaggio «Salvata in coda: parte appena torni in
   rete» e link a «Da rivedere». Online il percorso resta quello della 06 (stima e «Estrai (circa
   X $)»). Vale solo in modalità `extract`: in modalità `attach` (un allegato a una bolletta già
-  salvata) senza rete «Carica» mostra «Serve la rete per allegare il file.» e non accoda nulla.
+  salvata) senza rete «Allega il file» mostra «Serve la rete per allegare il file.» e non accoda nulla.
 - `SelfReadingForm` (03): l'avviso del valore più basso (D-50) e la sua conferma vengono prima;
   poi, se `navigator.onLine === false` o la Server Action lancia per un errore di rete, il
   `SelfReadingInput` già costruito va a `enqueueSelfReading(input, useQueueDeps())` con lo stesso

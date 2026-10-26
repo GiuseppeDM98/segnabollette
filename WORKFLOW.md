@@ -148,11 +148,11 @@ changes from repo to repo and is the only part to rewrite when the tooling chang
 | Lint + format | `pnpm lint` (`biome check .`; `pnpm lint:fix` to write) | 2026-10-24 |
 | Unit tests | `pnpm test` (Vitest, `TZ=Europe/Rome` set by `vitest.config.ts`) | 2026-10-24 |
 | Build | `pnpm build` (`next build --webpack`, kept for the service worker) | 2026-10-24 |
-| Browser tests | `pnpm test:e2e` (Playwright on a production build on :3100, `file:e2e.db`; fake Blob and Anthropic behind `E2E_FAKE_SERVICES=1` from spec 06, which until then only turns the rate limit off) | 2026-10-24 |
-| Database | `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:studio`, `pnpm db:seed` (the two seed users, with invented houses, supplies, bills and self-readings); `pnpm db:migrate:prod` (production, reads `.env.turso-prod`) | 2026-10-24 / 05 |
+| Browser tests | `pnpm test:e2e` (Playwright on a production build on :3100, `file:e2e.db`; fake Blob and Anthropic behind `E2E_FAKE_SERVICES=1` since 2026-10-26, which also turns the rate limit off) | 2026-10-24 |
+| Database | `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:studio`, `pnpm db:seed` (the two seed users, with invented houses, supplies, bills and self-readings); `pnpm db:migrate:prod` (production, reads `.env.turso-prod`) | 2026-10-24 / 2026-10-25 |
 | Market references | `pnpm riferimenti:update` (ARERA, writes `data/riferimenti/*.json`), `pnpm riferimenti:pun -- <AnnoYYYY.zip> [--prod]` (GME zip downloaded by hand; writes `local.db`, or production with `--prod`, which reads `.env.turso-prod`) | 08 |
-| Blob housekeeping | `pnpm documents:prune` (dry run; `-- --delete` removes orphan files; `-- --prod` targets production through `.env.turso-prod`) | 06 |
-| Fixtures | `pnpm fixture:bills` (rewrites the synthetic bill PDFs in `tests/fixtures/bills/`) | 06 |
+| Blob housekeeping | `pnpm documents:prune` (dry run; `-- --delete` removes orphan files; `-- --prod` targets production through `.env.turso-prod`) | 2026-10-26 |
+| Fixtures | `pnpm fixture:bills` (rewrites the synthetic bill PDFs in `tests/fixtures/bills/`) | 2026-10-26 |
 | Icons | `pnpm icons` | 09 |
 
 Gates before a commit, in this order: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`,
@@ -187,7 +187,8 @@ one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.
   authenticated. Isolation checks use the pair: seed A's resource (must open) and seed B's
   resource (must be refused) with the same request.
 - Phones (camera capture on Android and iPhone, installing the PWA, the offline queue on a real
-  device) are the only part the owner must do by hand (specs 06 and 09): a probe cannot press
+  device) are the only part the owner must do by hand (the camera since 2026-10-26, the rest with
+  spec 09): a probe cannot press
   "Add to Home Screen".
 
 ### Inspecting real data state

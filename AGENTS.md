@@ -21,24 +21,27 @@ alone.
 `src/app` (pages, route handlers, Server Actions) is thin: zod → `requireUser()` → a service →
 map the result (`toActionResult`, `toErrorResponse`). `src/lib/services/*` holds the use cases;
 every service takes `db: Db` first and its other dependencies (`blob`, `extractor`, `now`, `clock`)
-explicitly. `src/lib/db/repositories/*` is the only place that writes SQL (Drizzle), with one
-exception: `src/lib/db/maintenance/prune.ts`, the queries of `pnpm documents:prune`, which no app
-module imports.
+explicitly. `src/lib/db/repositories/*` is the only place that writes SQL (Drizzle), with two
+exceptions: `src/lib/services/user-data.ts` (`deleteAllUserData`, one batch over every user table)
+and `src/lib/db/maintenance/prune.ts`, the cross-user queries of `pnpm documents:prune`, which no app
+module imports (test helpers in `src/lib/db/testing/` aside).
 `src/lib/domain/*` and `src/lib/engine/*` are pure: no Drizzle, no `next/*`, no `fetch`, no clock
 (they take `today`/`now` as parameters). Services import each repository as a namespace
 (`import * as billsRepository from '@/lib/db/repositories/bills'`, likewise `housesRepository`,
 `suppliesRepository`, `readingsRepository`): a service and its repository share function names
 (`listBills`, `listReadings`) with different signatures. Gateways:
 `src/lib/extraction/anthropic-extractor.ts` is the only file importing `@anthropic-ai/sdk`;
-`src/lib/blob/vercel-blob-store.ts` the only server file importing `@vercel/blob` and
-`src/lib/blob/upload-client.ts` the only client one; `src/components/charts/recharts.ts` the only file importing `recharts` (it re-exports what the
+`src/lib/blob/vercel-blob-store.ts` the only file using the store API of `@vercel/blob` (`get`, `del`,
+`list`; the token route imports only `handleUpload` from `@vercel/blob/client`) and
+`src/lib/blob/upload-client.ts` the only client importer; `src/components/charts/recharts.ts` the only file importing `recharts` (it re-exports what the
 charts use, Recharts' `ReferenceLine` as `RechartsReferenceLine`).
 The app reaches external services through `src/lib/container.ts` (`getDb`; `getBlobStore`,
 `getBillExtractor` and their fakes under `E2E_FAKE_SERVICES=1`); CLI scripts in `scripts/` build their
 clients directly and never import `server-only` modules (`env.ts`, `db/client.ts`, `auth/auth.ts`,
 `container.ts`); a module a script needs takes its secrets as arguments (`createVercelBlobStore(token)`).
 Route handlers exist only where a non-form client calls HTTP (auth, Blob upload, extraction steps,
-document download, the offline queue); everything else is a colocated Server Action.
+document download, the offline queue *(from spec 09)*); everything else is a colocated Server
+Action.
 
 ### 2.2 Naming
 
@@ -54,8 +57,9 @@ Secrets only in `.env.local`, `.env.turso-prod` (both gitignored) and Vercel; `.
 every variable a developer or a deployment sets (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
 `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGNUP_ENABLED`; `ANTHROPIC_API_KEY`,
 `BLOB_READ_WRITE_TOKEN`), with development defaults and empty secrets; the test-only switches
-(`E2E_FAKE_SERVICES`, `NEXT_PUBLIC_E2E_FAKE_SERVICES`, `E2E_BLOB_DIR`, `E2E_EXTRACTOR_DELAY_MS`) are
-set only by `playwright.config.ts` (and, for a local verification with the fakes, on the command
+(`E2E_FAKE_SERVICES`, `NEXT_PUBLIC_E2E_FAKE_SERVICES`, `E2E_BLOB_DIR`, `E2E_EXTRACTOR_DELAY_MS`
+*(from spec 07)*) are set only by `playwright.config.ts` or take their test default (`E2E_BLOB_DIR`
+= `.e2e-blob`) (and, for a local verification with the fakes, on the command
 line of that run, never in `.env.local`), and `VERCEL_ENV` only by Vercel. `src/lib/env-schema.ts` is the
 zod schema, `src/lib/env.ts` the server-only instance and the only reader of `process.env` in the
 app, except `process.env.NODE_ENV` and the `NEXT_PUBLIC_*` variables read literally in client code
@@ -102,8 +106,8 @@ them on (`@libsql/client` 0.18.0); the PRAGMA in `prepareLocalDatabase` reaches 
 that runs it, and `create-db.test.ts` reads the setting on several connections at once, so a driver
 upgrade that turns them off goes red. Every table with `user_id` is also deleted in
 `src/lib/services/user-data.ts` (`deleteAllUserData`, run by account deletion). Files on Blob are
-deleted **after** their rows (an orphan file is recoverable with `pnpm documents:prune` *(from spec
-06)*; a row without its file is not). Better Auth's own tables keep their cascade towards `users`.
+deleted **after** their rows (an orphan file is recoverable with `pnpm documents:prune`;
+a row without its file is not). Better Auth's own tables keep their cascade towards `users`.
 
 ### 2.7 Comments
 
@@ -214,7 +218,10 @@ precached by hand; the offline queue is drained by the pages.
 - Anthropic and Blob are never called in tests: fake client for the extractor, disk store and
   fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`); the
   service tests drive the same fakes through `src/lib/extraction/testing/` (`tempBlobStore`,
-  `uploadFixture`, `runFixture`, `scriptedExtractor`, the fixture bytes and their SHA-256).
+  `uploadFixture`, `runFixture`, `scriptedExtractor`, the fixture bytes and their SHA-256). A
+  gateway's own test is the one other place that touches its SDK, to stand in for it: a fake
+  client in `anthropic-extractor.test.ts`, `vi.mock('@vercel/blob')` in `vercel-blob-store.test.ts`
+  (paging and the 500-file delete blocks, 2026-10-26).
 - Every test in a spec names the mutation that proves it load-bearing; a test that cannot go red is
   not a test. A mutation must still type-check: under Playwright the `webServer` build fails on a
   type error, and the red then proves nothing (2026-10-24, `{x && false && (…)}` in a page).

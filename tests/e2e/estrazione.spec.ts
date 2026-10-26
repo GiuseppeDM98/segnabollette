@@ -130,6 +130,22 @@ test('dal file alla bolletta, coi doppioni, le code, gli errori e le foto', asyn
     await expect(document.getByRole('link', { name: /^Apri/ })).toBeVisible();
   });
 
+  await test.step('un file allegato alla bolletta, senza estrazione', async () => {
+    await page.getByLabel('Scegli PDF o foto').setInputFiles(`${BILLS}/internet-armadillo.pdf`);
+    await page.getByRole('button', { name: 'Allega il file' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'File allegato.' })).toBeVisible();
+    const documents = page.getByTestId('bill-document');
+    await expect(documents).toHaveCount(2);
+    const open = documents.nth(1).getByRole('link', { name: /^Apri/ });
+    await expect(open).toHaveAttribute('href', /^\/api\/documents\/[^/]+$/);
+    await expect(open).toHaveAttribute('target', '_blank');
+    const file = await page.request.get((await open.getAttribute('href')) ?? '');
+    expect(file.status()).toBe(200);
+    expect(file.headers()['content-type']).toBe('application/pdf');
+    // An attachment is not an extraction: nothing waits in «Da rivedere».
+    expect(await extractionsOf(email)).toHaveLength(1);
+  });
+
   await test.step('lo stesso file una seconda volta', async () => {
     await upload(page, `${BILLS}/luce-pellicano.pdf`);
     await expect(page.getByRole('alert').filter({ hasText: 'Questo file' })).toContainText(

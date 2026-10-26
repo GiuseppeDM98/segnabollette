@@ -1,6 +1,7 @@
 /**
  * The real file store: a private Vercel Blob store, read only on the server with the read-write
- * token (the only server file that imports @vercel/blob). Files never pass through a function on
+ * token (the only file that uses the store API of @vercel/blob; the token route imports only
+ * handleUpload from @vercel/blob/client). Files never pass through a function on
  * the way in: the browser uploads them directly (upload-client.ts and /api/documents/upload).
  *
  * No 'server-only' import: documents:prune runs it under tsx, where that package throws. The token
