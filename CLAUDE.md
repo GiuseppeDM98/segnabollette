@@ -31,14 +31,14 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
   owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
   SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-26)**: spec 06 implemented on `feature/06-extraction` — upload to private
-  Blob, Claude extraction at the click on «Estrai», review and confirm, files on the bill
-  (`doc/guide/estrazione.md`); `BillForm` now lays out by its own width, with readings as one row
-  per date and «Da pagare» under the total (`doc/guide/app.md` § 5); the prompt gained a
-  summary-only example. Local verification passed on three real bills (figures exact, real cost
-  about half the estimate), isolation and negative cases; the tour was skipped by the owner.
-  **Still open**: production migration, `ANTHROPIC_API_KEY` on Vercel, merge, production
-  measure from the phone (spec 06 § 8). **Next**: closing commit on `docs/06-in-esercizio`.
+- **Latest (2026-10-26)**: spec 06 in service (PR #14): upload to private Blob, Claude extraction
+  at the click on «Estrai», review and confirm, files on the bill (`doc/guide/estrazione.md`);
+  `BillForm` lays out by its own width, with readings as one row per date and «Da pagare» under
+  the total (`doc/guide/app.md` § 5); the prompt gained a summary-only example. Verified locally on
+  three real bills and in production on one (upload, page count, extraction, confirm, «Apri»,
+  delete; database and store left empty), real cost about half the estimate. **Still open**:
+  «Scatta foto» from a phone was never tried (the owner skipped the phone measure); the
+  summary-only prompt example awaits its first bill. **Next**: retire spec 06, then spec 07.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI, the dashboard and the extraction exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);

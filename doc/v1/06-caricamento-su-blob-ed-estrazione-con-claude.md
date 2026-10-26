@@ -1,7 +1,8 @@
 # 06 — Caricamento su Blob ed estrazione con Claude
 
-> **Stato**: implementata il 2026-10-26, branch `feature/06-extraction`. Scritta 2026-10-24; riletta
-> in modo adversariale il 2026-10-24: 40 rilievi, 5 decisioni (D-41, D-42, D-55, D-56, D-59).
+> **Stato**: in esercizio il 2026-10-26, PR #14 (implementata il 2026-10-26 su `feature/06-extraction`;
+> scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 40 rilievi, 5 decisioni: D-41,
+> D-42, D-55, D-56, D-59).
 > **Branch**: `feature/06-extraction` da `main` aggiornato dopo il merge della 05. **Dipende da**: 05
 > (ritirata il 2026-10-25).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-2, D-6, D-7, D-9, D-15, D-16, D-17, D-19,
