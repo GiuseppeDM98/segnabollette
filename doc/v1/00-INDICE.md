@@ -293,7 +293,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | 03 | Design, forniture, inserimento manuale e autoletture | `feature/03-design-manual-entry` | 02 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #7; ritirata il 2026-10-24 |
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #9; ritirata il 2026-10-24 |
 | 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | in esercizio il 2026-10-25, PR #11; ritirata il 2026-10-25 |
-| 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 (ritirata il 2026-10-25) | implementata il 2026-10-26, branch `feature/06-extraction` |
+| 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 (ritirata il 2026-10-25) | in esercizio il 2026-10-26, PR #14 |
 | 07 | Import multiplo | `feature/07-bulk-import` | 06 | scritta 2026-10-24; riletta 2026-10-24 |
 | 08 | Riferimenti di mercato | `feature/08-market-references` | 07 | scritta 2026-10-24; riletta 2026-10-24 |
 | 09 | PWA, fotocamera e coda offline | `feature/09-pwa-offline` | 08 | scritta 2026-10-24; riletta 2026-10-24 |

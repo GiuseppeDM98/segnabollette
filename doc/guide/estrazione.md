@@ -32,7 +32,8 @@ A bill becomes data in five steps, and **Claude is called only at the owner's cl
    back from the store and runs `verifyDocument` (`src/lib/extraction/verify-document.ts`): size
    against the limit and against the declared size, magic bytes (`%PDF-`, `FF D8 FF`), SHA-256
    against the declared one, then for a PDF no `/Encrypt` dictionary and a page count from `unpdf`
-   (at most 40). All good → `queued` with `uploadedAt` and `pageCount`, and the answer is the
+   (at most 40; `unpdf` stays out of the webpack bundle through `serverExternalPackages`, and
+   loads from `node_modules` on Vercel too, verified in production on 2026-10-26). All good → `queued` with `uploadedAt` and `pageCount`, and the answer is the
    estimate (§ 5). A bad file → `failed` with `document_invalid` and the reason; the files stay until
    «Scarta» so the owner sees why.
 5. **Extract** — the page shows «Estrai (circa 0,31 $)» with «La bolletta resta in «Da rivedere»
@@ -163,7 +164,9 @@ and logged.
 
 The estimate before the click, `estimateExtractionCost({ pdfPages, photos })`: input
 `pdfPages × 3,000 + photos × 4,800 + 4,000` tokens, output 10,000 tokens. An eight-page PDF:
-`(28,000 × 4 + 10,000 × 20) = 312,000` micro-dollars, shown «0,31 $». Real bills cost about that.
+`(28,000 × 4 + 10,000 × 20) = 312,000` micro-dollars, shown «0,31 $». The estimate is
+deliberately high: four real bills (2026-10-26) cost about half of it, because their answers took
+1,000–3,300 output tokens instead of 10,000.
 
 Every attempt adds its tokens and cost to the row (`COALESCE(col, 0) + n` in
 `src/lib/db/repositories/extractions.ts`), refusals and truncated answers included: they were paid.
