@@ -4,7 +4,15 @@
 import { asc, eq } from 'drizzle-orm';
 import { expect } from 'vitest';
 import type { Db } from '@/lib/db/create-db';
-import { billLines, bills, houses, meterReadings, supplies } from '@/lib/db/schema/app';
+import {
+  billLines,
+  bills,
+  documents,
+  extractions,
+  houses,
+  meterReadings,
+  supplies,
+} from '@/lib/db/schema/app';
 import type { BillInput, BillLineInput } from '@/lib/domain/bill-input';
 import type { IsoDate } from '@/lib/domain/types';
 import { DomainError, type DomainErrorCode } from '@/lib/errors';
@@ -96,6 +104,16 @@ export async function snapshotUserRows(db: Db, userId: string) {
       .from(meterReadings)
       .where(eq(meterReadings.userId, userId))
       .orderBy(asc(meterReadings.id)),
+    extractions: await db
+      .select()
+      .from(extractions)
+      .where(eq(extractions.userId, userId))
+      .orderBy(asc(extractions.id)),
+    documents: await db
+      .select()
+      .from(documents)
+      .where(eq(documents.userId, userId))
+      .orderBy(asc(documents.id)),
   };
 }
 

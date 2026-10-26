@@ -6,7 +6,8 @@ import { SupplyKindIcon } from '@/components/supplies/supply-kind-icon';
 import { Page, Section } from '@/components/ui/page';
 import { Stamp } from '@/components/ui/stamp';
 import { columnHeaderClass, panelClass } from '@/components/ui/styles';
-import { getDb } from '@/lib/container';
+import { BillUploader } from '@/components/upload/bill-uploader';
+import { getDb, isBlobConfigured } from '@/lib/container';
 import { checkBillArithmetic } from '@/lib/domain/bill-checks';
 import { isMetered, LINE_CATEGORIES, readingUnitOf } from '@/lib/domain/types';
 import {
@@ -20,6 +21,7 @@ import {
   REGISTER_LABELS,
 } from '@/lib/format';
 import { getBillDetail } from '@/lib/services/bills';
+import { listBillDocuments } from '@/lib/services/extractions';
 import { orNotFound, pageUser } from '../../page-helpers';
 import { deleteBillAction } from '../actions';
 
@@ -38,6 +40,8 @@ export default async function BillPage({ params }: { params: Promise<{ id: strin
   })).filter((group) => group.lines.length > 0);
   const replaced = bill.status === 'replaced';
   const readingUnit = isMetered(supply.kind) ? readingUnitOf(supply.kind) : null;
+  // The files need only the Blob store, not the Anthropic key.
+  const documents = isBlobConfigured() ? await listBillDocuments(getDb(), user.id, bill.id) : null;
   const period = `dal ${formatDate(bill.periodStart)} al ${formatDate(bill.periodEnd)}`;
 
   const facts: Array<[string, ReactNode]> = [
@@ -264,6 +268,41 @@ export default async function BillPage({ params }: { params: Promise<{ id: strin
               ))}
             </ul>
           )}
+        </Section>
+      )}
+
+      {documents && (
+        <Section title="Documenti">
+          {documents.length === 0 ? (
+            <p className="text-ink-soft">Nessun file allegato.</p>
+          ) : (
+            <ul className={panelClass}>
+              {documents.map((document, index) => {
+                const name =
+                  document.contentType === 'application/pdf'
+                    ? `PDF, ${document.pageCount ?? 0} ${document.pageCount === 1 ? 'pagina' : 'pagine'}`
+                    : `Pagina ${index + 1}`;
+                return (
+                  <li
+                    key={document.id}
+                    data-testid="bill-document"
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-3 py-1.5 last:border-b-0"
+                  >
+                    <span>{name}</span>
+                    <a
+                      href={`/api/documents/${document.id}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex min-h-11 items-center font-semibold"
+                    >
+                      Apri<span className="sr-only"> {name}</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <BillUploader mode="attach" billId={bill.id} />
         </Section>
       )}
     </Page>

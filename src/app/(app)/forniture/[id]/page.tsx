@@ -17,7 +17,7 @@ import {
   toUnitPriceSeries,
   toYearOverYearSeries,
 } from '@/lib/charts/series';
-import { getDb } from '@/lib/container';
+import { getDb, isExtractionConfigured } from '@/lib/container';
 import { monthKeyOf, romeToday } from '@/lib/domain/dates';
 import { consumptionUnitOf, isMetered, readingUnitOf } from '@/lib/domain/types';
 import { KIND_LABELS } from '@/lib/format';
@@ -124,9 +124,19 @@ export default async function SupplyPage({
         </span>
       }
       actions={
-        <Link href={`/bollette/nuova?fornitura=${supply.id}`} className={buttonClass('primary')}>
-          Nuova bolletta
-        </Link>
+        <>
+          <Link href={`/bollette/nuova?fornitura=${supply.id}`} className={buttonClass('primary')}>
+            Nuova bolletta
+          </Link>
+          {isExtractionConfigured() && (
+            <Link
+              href={`/bollette/carica?fornitura=${supply.id}`}
+              className={buttonClass('secondary')}
+            >
+              Carica bolletta
+            </Link>
+          )}
+        </>
       }
     >
       <dl className={`${panelClass} grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 p-4`}>

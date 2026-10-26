@@ -31,15 +31,16 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
   owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
   SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-25)**: spec 05 in service (PR #11) and retired; production lives in
-  `doc/guide/deploy.md` and SETUP.md, and the fixed `ignoreCommand` built `main` from a Git push.
-  The retirement changed code: the charts' right margin (the last month label is no longer cut at
-  390 px) and the bottom bar's active tick, now 6 px inside the cloth (DESIGN.md); README
-  screenshots retaken locally. The production verification holds for the code before this change
-  and is redone after the deploy; the phone tour, partial for lack of real data, comes back with
-  the first real bills. **Still open**: none. **Next**: spec 06 (extraction).
+- **Latest (2026-10-26)**: spec 06 implemented on `feature/06-extraction` — upload to private
+  Blob, Claude extraction at the click on «Estrai», review and confirm, files on the bill
+  (`doc/guide/estrazione.md`); `BillForm` now lays out by its own width, with readings as one row
+  per date and «Da pagare» under the total (`doc/guide/app.md` § 5); the prompt gained a
+  summary-only example. Local verification passed on three real bills (figures exact, real cost
+  about half the estimate), isolation and negative cases; the tour was skipped by the owner.
+  **Still open**: production migration, `ANTHROPIC_API_KEY` on Vercel, merge, production
+  measure from the phone (spec 06 § 8). **Next**: closing commit on `docs/06-in-esercizio`.
 
-## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI and the dashboard exist; the rest as specified)
+## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI, the dashboard and the extraction exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
   `src/lib/db/create-db.ts` (`createDb`, `prepareLocalDatabase`) + `client.ts` (server singleton),
   `schema/auth.ts` (Better Auth tables) and `schema/app.ts` (app tables), migrations in `drizzle/`;
@@ -65,13 +66,20 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   `ReferenceLine` type), charts in `src/components/charts/*` (`recharts.ts` the only Recharts
   import, `ChartFrame` with its «Vedi i dati» table, `ConsumptionChart`, `UnitPriceChart`,
   `CostsChart`, `YearOverYearChart`, `KpiTile`, `PeriodSelector`) on `/` and `/forniture/[id]`.
+- **Extraction** (exists): `src/lib/blob/*` (`BlobStore`, Vercel and disk stores, `upload-client.ts`),
+  `src/lib/extraction/*` (schema with sentinels, prompt, pricing, Anthropic and fake extractors,
+  `verify-document`, `validate`, `to-bill-input`, `testing/`), repositories `documents` and
+  `extractions`, service `extractions.ts`, routes under `src/app/api/{extractions,bills,documents,e2e}`
+  (`toErrorResponse` in `src/lib/http/error-status.ts`), pages `/bollette/carica`,
+  `/bollette/da-rivedere`, `/bollette/revisione/[id]`, components in `src/components/upload/*`;
+  `scripts/make-bill-fixtures.ts`, `scripts/prune-documents.ts` + `src/lib/db/maintenance/prune.ts`.
 - `src/app` (pages, Server Actions, route handlers: thin) → `src/lib/services` (use cases) →
   `src/lib/db/repositories` (Drizzle only, `(db, userId, …)`); pure `src/lib/domain` (types, dates,
   money, bill input and checks) and `src/lib/engine` (monthly series). Gateways:
   `src/lib/extraction/anthropic-extractor.ts`, `src/lib/blob/vercel-blob-store.ts`; services reach
   them through `src/lib/container.ts` (fakes under `E2E_FAKE_SERVICES=1`).
 - Data: one schema for every utility — `houses`, `supplies`, `bills`, `bill_lines` (each line with
-  its own competence period), `meter_readings`; `documents` and `extractions` (06);
+  its own competence period), `meter_readings`; `documents` and `extractions`;
   `reference_prices` (08, PUN only). No ON DELETE CASCADE on app tables (Turso does not enforce
   foreign keys): explicit deletes. Money in integer cents, unit prices in integer micro-euros,
   calendar days as `YYYY-MM-DD`.
@@ -92,8 +100,9 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   and on «Casa» the house costs, two tiles and the last billed month on each card; 12 / 24 months /
   everything, a data table under every chart. → `doc/guide/app.md` § 9, `doc/guide/calcoli.md` § 13.
 - **Production** (exists since 2026-10-25): Vercel, Turso, two private Blob stores, SETUP.md. → `doc/guide/deploy.md`.
-- **Extraction** (06): PDF or up to 10 photos to private Blob, Claude Opus 5.5, review and confirm,
-  files reopened from the bill, cost recorded. → `doc/guide/estrazione.md`.
+- **Extraction** (exists since 2026-10-25): PDF or up to 10 photos to private Blob, Claude Opus 5.5
+  only at the click on «Estrai» after the estimate, review and confirm, files reopened from the bill,
+  cost recorded. → `doc/guide/estrazione.md`.
 - **Bulk import** (07): browser-driven queue with a cost estimate before starting.
 - **Market references** (08): ARERA files committed (CC BY-SA), PUN from a hand-downloaded GME zip
   into the database only. → `doc/guide/riferimenti.md`.
@@ -105,8 +114,9 @@ Vitest for pure modules, repositories and services (`createTestDb()`: temp-file 
 real migrations, foreign keys on); `scope.test.ts` guards the `(db, userId, …)` signature of every
 repository. Playwright on a production build, :3100 open signup and :3101 closed, `file:e2e.db`,
 two read-only seed users with invented houses, supplies and bills (`pnpm db:seed`); writing tests
-sign up their own user (`tests/e2e/helpers.ts`); axe on every page, light and dark. Later:
-synthetic bill fixtures, fake Blob and extractor. Never the real services. Commands:
+sign up their own user (`tests/e2e/helpers.ts`); axe on every page, light and dark. Synthetic bill
+fixtures (`pnpm fixture:bills`), fake Blob and extractor (`E2E_FAKE_SERVICES=1`). Never the real
+services. Commands:
 WORKFLOW.md § 3.
 
 ## Data & Integrations
@@ -118,8 +128,8 @@ use, never redistributed).
 None.
 
 ## Not yet present (do not assume it exists)
-- `doc/guide/*` beyond `calcoli.md`, `app.md` and `deploy.md`: each guide is born with its spec
-  (estrazione 06, riferimenti 08, pwa 09).
+- `doc/guide/*` beyond `calcoli.md`, `app.md`, `deploy.md` and `estrazione.md`: each guide is born
+  with its spec (riferimenti 08, pwa 09).
 - Password reset and email verification: no outbound email.
 - Water bills: never tried on a real bill (the owner's water is in the condominium fees); the first
   real one comes with the new house.

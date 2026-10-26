@@ -113,6 +113,35 @@ the production one. The Vercel CLI also appends `.vercel` and `.env*` to `.gitig
 links or pulls; this repository already ignores both, and `.env*` would cancel the
 `!.env.example` exception above it, so discard that change (`git checkout -- .gitignore`).
 
+### Development file store
+
+If `.env.local` has no `BLOB_READ_WRITE_TOKEN` (it was written before the store was linked, or by
+hand), take the development token without touching the rest of the file:
+
+```bash
+pnpm dlx vercel@latest env pull .env.vercel-dev --environment=development
+```
+
+Copy only the `BLOB_READ_WRITE_TOKEN=…` line from `.env.vercel-dev` into `.env.local`, then delete
+`.env.vercel-dev`. Uploads on `localhost` then go to `segnabollette-files-dev`, never to production.
+
+## Anthropic API key
+
+The extraction calls Claude (`claude-opus-5-5`) with your own key: create it on an organization of
+your own in the Claude Console (platform.claude.com), not on a shared or company one, and set a
+**monthly spend limit** on that organization: a few dollars cover a household. One bill costs
+about 0,30 $ and the app shows the estimate before every extraction; nothing is extracted until
+you press «Estrai». «Impostazioni» shows what the month has cost.
+
+For development, add the key to `.env.local` as `ANTHROPIC_API_KEY=…`; for production, type it:
+
+```bash
+pnpm dlx vercel@latest env add ANTHROPIC_API_KEY production     # tick Sensitive in the dashboard
+```
+
+Without the key the app still stores files attached to a bill by hand; without
+`BLOB_READ_WRITE_TOKEN` the upload pages say the file store is not configured and offer manual entry.
+
 ## Environment variables
 
 Production variables are typed by you (`vercel env add <NAME> production` asks for the value);
@@ -125,7 +154,8 @@ check them with `pnpm dlx vercel@latest env ls production`, which shows names on
 | `BETTER_AUTH_SECRET` | Production | `openssl rand -base64 32`, a new one, never the local one | yes | you |
 | `BETTER_AUTH_URL` | Production | `https://<project>.vercel.app` — scheme and host, no trailing `/` | yes | you |
 | `SIGNUP_ENABLED` | Production | `true` for your first account, then `false` | no (closed when missing) | you |
-| `BLOB_READ_WRITE_TOKEN` | Production (`segnabollette-files`), Development (`segnabollette-files-dev`) | — | from the file upload on | Vercel, when the store is linked |
+| `BLOB_READ_WRITE_TOKEN` | Production (`segnabollette-files`), Development (`segnabollette-files-dev`) | — | for uploads | Vercel, when the store is linked |
+| `ANTHROPIC_API_KEY` | Production | `sk-ant-…` of your own organization | for the extraction | you |
 
 ```bash
 pnpm dlx vercel@latest env add TURSO_DATABASE_URL production
@@ -133,6 +163,7 @@ pnpm dlx vercel@latest env add TURSO_AUTH_TOKEN production
 pnpm dlx vercel@latest env add BETTER_AUTH_SECRET production
 pnpm dlx vercel@latest env add BETTER_AUTH_URL production
 pnpm dlx vercel@latest env add SIGNUP_ENABLED production       # true, for now
+pnpm dlx vercel@latest env add ANTHROPIC_API_KEY production
 pnpm dlx vercel@latest env ls production
 ```
 
@@ -140,7 +171,7 @@ Without `openssl` (Windows PowerShell has none), the same secret comes from Node
 `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. The dashboard
 (Settings → Environment Variables) works as well as the CLI: tick **Production only** for each
 variable, since the form proposes Preview and Development too, and tick **Sensitive** for the
-secrets (`TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`): it is not on by default there.
+secrets (`TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`, `ANTHROPIC_API_KEY`): it is not on by default there.
 
 A `BETTER_AUTH_URL` that differs from the real origin makes Better Auth's origin check refuse every
 sign-in.
@@ -172,6 +203,24 @@ Pull the new version; if it brings a new migration in `drizzle/`, run `pnpm db:m
 **before** merging (or pushing) it to `main`. Vercel never migrates during the build, and a deploy
 that starts on a schema not yet migrated fails at its first query.
 
+Now and then, check the production store for files left behind (an upload abandoned halfway, a
+delete interrupted between the row and the file):
+
+```bash
+pnpm documents:prune -- --prod             # lists; add -- --delete to delete
+```
+
+It needs a third line in `.env.turso-prod`, the **production** store's token, which you add only for
+this command (from the page of `segnabollette-files` under Storage in the Vercel dashboard):
+
+```bash
+BLOB_READ_WRITE_TOKEN="vercel_blob_rw_<store>_<secret>"
+```
+
+It prints the database host and the store id before anything else: check that they are the
+production pair. Without `--prod` it pairs `.env.local`'s database (a local file only) with the
+development store.
+
 ## Costs and limits
 
 - **Vercel Hobby**: personal and non-commercial use only; one region; functions up to 300 s;
@@ -186,7 +235,6 @@ that starts on a schema not yet migrated fails at its first query.
 
 Sections that later versions add to this file:
 
-- **Anthropic** — the API key for the bill extraction, on an organization of your own.
 - **Market references** — importing the PUN Index GME into your database from a file you download by
   hand (private use under the GME terms: check them before opening registration to anyone else).
 - **Install on your phone** — the PWA, the camera and the offline queue.

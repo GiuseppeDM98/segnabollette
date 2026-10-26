@@ -1,0 +1,64 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 1203 >>
+stream
+BT /F1 10 Tf 40 800 Td 13 TL
+(PELLICANO ENERGIA) '
+(Bolletta luce - Offerta Pellicano Luce Fissa) '
+(Data emissione: 06/10/2024   Scadenza: 25/10/2024) '
+(POD: IT001E00000011) '
+(Periodo di fatturazione: dal 01/09/2024 al 30/09/2024) '
+() '
+(Totale bolletta: 66,00 EUR) '
+(Canone TV: 9,00 EUR) '
+(Totale da pagare: 75,00 EUR) '
+() '
+(Elementi di dettaglio) '
+(Spesa per la materia energia) '
+(Energia F1   100 kWh x 0,100000 EUR/kWh   10,00) '
+(Energia F2    80 kWh x 0,100000 EUR/kWh    8,00) '
+(Energia F3   120 kWh x 0,100000 EUR/kWh   12,00) '
+(Commercializzazione   1 mese x 10,000000 EUR/mese   10,00) '
+(Spesa per il trasporto e la gestione del contatore) '
+(Trasporto e gestione del contatore   300 kWh x 0,020000 EUR/kWh   6,00) '
+(Quota fissa trasporto   1 mese x 2,000000 EUR/mese   2,00) '
+(Spesa per oneri di sistema) '
+(Oneri di sistema ASOS   300 kWh x 0,030000 EUR/kWh   9,00) '
+(Imposte) '
+(Accise   300 kWh x 0,010000 EUR/kWh   3,00) '
+(IVA 10% su 60,00   6,00) '
+(Altre partite) '
+(Canone di abbonamento alla televisione   9,00) '
+() '
+(Letture) '
+(Data         F1     F2     F3    Tipo) '
+(31/08/2024   1000   1000   1000  rilevata) '
+(30/09/2024   1100   1080   1120  rilevata) '
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000212 00000 n 
+0000000338 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1593
+%%EOF

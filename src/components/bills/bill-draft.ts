@@ -2,11 +2,13 @@
  * The bill form edits a draft of strings, not a BillInput: a field must be able to hold what the
  * person is typing ('12,', '', '0,0990001') until they submit. draftFromInput writes numbers the
  * Italian way at the precision of each field; inputFromDraft reads them back, reports every field
- * error by path ('lines.3.amountCents', 'totalCents', 'readings.0.value') and validates the
+ * error by path ('lines.3.amountCents', 'totalCents', 'readings.0.F1') and validates the
  * result with BillInputSchema. A pure module: the form, its tests and later the review use it.
+ * Readings are drafted the way a bill prints them: one row per date, one value per register.
  */
 import { type BillInput, BillInputSchema, type BillLineInput } from '@/lib/domain/bill-input';
 import { centsFromEuro, microsFromEuro } from '@/lib/domain/money';
+import { READING_REGISTERS, type ReadingRegister } from '@/lib/domain/types';
 import { formatDecimalInput, parseDecimalInput } from '@/lib/format';
 
 /** Field path → the message shown under that field. */
@@ -24,7 +26,12 @@ export type BillLineDraft = Omit<
   hasOwnPeriod: boolean;
 };
 
-export type BillReadingDraft = Omit<BillInput['readings'][number], 'value'> & { value: string };
+/** One date of the readings; an empty value means the bill prints nothing for that register. */
+export interface BillReadingRowDraft {
+  readOn: string;
+  source: BillInput['readings'][number]['source'];
+  values: Partial<Record<ReadingRegister, string>>;
+}
 
 export type BillDraft = Omit<
   BillInput,
@@ -35,7 +42,9 @@ export type BillDraft = Omit<
   conversionFactor: string;
   calorificValueGj: string;
   lines: BillLineDraft[];
-  readings: BillReadingDraft[];
+  readings: BillReadingRowDraft[];
+  /** The registers shown as columns, in READING_REGISTERS order. */
+  readingRegisters: ReadingRegister[];
 };
 
 // Field precision: cents for amounts, micro-euros for unit prices, basis points for VAT. Quantities
@@ -47,7 +56,6 @@ const EXACT_DIGITS = 20;
 
 const AMOUNT_REQUIRED = 'Importo obbligatorio';
 const TOTAL_REQUIRED = 'Totale obbligatorio';
-const VALUE_REQUIRED = 'Valore obbligatorio';
 const NOT_A_NUMBER = 'Numero non valido';
 const tooManyDigits = (digits: number) => `Al massimo ${digits} decimali`;
 
@@ -55,11 +63,33 @@ function numberText(value: number | null, digits: number, scale = 1): string {
   return value === null ? '' : formatDecimalInput(value, digits, scale);
 }
 
+/** Registers in READING_REGISTERS order, each once. */
+export function orderedRegisters(registers: Iterable<ReadingRegister>): ReadingRegister[] {
+  const set = new Set(registers);
+  return READING_REGISTERS.filter((register) => set.has(register));
+}
+
+/** The bill's readings grouped by date and type, in the order they come. */
+function readingRows(readings: BillInput['readings']): BillReadingRowDraft[] {
+  const rows = new Map<string, BillReadingRowDraft>();
+  for (const reading of readings) {
+    const key = `${reading.readOn}|${reading.source}`;
+    const row = rows.get(key) ?? { readOn: reading.readOn, source: reading.source, values: {} };
+    row.values[reading.register] = numberText(reading.value, EXACT_DIGITS);
+    rows.set(key, row);
+  }
+  return [...rows.values()];
+}
+
+/**
+ * defaultRegisters: the columns of a bill with no readings yet (the form knows the supply's kind).
+ */
 export function draftFromInput(
   input: BillInput,
-  options: { blankAmounts?: boolean } = {},
+  options: { blankAmounts?: boolean; defaultRegisters?: ReadingRegister[] } = {},
 ): BillDraft {
   const blank = options.blankAmounts === true;
+  const used = orderedRegisters(input.readings.map((reading) => reading.register));
   return {
     ...input,
     totalCents: blank ? '' : numberText(input.totalCents, AMOUNT_DIGITS, 100),
@@ -74,10 +104,8 @@ export function draftFromInput(
       vatRateBp: numberText(line.vatRateBp, VAT_DIGITS, 100),
       hasOwnPeriod: line.periodStart !== input.periodStart || line.periodEnd !== input.periodEnd,
     })),
-    readings: input.readings.map((reading) => ({
-      ...reading,
-      value: numberText(reading.value, EXACT_DIGITS),
-    })),
+    readings: readingRows(input.readings),
+    readingRegisters: used.length > 0 ? used : (options.defaultRegisters ?? []),
   };
 }
 
@@ -157,12 +185,24 @@ export function inputFromDraft(draft: BillDraft): { input?: BillInput; errors: F
       })(),
     };
   });
-  const readings = draft.readings.map((reading, index) => ({
-    ...reading,
-    value: readNumber(reading.value, `readings.${index}.value`, errors, {
-      required: VALUE_REQUIRED,
-    }),
-  }));
+  // Each reading keeps the path of its cell and of its row, for the schema's errors below.
+  const readings: Array<Omit<BillInput['readings'][number], 'value'> & { value: number | null }> =
+    [];
+  const readingPaths: Array<{ cell: string; row: string }> = [];
+  for (const [index, row] of draft.readings.entries()) {
+    for (const register of draft.readingRegisters) {
+      const text = row.values[register] ?? '';
+      if (text.trim() === '') continue;
+      const cell = `readings.${index}.${register}`;
+      readings.push({
+        readOn: row.readOn,
+        register,
+        source: row.source,
+        value: readNumber(text, cell, errors),
+      });
+      readingPaths.push({ cell, row: `readings.${index}` });
+    }
+  }
   if (Object.keys(errors).length > 0) return { errors };
 
   const parsed = BillInputSchema.safeParse({
@@ -178,7 +218,10 @@ export function inputFromDraft(draft: BillDraft): { input?: BillInput; errors: F
   });
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
-      const path = issue.path.join('.');
+      const [head, at, field] = issue.path;
+      const reading = head === 'readings' && typeof at === 'number' ? readingPaths[at] : undefined;
+      let path = issue.path.join('.');
+      if (reading) path = field === 'value' ? reading.cell : `${reading.row}.${String(field)}`;
       errors[path] ??= issue.message;
     }
     return { errors };

@@ -7,6 +7,8 @@ import type { BatchItem } from 'drizzle-orm/batch';
 import { nanoid } from 'nanoid';
 import type { Db } from '@/lib/db/create-db';
 import * as billsRepository from '@/lib/db/repositories/bills';
+import * as documentsRepository from '@/lib/db/repositories/documents';
+import * as extractionsRepository from '@/lib/db/repositories/extractions';
 import type { HouseRow } from '@/lib/db/repositories/houses';
 import * as housesRepository from '@/lib/db/repositories/houses';
 import * as readingsRepository from '@/lib/db/repositories/readings';
@@ -78,27 +80,39 @@ async function assertIdentifierFree(
   if (existing && existing.id !== exceptSupplyId) throw new DomainError('DUPLICATE_IDENTIFIER');
 }
 
-/** The delete queries for supplies and everything under them, children first. */
+/**
+ * The delete queries for supplies and everything under them, children first, and the pathnames
+ * of the files of their bills (read before the batch: the caller deletes the files after it).
+ * Their extractions stay, for the month's spend, without the links.
+ */
 async function deleteSuppliesQueries(
   db: Db,
   userId: string,
   supplyIds: string[],
-): Promise<BatchItem<'sqlite'>[]> {
-  if (supplyIds.length === 0) return [];
+): Promise<{ queries: BatchItem<'sqlite'>[]; documentPathnames: string[] }> {
+  if (supplyIds.length === 0) return { queries: [], documentPathnames: [] };
   const billIds = await billsRepository.listBillIdsOfSupplies(db, userId, supplyIds);
+  const documentPathnames = await documentsRepository.listDocumentPathnamesOfBills(
+    db,
+    userId,
+    billIds,
+  );
   const queries: BatchItem<'sqlite'>[] = [
     readingsRepository.deleteReadingsOfSuppliesQuery(db, userId, supplyIds),
+    extractionsRepository.clearSupplyOfExtractionsQuery(db, userId, supplyIds),
   ];
   if (billIds.length > 0) {
     queries.push(
       billsRepository.deleteBillLinesQuery(db, userId, billIds),
+      extractionsRepository.clearBillOfExtractionsQuery(db, userId, billIds),
+      documentsRepository.deleteDocumentsOfBillsQuery(db, userId, billIds),
       // Clears replaced_by_bill_id first: a bill pointing at another one would block its delete.
       billsRepository.restoreReplacedQuery(db, userId, billIds),
       billsRepository.deleteBillsQuery(db, userId, billIds),
     );
   }
   queries.push(suppliesRepository.deleteSuppliesQuery(db, userId, supplyIds));
-  return queries;
+  return { queries, documentPathnames };
 }
 
 export async function createHouse(
@@ -121,7 +135,7 @@ export async function renameHouse(
   await housesRepository.renameHouseQuery(db, userId, houseId, houseName(name));
 }
 
-/** Files on Blob arrive later: the list is always empty for now. */
+/** Returns the pathnames of the deleted files: the caller deletes them from Blob after the batch. */
 export async function deleteHouse(
   db: Db,
   userId: string,
@@ -132,14 +146,14 @@ export async function deleteHouse(
     houseId,
     includeArchived: true,
   });
-  const queries = await deleteSuppliesQueries(
+  const { queries, documentPathnames } = await deleteSuppliesQueries(
     db,
     userId,
     supplies.map((supply) => supply.id),
   );
   queries.push(housesRepository.deleteHouseQuery(db, userId, houseId));
   await runBatch(db, queries);
-  return { documentPathnames: [] };
+  return { documentPathnames };
 }
 
 export async function createSupply(
@@ -213,15 +227,16 @@ export async function archiveSupply(
   });
 }
 
-/** Files on Blob arrive later: the list is always empty for now. */
+/** Returns the pathnames of the deleted files: the caller deletes them from Blob after the batch. */
 export async function deleteSupply(
   db: Db,
   userId: string,
   supplyId: string,
 ): Promise<{ documentPathnames: string[] }> {
   await getSupplyOrThrow(db, userId, supplyId);
-  await runBatch(db, await deleteSuppliesQueries(db, userId, [supplyId]));
-  return { documentPathnames: [] };
+  const { queries, documentPathnames } = await deleteSuppliesQueries(db, userId, [supplyId]);
+  await runBatch(db, queries);
+  return { documentPathnames };
 }
 
 /** Archived supplies last, then by kind in the app's order (electricity first), then by label. */

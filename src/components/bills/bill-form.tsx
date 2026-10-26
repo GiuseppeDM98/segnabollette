@@ -22,6 +22,7 @@ import {
   LINE_CATEGORIES,
   LINE_COMPONENTS,
   QUANTITY_UNITS,
+  type ReadingRegister,
   type SupplyKind,
 } from '@/lib/domain/types';
 import type { ActionResult } from '@/lib/errors';
@@ -38,10 +39,11 @@ import { ArithmeticWarnings } from './arithmetic-warnings';
 import {
   type BillDraft,
   type BillLineDraft,
-  type BillReadingDraft,
+  type BillReadingRowDraft,
   draftFigures,
   draftFromInput,
   inputFromDraft,
+  orderedRegisters,
 } from './bill-draft';
 
 export interface BillFormProps {
@@ -70,8 +72,11 @@ const BAND_LABELS: Record<(typeof BANDS)[number], string> = {
 /** The bands as a bill prints them, F1 first; «unica» last, after the time bands. */
 const BAND_OPTIONS = [...BANDS.filter((band) => band !== 'single'), 'single' as const];
 
-/** Labels above the field on a phone; on the desktop table the column header names it. */
-const CELL_LABEL = `${labelClass} mb-1 text-sm md:sr-only`;
+/**
+ * Labels above the field in a narrow form; in the table of a wide one the column header names it.
+ * The form lays itself out by its own width, not the window's: the review puts it in a column.
+ */
+const CELL_LABEL = `${labelClass} mb-1 text-sm @3xl:sr-only`;
 
 function isOverlapList(value: unknown): value is ExistingBillPeriod[] {
   return (
@@ -90,8 +95,13 @@ export function BillForm({
 }: BillFormProps) {
   const router = useRouter();
   const id = useId();
+  const registers = allowedRegisters(supply.kind, supply.hasPhotovoltaic);
   const [draft, setDraft] = useState<BillDraft>(() =>
-    draftFromInput(initialValue, { blankAmounts }),
+    draftFromInput(initialValue, {
+      blankAmounts,
+      // Most electricity bills print the three bands; «Monoraria» is one tick away.
+      defaultRegisters: supply.kind === 'electricity' ? ['F1', 'F2', 'F3'] : registers,
+    }),
   );
   // React keys for lines and readings, kept beside the draft so the draft stays a BillInput shape.
   const nextKey = useRef(0);
@@ -100,7 +110,7 @@ export function BillForm({
     return `k${nextKey.current}`;
   };
   const [lineKeys, setLineKeys] = useState(() => initialValue.lines.map(() => newKey()));
-  const [readingKeys, setReadingKeys] = useState(() => initialValue.readings.map(() => newKey()));
+  const [readingKeys, setReadingKeys] = useState(() => draft.readings.map(() => newKey()));
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
   const [overlaps, setOverlaps] = useState<ExistingBillPeriod[]>(initialOverlaps ?? []);
@@ -114,7 +124,6 @@ export function BillForm({
 
   const metered = isMetered(supply.kind);
   const consumptionUnit = isMetered(supply.kind) ? consumptionUnitOf(supply.kind) : null;
-  const registers = allowedRegisters(supply.kind, supply.hasPhotovoltaic);
   const fieldId = (path: string) => `${id}-${path.replaceAll('.', '-')}`;
   const errorFor = (path: string) => (submitted || touched.has(path) ? errors[path] : undefined);
   const touch = (path: string) =>
@@ -131,12 +140,28 @@ export function BillForm({
     }));
   }
 
-  function updateReading(index: number, patch: Partial<BillReadingDraft>) {
+  function updateReadingRow(index: number, patch: Partial<BillReadingRowDraft>) {
     setDraft((current) => ({
       ...current,
-      readings: current.readings.map((reading, at) =>
-        at === index ? { ...reading, ...patch } : reading,
+      readings: current.readings.map((row, at) => (at === index ? { ...row, ...patch } : row)),
+    }));
+  }
+
+  function setReadingValue(index: number, register: ReadingRegister, value: string) {
+    setDraft((current) => ({
+      ...current,
+      readings: current.readings.map((row, at) =>
+        at === index ? { ...row, values: { ...row.values, [register]: value } } : row,
       ),
+    }));
+  }
+
+  function toggleRegister(register: ReadingRegister, shown: boolean) {
+    setDraft((current) => ({
+      ...current,
+      readingRegisters: shown
+        ? orderedRegisters([...current.readingRegisters, register])
+        : current.readingRegisters.filter((item) => item !== register),
     }));
   }
 
@@ -204,12 +229,7 @@ export function BillForm({
       ...current,
       readings: [
         ...current.readings,
-        {
-          readOn: current.periodEnd,
-          register: registers[0] ?? 'single',
-          value: '',
-          source: 'bill_actual',
-        },
+        { readOn: current.periodEnd, source: 'bill_actual', values: {} },
       ],
     }));
     setReadingKeys((keys) => [...keys, newKey()]);
@@ -307,13 +327,27 @@ export function BillForm({
     );
   }
 
-  const usedCategories = LINE_CATEGORIES.filter((category) =>
-    figures.lines.some((line) => line.category === category),
+  // «Fuori bolletta» goes under the total it is not part of, then what is paid with it.
+  const usedCategories = LINE_CATEGORIES.filter(
+    (category) =>
+      category !== 'outside' && figures.lines.some((line) => line.category === category),
   );
+  const outsideLines = figures.lines.filter((line) => line.category === 'outside');
+  const outsideCents = outsideLines.reduce((sum, line) => sum + line.amountCents, 0);
+  const registerOptions = orderedRegisters([...registers, ...draft.readingRegisters]);
+  const registerLabel = (register: ReadingRegister) =>
+    register === 'single' && registers.length > 1 ? 'Monoraria' : REGISTER_LABELS[register];
+  const registerHasValues = (register: ReadingRegister) =>
+    draft.readings.some((row) => (row.values[register] ?? '').trim() !== '');
   const decisionMissing = overlaps.length > 0 && draft.overlapDecision === null;
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-6" data-testid="bill-form">
+    <form
+      onSubmit={submit}
+      noValidate
+      className="@container flex flex-col gap-6"
+      data-testid="bill-form"
+    >
       <FormErrors messages={formMessages} />
 
       <fieldset className="flex flex-col gap-4">
@@ -324,7 +358,7 @@ export function BillForm({
             {supply.label} ({KIND_LABELS[supply.kind]})
           </span>
         </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
           {draftInput({
             path: 'periodStart',
             label: 'Dal',
@@ -354,7 +388,7 @@ export function BillForm({
             onChange: (value) => update({ dueDate: value === '' ? null : value }),
           })}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @md:grid-cols-2">
           {draftInput({
             path: 'supplierName',
             label: 'Fornitore',
@@ -380,7 +414,7 @@ export function BillForm({
 
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-3 text-base font-bold">Totali</legend>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @md:grid-cols-2">
           {draftInput({
             path: 'totalCents',
             label: 'Totale bolletta (€)',
@@ -404,7 +438,7 @@ export function BillForm({
       {supply.kind === 'gas' && (
         <fieldset className="flex flex-col gap-4">
           <legend className="mb-3 text-base font-bold">Gas</legend>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 @lg:grid-cols-2">
             {draftInput({
               path: 'conversionFactor',
               label: 'Coefficiente C',
@@ -426,9 +460,9 @@ export function BillForm({
 
       <fieldset className="flex min-w-0 flex-col gap-3">
         <legend className="mb-3 text-base font-bold">Voci</legend>
-        <div className="md:overflow-x-auto">
-          <table className="w-full border-collapse text-left max-md:block">
-            <thead className="max-md:hidden">
+        <div className="@3xl:overflow-x-auto">
+          <table className="w-full border-collapse text-left @max-3xl:block">
+            <thead className="@max-3xl:hidden">
               <tr className="border-b-2 border-action text-2xs font-bold uppercase tracking-widest text-action">
                 <th scope="col" className="px-2 pb-1.5 font-bold">
                   N.
@@ -469,16 +503,16 @@ export function BillForm({
                 <tbody
                   key={key}
                   data-testid="bill-line"
-                  className="border-b border-rule bg-surface max-md:mb-3 max-md:block max-md:rounded-sm max-md:border"
+                  className="border-b border-rule bg-surface @max-3xl:mb-3 @max-3xl:block @max-3xl:rounded-sm @max-3xl:border"
                 >
-                  <tr className="align-top max-md:grid max-md:grid-cols-2 max-md:gap-3 max-md:p-3">
-                    <td className="px-2 pt-3 max-md:col-span-2 max-md:block max-md:p-0">
+                  <tr className="align-top @max-3xl:grid @max-3xl:grid-cols-2 @max-3xl:gap-3 @max-3xl:p-3">
+                    <td className="px-2 pt-3 @max-3xl:col-span-2 @max-3xl:block @max-3xl:p-0">
                       <span className="figures font-bold">
-                        <span className="md:sr-only">Voce </span>
+                        <span className="@3xl:sr-only">Voce </span>
                         {index + 1}
                       </span>
                     </td>
-                    <td className="min-w-40 px-2 py-2 max-md:col-span-2 max-md:block max-md:p-0">
+                    <td className="min-w-40 px-2 py-2 @max-3xl:col-span-2 @max-3xl:block @max-3xl:p-0">
                       {draftInput({
                         path: `${path}.description`,
                         label: 'Descrizione',
@@ -487,7 +521,7 @@ export function BillForm({
                         onChange: (description) => updateLine(index, { description }),
                       })}
                     </td>
-                    <td className="min-w-36 px-2 py-2 max-md:col-span-2 max-md:block max-md:p-0">
+                    <td className="min-w-36 px-2 py-2 @max-3xl:col-span-2 @max-3xl:block @max-3xl:p-0">
                       <label htmlFor={categoryId} className={CELL_LABEL}>
                         Categoria
                       </label>
@@ -508,7 +542,7 @@ export function BillForm({
                         ))}
                       </select>
                     </td>
-                    <td className="w-24 px-2 py-2 max-md:block max-md:w-auto max-md:p-0">
+                    <td className="w-24 px-2 py-2 @max-3xl:block @max-3xl:w-auto @max-3xl:p-0">
                       {draftInput({
                         path: `${path}.quantity`,
                         label: 'Quantità',
@@ -518,7 +552,7 @@ export function BillForm({
                         onChange: (quantity) => updateLine(index, { quantity }),
                       })}
                     </td>
-                    <td className="w-24 px-2 py-2 max-md:block max-md:w-auto max-md:p-0">
+                    <td className="w-24 px-2 py-2 @max-3xl:block @max-3xl:w-auto @max-3xl:p-0">
                       {fixedUnit ? (
                         <>
                           <span className={CELL_LABEL}>Unità</span>
@@ -562,7 +596,7 @@ export function BillForm({
                         </>
                       )}
                     </td>
-                    <td className="w-28 px-2 py-2 max-md:block max-md:w-auto max-md:p-0">
+                    <td className="w-28 px-2 py-2 @max-3xl:block @max-3xl:w-auto @max-3xl:p-0">
                       {draftInput({
                         path: `${path}.unitPriceMicros`,
                         label: 'Prezzo unitario (€)',
@@ -572,7 +606,7 @@ export function BillForm({
                         onChange: (unitPriceMicros) => updateLine(index, { unitPriceMicros }),
                       })}
                     </td>
-                    <td className="w-28 px-2 py-2 max-md:block max-md:w-auto max-md:p-0">
+                    <td className="w-28 px-2 py-2 @max-3xl:block @max-3xl:w-auto @max-3xl:p-0">
                       {draftInput({
                         path: `${path}.amountCents`,
                         label: 'Importo (€)',
@@ -585,8 +619,8 @@ export function BillForm({
                       })}
                     </td>
                   </tr>
-                  <tr className="max-md:block max-md:px-3 max-md:pb-3">
-                    <td colSpan={7} className="px-2 pb-3 max-md:block max-md:p-0">
+                  <tr className="@max-3xl:block @max-3xl:px-3 @max-3xl:pb-3">
+                    <td colSpan={7} className="px-2 pb-3 @max-3xl:block @max-3xl:p-0">
                       <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
                         <div className="w-40">
                           <label htmlFor={componentId} className={`${labelClass} mb-1 text-sm`}>
@@ -768,96 +802,145 @@ export function BillForm({
           >
             {formatEuro(report.linesTotalCents)}
           </dd>
+          {outsideLines.length > 0 && (
+            <>
+              <dt className="mt-2 text-ink-soft">{CATEGORY_LABELS.outside}</dt>
+              <dd className="figures mt-2 text-right font-bold">{formatEuro(outsideCents)}</dd>
+              <dt className="mt-1 border-t border-rule pt-1 font-semibold">Da pagare</dt>
+              <dd
+                className="figures mt-1 border-t border-rule pt-1 text-right font-bold"
+                data-testid="computed-amount-due"
+              >
+                {formatEuro(report.linesTotalCents + outsideCents)}
+              </dd>
+            </>
+          )}
         </dl>
         <ArithmeticWarnings report={report} figures={figures} />
       </section>
 
       {metered && (
-        <fieldset className="flex flex-col gap-3">
+        <fieldset className="flex min-w-0 flex-col gap-3">
           <legend className="mb-3 text-base font-bold">Letture della bolletta</legend>
-          {draft.readings.length === 0 && (
-            <p className="text-ink-soft">Nessuna lettura stampata su questa bolletta.</p>
-          )}
-          {draft.readings.map((reading, index) => {
-            const path = `readings.${index}`;
-            const registerId = fieldId(`${path}.register`);
-            const sourceId = fieldId(`${path}.source`);
-            return (
-              <div
-                key={readingKeys[index] ?? `reading-${index}`}
-                data-testid="bill-reading"
-                className={`${panelClass} grid grid-cols-2 items-end gap-3 p-3 sm:grid-cols-[10rem_8rem_minmax(0,1fr)_9rem_auto]`}
-              >
-                {draftInput({
-                  path: `${path}.readOn`,
-                  label: 'Data',
-                  type: 'date',
-                  value: reading.readOn,
-                  onChange: (readOn) => updateReading(index, { readOn }),
-                })}
-                <div>
-                  <label htmlFor={registerId} className={`${labelClass} mb-1`}>
-                    Registro
-                  </label>
-                  <select
-                    id={registerId}
-                    value={reading.register}
-                    onChange={(event) =>
-                      updateReading(index, {
-                        register: event.target.value as BillReadingDraft['register'],
-                      })
-                    }
-                    className={inputClass}
-                  >
-                    {registers.map((register) => (
-                      <option key={register} value={register}>
-                        {REGISTER_LABELS[register]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {draftInput({
-                  path: `${path}.value`,
-                  label: 'Valore',
-                  figure: true,
-                  value: reading.value,
-                  onChange: (value) => updateReading(index, { value }),
-                })}
-                <div>
-                  <label htmlFor={sourceId} className={`${labelClass} mb-1`}>
-                    Tipo
-                  </label>
-                  <select
-                    id={sourceId}
-                    value={reading.source}
-                    onChange={(event) =>
-                      updateReading(index, {
-                        source: event.target.value as BillReadingDraft['source'],
-                      })
-                    }
-                    className={inputClass}
-                  >
-                    <option value="bill_actual">Rilevata</option>
-                    <option value="bill_estimated">Stimata</option>
-                  </select>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeReading(index)}
-                  aria-label={`Rimuovi la lettura ${index + 1}`}
-                  className={buttonClass('quiet', 'text-sm text-danger')}
-                >
-                  Rimuovi
-                </button>
+          {registerOptions.length > 1 && (
+            <fieldset>
+              <legend className={`${labelClass} mb-1`}>Registri</legend>
+              <div className="flex flex-wrap gap-x-5">
+                {registerOptions.map((register) => (
+                  <CheckboxField
+                    key={register}
+                    id={fieldId(`readingRegisters.${register}`)}
+                    label={registerLabel(register)}
+                    checked={draft.readingRegisters.includes(register)}
+                    disabled={registerHasValues(register)}
+                    onChange={(shown) => toggleRegister(register, shown)}
+                  />
+                ))}
               </div>
-            );
-          })}
+              <span className={hintClass}>
+                Un registro con dei valori resta: svuotali per toglierlo.
+              </span>
+            </fieldset>
+          )}
+          {draft.readings.length === 0 ? (
+            <p className="text-ink-soft">Nessuna lettura stampata su questa bolletta.</p>
+          ) : (
+            <div className="@3xl:overflow-x-auto">
+              <table className="w-full border-collapse text-left @max-3xl:block">
+                <thead className="@max-3xl:hidden">
+                  <tr className="border-b-2 border-action text-2xs font-bold uppercase tracking-widest text-action">
+                    <th scope="col" className="px-2 pb-1.5 font-bold">
+                      Data
+                    </th>
+                    {draft.readingRegisters.map((register) => (
+                      <th key={register} scope="col" className="px-2 pb-1.5 text-right font-bold">
+                        {registerLabel(register)}
+                      </th>
+                    ))}
+                    <th scope="col" className="px-2 pb-1.5 font-bold">
+                      Tipo
+                    </th>
+                    <th scope="col" className="px-2 pb-1.5">
+                      <span className="sr-only">Azioni</span>
+                    </th>
+                  </tr>
+                </thead>
+                {/* A narrow form shows each date as a card: date and type, then the registers, three a line. */}
+                <tbody className="@max-3xl:flex @max-3xl:flex-col @max-3xl:gap-3">
+                  {draft.readings.map((row, index) => {
+                    const sourceId = fieldId(`readings.${index}.source`);
+                    return (
+                      <tr
+                        key={readingKeys[index] ?? `reading-${index}`}
+                        data-testid="bill-reading"
+                        className="border-b border-rule align-top @max-3xl:grid @max-3xl:grid-cols-6 @max-3xl:gap-3 @max-3xl:rounded-sm @max-3xl:border @max-3xl:bg-surface @max-3xl:p-3"
+                      >
+                        <td className="w-44 px-2 py-2 @max-3xl:col-span-3 @max-3xl:w-auto @max-3xl:p-0">
+                          {draftInput({
+                            path: `readings.${index}.readOn`,
+                            label: 'Data',
+                            labelClassName: CELL_LABEL,
+                            type: 'date',
+                            value: row.readOn,
+                            onChange: (readOn) => updateReadingRow(index, { readOn }),
+                          })}
+                        </td>
+                        {draft.readingRegisters.map((register) => (
+                          <td
+                            key={register}
+                            className="w-28 px-2 py-2 @max-3xl:order-last @max-3xl:col-span-2 @max-3xl:w-auto @max-3xl:p-0"
+                          >
+                            {draftInput({
+                              path: `readings.${index}.${register}`,
+                              label: registerLabel(register),
+                              labelClassName: CELL_LABEL,
+                              figure: true,
+                              value: row.values[register] ?? '',
+                              onChange: (value) => setReadingValue(index, register, value),
+                            })}
+                          </td>
+                        ))}
+                        <td className="w-36 px-2 py-2 @max-3xl:col-span-3 @max-3xl:w-auto @max-3xl:p-0">
+                          <label htmlFor={sourceId} className={CELL_LABEL}>
+                            Tipo
+                          </label>
+                          <select
+                            id={sourceId}
+                            value={row.source}
+                            onChange={(event) =>
+                              updateReadingRow(index, {
+                                source: event.target.value as BillReadingRowDraft['source'],
+                              })
+                            }
+                            className={inputClass}
+                          >
+                            <option value="bill_actual">Rilevata</option>
+                            <option value="bill_estimated">Stimata</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-2 text-right @max-3xl:order-last @max-3xl:col-span-6 @max-3xl:p-0">
+                          <button
+                            type="button"
+                            onClick={() => removeReading(index)}
+                            aria-label={`Rimuovi le letture della riga ${index + 1}`}
+                            className={buttonClass('quiet', 'text-sm text-danger')}
+                          >
+                            Rimuovi
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
           <button
             type="button"
             onClick={addReading}
             className={buttonClass('secondary', 'self-start')}
           >
-            Aggiungi lettura
+            Aggiungi data
           </button>
         </fieldset>
       )}

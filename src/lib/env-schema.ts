@@ -27,6 +27,18 @@ export const EnvSchema = z
     SIGNUP_ENABLED: booleanFlag('false'),
     E2E_FAKE_SERVICES: booleanFlag('false'),
     VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
+    // Both optional: without the key the app works and extraction says it is not configured;
+    // without the Blob token uploads, documents and attachments are hidden.
+    ANTHROPIC_API_KEY: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    BLOB_READ_WRITE_TOKEN: z
+      .string()
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    /** Where the Playwright fake Blob store keeps its files. */
+    E2E_BLOB_DIR: z.string().default('.e2e-blob'),
   })
   .superRefine((env, ctx) => {
     if (env.TURSO_DATABASE_URL.startsWith('libsql://') && !env.TURSO_AUTH_TOKEN) {

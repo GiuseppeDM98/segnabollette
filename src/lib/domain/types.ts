@@ -5,7 +5,8 @@
  * src/lib/engine/types.ts (emptyCosts) and src/lib/engine/supply-months.ts (cost buckets,
  * consumption units); src/lib/format.ts (CATEGORY_LABELS, COMPONENT_LABELS, KIND_LABELS,
  * REGISTER_LABELS, IDENTIFIER_HINTS); src/components/bills/line-templates.ts (the per-kind
- * line templates).
+ * line templates); src/lib/extraction/prompt.ts (the categories, units and registers the
+ * extraction prompt explains to the model).
  */
 export const SUPPLY_KINDS = ['electricity', 'gas', 'water', 'telecom', 'waste'] as const;
 export type SupplyKind = (typeof SUPPLY_KINDS)[number];
@@ -64,6 +65,30 @@ export const READING_SOURCES = ['bill_actual', 'bill_estimated', 'self'] as cons
 export type ReadingSource = (typeof READING_SOURCES)[number];
 
 export type BillStatus = 'confirmed' | 'replaced';
+
+/**
+ * An extraction's life: files uploading → queued (verified, waiting for the owner's click) →
+ * running → extracted (to review) or failed; then confirmed (a bill exists) or discarded.
+ */
+export type ExtractionStatus =
+  | 'uploading'
+  | 'queued'
+  | 'running'
+  | 'extracted'
+  | 'failed'
+  | 'confirmed'
+  | 'discarded';
+export type ExtractionErrorCode =
+  | 'refusal'
+  | 'truncated'
+  | 'invalid_output'
+  | 'not_a_bill'
+  | 'unavailable'
+  | 'api_error'
+  | 'timeout'
+  | 'document_invalid';
+/** The files a bill can be: one PDF, or photos converted to JPEG in the browser. */
+export type DocumentContentType = 'application/pdf' | 'image/jpeg';
 export type BillSource = 'manual' | 'extraction';
 
 /** A calendar day, 'YYYY-MM-DD'. Periods, readings and due dates are days, not instants. */

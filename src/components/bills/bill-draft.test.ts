@@ -106,14 +106,6 @@ describe('draftFromInput and inputFromDraft', () => {
     expect(errors['lines.2.amountCents']).toBe('Importo obbligatorio');
   });
 
-  it('asks for the value of a reading left empty', () => {
-    const draft = draftFromInput(richInput());
-    const [reading] = draft.readings;
-    if (reading) reading.value = '';
-
-    expect(inputFromDraft(draft).errors['readings.0.value']).toBe('Valore obbligatorio');
-  });
-
   it('reports text that is not a number', () => {
     const draft = draftFromInput(richInput());
     lineOf(draft, 0).quantity = 'abc';
@@ -154,5 +146,90 @@ describe('a new hand-typed bill', () => {
     for (const index of [0, 1, 2, 3]) {
       expect(errors[`lines.${index}.amountCents`]).toBe('Importo obbligatorio');
     }
+  });
+});
+
+/** Readings at two dates, F1/F2/F3 each, as a banded electricity bill prints them. */
+function bandedInput(): BillInput {
+  const at = (readOn: string, base: number): BillInput['readings'] =>
+    (['F1', 'F2', 'F3'] as const).map((register, index) => ({
+      readOn,
+      register,
+      value: base + index * 100,
+      source: 'bill_actual',
+    }));
+  return billInput('supply-1', {
+    readings: [...at('2026-08-31', 1000), ...at('2026-09-30', 1100)],
+  });
+}
+
+describe('the readings of the draft', () => {
+  it('are one row per date with a column per register, and come back identical', () => {
+    const input = bandedInput();
+    const draft = draftFromInput(input);
+
+    expect(draft.readingRegisters).toEqual(['F1', 'F2', 'F3']);
+    expect(draft.readings).toEqual([
+      {
+        readOn: '2026-08-31',
+        source: 'bill_actual',
+        values: { F1: '1000', F2: '1100', F3: '1200' },
+      },
+      {
+        readOn: '2026-09-30',
+        source: 'bill_actual',
+        values: { F1: '1100', F2: '1200', F3: '1300' },
+      },
+    ]);
+    expect(inputFromDraft(draft).input).toEqual(input);
+  });
+
+  it('skip an empty cell: the bill prints nothing for that register on that date', () => {
+    const draft = draftFromInput(bandedInput());
+    const [first] = draft.readings;
+    if (first) first.values.F2 = '';
+
+    const { input, errors } = inputFromDraft(draft);
+
+    expect(errors).toEqual({});
+    expect(input?.readings).toHaveLength(5);
+    expect(input?.readings.some((r) => r.readOn === '2026-08-31' && r.register === 'F2')).toBe(
+      false,
+    );
+  });
+
+  it('report a value on its cell and a date on its row', () => {
+    const draft = draftFromInput(bandedInput());
+    const [first, second] = draft.readings;
+    if (!first || !second) throw new Error('two rows expected');
+    second.values.F3 = 'abc';
+    expect(inputFromDraft(draft).errors['readings.1.F3']).toBe('Numero non valido');
+
+    second.values.F3 = '1300';
+    first.readOn = '';
+    const { errors } = inputFromDraft(draft);
+    expect(Object.keys(errors)).toEqual(['readings.0.readOn']);
+  });
+
+  it('keep a reading taken and one estimated on the same day in two rows', () => {
+    const input = billInput('supply-1', {
+      readings: [
+        { readOn: '2026-09-30', register: 'single', value: 10, source: 'bill_actual' },
+        { readOn: '2026-09-30', register: 'single', value: 12, source: 'bill_estimated' },
+      ],
+    });
+
+    expect(draftFromInput(input).readings.map((row) => row.source)).toEqual([
+      'bill_actual',
+      'bill_estimated',
+    ]);
+  });
+
+  it('take the default columns when the bill has no readings yet', () => {
+    const input = billInput('supply-1', { readings: [] });
+
+    expect(
+      draftFromInput(input, { defaultRegisters: ['F1', 'F2', 'F3'] }).readingRegisters,
+    ).toEqual(['F1', 'F2', 'F3']);
   });
 });

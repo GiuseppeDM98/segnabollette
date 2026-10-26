@@ -1,0 +1,50 @@
+{
+  "isBill": true,
+  "supplyKind": "telecom",
+  "supplierName": "Armadillo Telecomunicazioni",
+  "offerName": "Armadillo Fibra",
+  "supplyIdentifier": "",
+  "periodStart": "2024-09-01",
+  "periodEnd": "2024-09-30",
+  "issueDate": "2024-09-05",
+  "dueDate": "2024-09-25",
+  "totalCents": 3050,
+  "amountDueCents": 3050,
+  "conversionFactor": 0,
+  "calorificValueGj": 0,
+  "consumptionEstimated": false,
+  "lines": [
+    {
+      "periodStart": "",
+      "periodEnd": "",
+      "quantity": 1,
+      "quantityUnit": "month",
+      "unitPriceMicros": 25000000,
+      "band": "none",
+      "isRecalculation": false,
+      "isEstimated": false,
+      "vatRatePercent": 22,
+      "description": "Canone Armadillo Fibra",
+      "category": "sale",
+      "component": "fixed",
+      "amountCents": 2500
+    },
+    {
+      "periodStart": "",
+      "periodEnd": "",
+      "quantity": 0,
+      "quantityUnit": "none",
+      "unitPriceMicros": 0,
+      "band": "none",
+      "isRecalculation": false,
+      "isEstimated": false,
+      "vatRatePercent": 22,
+      "description": "IVA 22%",
+      "category": "vat",
+      "component": "lump",
+      "amountCents": 550
+    }
+  ],
+  "readings": [],
+  "warnings": ["Importi stampati IVA inclusa: netto ricavato dal riepilogo IVA"]
+}

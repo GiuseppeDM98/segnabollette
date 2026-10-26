@@ -14,6 +14,7 @@ import {
   renameHouse,
   updateSupply,
 } from '@/lib/services/houses-supplies';
+import { deleteDocumentFiles } from '../document-files';
 import {
   ArchivedSchema,
   HouseNameSchema,
@@ -69,7 +70,8 @@ export async function deleteHouseAction(houseId: unknown): Promise<ActionResult<
     toActionResult(async () => {
       const id = parseInput(IdSchema, houseId);
       const user = await requireUser();
-      await deleteHouse(getDb(), user.id, id);
+      const { documentPathnames } = await deleteHouse(getDb(), user.id, id);
+      await deleteDocumentFiles(documentPathnames);
       return null;
     }),
   );
@@ -123,7 +125,8 @@ export async function deleteSupplyAction(supplyId: unknown): Promise<ActionResul
     toActionResult(async () => {
       const id = parseInput(IdSchema, supplyId);
       const user = await requireUser();
-      await deleteSupply(getDb(), user.id, id);
+      const { documentPathnames } = await deleteSupply(getDb(), user.id, id);
+      await deleteDocumentFiles(documentPathnames);
       return null;
     }),
   );

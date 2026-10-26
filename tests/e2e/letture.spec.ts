@@ -27,15 +27,17 @@ test('autoletture a fasce, elenco e valore più basso', async ({ page }) => {
       await lineAmounts(page).nth(index).fill(amount);
     }
     await page.getByTestId('bill-total').fill('26,40');
-    for (const [index, [register, value]] of [
+    // One row per date, a column per band: F1, F2, F3 are the columns of a new electricity bill.
+    await page.getByRole('button', { name: 'Aggiungi data' }).click();
+    const row = page.getByTestId('bill-reading');
+    await expect(row).toHaveCount(1);
+    await expect(row.getByLabel('Data')).toHaveValue('2025-01-31');
+    for (const [register, value] of [
       ['F1', '1000'],
       ['F2', '800'],
       ['F3', '600'],
-    ].entries()) {
-      await page.getByRole('button', { name: 'Aggiungi lettura' }).click();
-      const row = page.getByTestId('bill-reading').nth(index);
-      await row.getByLabel('Registro').selectOption(register ?? '');
-      await row.getByLabel('Valore').fill(value ?? '');
+    ]) {
+      await row.getByLabel(register ?? '', { exact: true }).fill(value ?? '');
     }
     await page.getByRole('button', { name: 'Salva bolletta' }).click();
     await expect(page).toHaveURL(SAVED_BILL_URL);

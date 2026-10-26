@@ -4,11 +4,11 @@ Track your household utility bills and prices — electricity, gas, water, inter
 waste tax — and see whether your offer is a good one. Multi-user with closable registration,
 self-hosted on Vercel + Turso, installable on your phone as a PWA.
 
-> **Status (2026-10-25)**: access (sign-up, sign-in, closable registration), houses and supplies,
-> bills typed by hand, self readings, settings and the charts per supply and per house run in
-> production on Vercel + Turso, on the data model and the calculation engine; extraction and the
-> rest of the v1 are specified in [`doc/v1/`](doc/v1/) and are being implemented one spec at a
-> time. Not affiliated with any utility, ARERA or GME.
+> **Status (2026-10-26)**: access (sign-up, sign-in, closable registration), houses and supplies,
+> bills typed by hand or uploaded and extracted by Claude, self readings, settings and the charts
+> per supply and per house run in production on Vercel + Turso + Blob, on the data model and the
+> calculation engine; the rest of the v1 is specified in [`doc/v1/`](doc/v1/) and is being
+> implemented one spec at a time. Not affiliated with any utility, ARERA or GME.
 
 ## What it does
 
@@ -43,7 +43,9 @@ documentation for contributors and agents is in English; the specs in `doc/v1/` 
 ## Privacy
 
 Bills contain personal data. They are stored in a **private** Vercel Blob store of your own
-deployment and sent to the Anthropic API only for extraction, with your own API key. The database
+deployment and sent to the Anthropic API only for extraction — when you press «Estrai», after the
+app shows what it will cost — with your own API key. Deleting a bill, a supply or your account
+deletes its files too. The database
 keeps only what the charts need — never your address or customer codes beyond the supply
 identifier (POD/PDR).
 
@@ -84,6 +86,7 @@ E2E run needs `pnpm exec playwright install chromium`.
 | [`AGENTS.md`](AGENTS.md) | Repo-wide conventions, isolation, money and dates, testing, gotchas |
 | [`doc/guide/calcoli.md`](doc/guide/calcoli.md) | The data model and the calculation engine: competence, bands, estimates, unit prices |
 | [`doc/guide/app.md`](doc/guide/app.md) | Pages, Server Actions, the bill form, self-readings, theme, end-to-end test rules |
+| [`doc/guide/estrazione.md`](doc/guide/estrazione.md) | Upload to private Blob, the extraction with Claude, the review, costs, the fakes |
 | [`doc/guide/deploy.md`](doc/guide/deploy.md) | Vercel, Turso and Blob choices, the production scripts, limits, rotating the secrets |
 | [`SETUP.md`](SETUP.md) | From clone to your own deployment on Vercel + Turso + Blob |
 | [`DESIGN.md`](DESIGN.md), [`PRODUCT.md`](PRODUCT.md) | The visual system (tokens, type, components) and the product voice |
