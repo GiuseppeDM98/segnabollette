@@ -14,8 +14,14 @@ A bill becomes data in five steps, and **Claude is called only at the owner's cl
    to 10 photos of the pages in order (Su / Giù / Rimuovi). Photos are converted to JPEG in the
    browser (`src/lib/upload/compress-photo.ts`: `createImageBitmap(…, { imageOrientation:
    'from-image' })`, long side at most 2,576 px, quality 0.85); a format the browser cannot decode
-   says «Formato immagine non supportato: usa JPEG o PNG.». The supply select starts on «Riconosci
-   dalla bolletta»; a supply chosen there tells the model which kind to expect.
+   says «Formato immagine non supportato: usa JPEG o PNG.». «Scatta foto» is an `<input
+   capture="environment">`: it opens the camera on Android and iPhone, not on a desktop, so it is
+   tried only from a real phone in production (the development server is not reachable from one).
+   On iOS a HEIC photo from the gallery usually arrives as JPEG; when it does not, the message
+   above is what the owner sees. The supply select starts on «Riconosci
+   dalla bolletta»; a supply chosen there tells the model which kind to expect. The select lives
+   inside `BillUploader` (props `mode`, `billId?`, `supplies?: { id, label }[]`,
+   `preselectedSupplyId?`; the choice is its `supplyId` state): the page only passes the supplies.
 2. **Create** — «Carica» computes each file's SHA-256 (`crypto.subtle.digest`) and calls
    `POST /api/extractions` with `{ supplyId, batchId, files: [{ sha256, contentType, sizeBytes }] }`.
    `createExtraction` (`src/lib/services/extractions.ts`) checks the files (§ 3), decides on
@@ -26,7 +32,8 @@ A bill becomes data in five steps, and **Claude is called only at the owner's cl
    `handleUploadUrl: '/api/documents/upload'`, the document id as `clientPayload`). The token route
    (`src/app/api/documents/upload/route.ts`) asks `authorizeDocumentUpload`: the pathname must be a
    pending document of the session user; the token allows only that pathname, that content type
-   and that size. No file passes through a function on the way in (the 4.5 MB body limit of Vercel
+   and at most that type's limit (10 MB for a PDF, 5 MB for a photo; the declared size is checked
+   in step 4). No file passes through a function on the way in (the 4.5 MB body limit of Vercel
    functions never applies).
 4. **Verify** — `POST /api/extractions/[id]/uploaded` → `markExtractionUploaded` reads every file
    back from the store and runs `verifyDocument` (`src/lib/extraction/verify-document.ts`): size
@@ -71,8 +78,9 @@ files; the extraction row stays, `discarded`, for the month's spend.
 excluded, the other four live states with their actions; after a run from there, `extracted` opens
 the review. The «Bollette» tab of `NavBar` and `SideBar` carries a badge with the count of
 `extracted` rows (`countExtractedToReview`, computed in the `(app)` layout); `/bollette` shows
-«Da rivedere (N)» next to «Carica bolletta» only when N > 0. Every mutation calls
-`revalidatePath('/', 'layout')`.
+«Da rivedere (N)» next to «Carica bolletta» only when N > 0. The review's Server Actions (confirm,
+discard) call `revalidatePath('/', 'layout')`; after each route call (create, uploaded, run) the
+uploader and the «Da rivedere» list call `router.refresh()`, which also refreshes the badge.
 
 ### Routes
 
@@ -102,7 +110,10 @@ new tab («PDF, N pagine» or «Pagina N»).
 
 ## 3. Files and limits
 
-`src/lib/blob/types.ts` and `assertFiles` in the service, checked again on the stored bytes:
+`src/lib/blob/types.ts` and `assertFiles` in the service (the messages below), checked again on
+the stored bytes by `verifyDocument` (same rules, its own wording: «La foto supera i 5 MB.», «Il
+file non è arrivato intero.») and, for a photo, first in the browser after compression («Una foto
+supera i 5 MB anche dopo la compressione.»):
 
 | Rule | Message |
 |---|---|
@@ -146,8 +157,9 @@ Other rules of `toBillInput`:
 - Readings: `actual` → `bill_actual`, `estimated` → `bill_estimated`; a reading without a date is
   dropped with the warning «Lettura senza data scartata: F1 1200».
 - The supply: the preselected one if any (a different kind adds «Il documento sembra una bolletta
-  di Luce»); otherwise the active supply whose identifier matches after removing spaces and case
-  («IT 001 E00000011» = «IT001E00000011»); otherwise `suggestedSupply` with the kind, or kind `null`
+  di Luce»); otherwise the supply of the **same kind**, archived ones included, whose identifier
+  matches after `normalizeSupplyIdentifier` (upper case, no spaces, dashes or dots: «IT 001
+  E00000011» = «IT001E00000011»); never «the only electricity supply there is»; otherwise `suggestedSupply` with the kind, or kind `null`
   and «Tipo di utenza non riconosciuto» for `other`.
 - `validateExtraction` (`src/lib/extraction/validate.ts`) checks what the schema cannot say: real
   calendar days, the period in order, at least one line, a unit for every non-zero quantity. A
@@ -242,11 +254,13 @@ recognises the message (`documents.user_id, documents.sha256`) and answers as th
 
 ## 9. The private store and deletions
 
-- Pathnames `users/<userId>/documents/<documentId>.<ext>`; `access: 'private'`; never a public URL.
+- Pathnames `users/<userId>/documents/<documentId>.<ext>`; `access: 'private'`; never a public URL:
+  a bill carries the holder's name, address and tax code.
   The app reads with the read-write token (`get(pathname, { access: 'private', useCache: false })`)
   and serves through `GET /api/documents/[id]` after checking the owner (`readDocumentFile`).
-- `src/lib/blob/vercel-blob-store.ts` is the only server file that imports `@vercel/blob`;
-  `upload-client.ts` the only client one.
+- `src/lib/blob/vercel-blob-store.ts` is the only file that uses the store API of `@vercel/blob`
+  (`get`, `del`, `list`); the token route `src/app/api/documents/upload/route.ts` imports only
+  `handleUpload` from `@vercel/blob/client`, and `upload-client.ts` is the only client importer.
 - **Rows first, files after**, everywhere: deleting a bill, a supply, a house
   (`deleteBill`, `deleteSupply`, `deleteHouse` return `documentPathnames`; the actions call
   `deleteDocumentFiles` in `src/app/(app)/document-files.ts`), discarding an extraction. A file left
@@ -254,9 +268,11 @@ recognises the message (`documents.user_id, documents.sha256`) and answers as th
   broken «Apri».
 - Deleting the account: `deleteAllUserData` deletes documents and extractions with the rest, then
   Better Auth's `afterUserDeleted` deletes everything under `users/<userId>/` (in blocks of 500).
-- Without `BLOB_READ_WRITE_TOKEN` the upload pages say the store is not configured and offer
-  «Inserisci a mano»; without `ANTHROPIC_API_KEY` attachments still work, extraction does not
-  (`isBlobConfigured`, `isExtractionConfigured` in `src/lib/container.ts`).
+- Without `BLOB_READ_WRITE_TOKEN` or without `ANTHROPIC_API_KEY`, `/bollette/carica` says
+  «Estrazione non configurata su questa installazione.» and offers «Inserisci a mano», and the
+  «Carica bolletta» links are hidden (`isExtractionConfigured`); with the token alone, attachments
+  still work (`isBlobConfigured`, both in `src/lib/container.ts`). Without the token the bill page
+  has no «Documenti» and deletions do not touch Blob.
 
 ## 10. `documents:prune`
 
@@ -269,10 +285,16 @@ documents:prune -- --prod` (production: `.env.turso-prod`, which then needs a th
 - extractions still `uploading` and attachments never uploaded (`uploadedAt` null) older than 24
   hours, with their files.
 
+Blob Hobby allows 2,000 advanced operations (upload, list) and 10,000 simple ones (reads) a month,
+then blocks the store for 30 days (`doc/guide/deploy.md`): `documents:prune` lists the whole store,
+so it is never run in a loop, and «Da rivedere» never reads a file.
+
 A dry run unless `-- --delete`; rows go first, files after. With an empty `documents` table and a
 non-empty store it refuses without `-- --force` (a database paired with the wrong store would
-delete real files). The cross-user queries live in `src/lib/db/maintenance/prune.ts`, the only SQL
-outside `repositories/`, imported by no app module.
+delete real files); with an empty store too there is no file at risk, so it goes ahead and deletes
+only stale rows (narrower than the first plan, which refused on any empty table; 2026-10-26). The
+cross-user queries live in `src/lib/db/maintenance/prune.ts`, imported by no app module (AGENTS.md
+§ 2.1).
 
 ## 11. The prompt
 
@@ -304,6 +326,15 @@ The example puts the printed «consumo fatturato» on that line (component lump,
 `prompt.test.ts` keeps it in the prompt. The bill was fixed by hand in the review and not
 re-extracted (the owner's choice): the next summary-only bill is the first to verify the example.
 
+**What real bills have shown so far (2026-10-26).** Locally, an electricity, a gas (the
+summary-only one above) and a telephone bill came back with the printed totals; in production, an
+eight-page electricity PDF, and photos from a phone. Never seen on a real bill yet: a block of the
+previous month re-billed with «voce di ricalcolo» lines (the gas example of the prompt is checked
+only on the synthetic `gas-pellicano.pdf`), the warning «Importi stampati IVA inclusa» on a bill
+printed VAT included, and any water bill. The first real bill of each kind — likely in the bulk
+import of past bills — is the check: compare its lines with the printed ones before trusting the
+prompt on it.
+
 ## 12. The fakes
 
 Under `E2E_FAKE_SERVICES=1` (Playwright's build; `NEXT_PUBLIC_E2E_FAKE_SERVICES=1` for the client
@@ -311,7 +342,9 @@ bundle) `src/lib/container.ts` swaps both services:
 
 - **Store**: `createDiskBlobStore(E2E_BLOB_DIR)` (default `.e2e-blob`, wiped by
   `scripts/e2e-reset-db.mjs`); the browser uploads with `PUT /api/e2e/blob`, which checks the
-  pending document like the token route.
+  pending document like the token route. It returns a `DiskBlobStore`: the `BlobStore` plus
+  `writeDocument(pathname, bytes)`, which that route and the test helpers use to put a file where
+  the browser would.
 - **Extractor**: `createFakeExtractor('tests/fixtures/extractions')` answers with
   `<sha256 of the first file>.json`; a JPEG without its own file gets `photo-default.json`; a file
   `{ "fail": "<code>" }` gives that failure without usage. Usage is always 10,000 in / 5,000 out
@@ -319,7 +352,9 @@ bundle) `src/lib/container.ts` swaps both services:
 
 `pnpm fixture:bills` (`scripts/make-bill-fixtures.ts`) writes the synthetic bills in
 `tests/fixtures/bills/` — hand-made one-page PDFs of invented suppliers («Pellicano Energia»,
-«Castoro Acque», «Armadillo Telecomunicazioni»), periods of 2024 — and their expected extractions;
+«Castoro Acque», «Armadillo Telecomunicazioni»), periods of 2024 — and their expected extractions
+(the water bill is `acqua-castoro.pdf`, not «Lontra», because «Lontra» is the decoy word of the
+access tests, `doc/guide/app.md` § 8);
 the same bytes at every run, so the names never change. `luce-pellicano-rotta.pdf` is the
 electricity bill with another issue date, mapped to `{ "fail": "unavailable" }`. Real bills never
 enter the repository: they stay in the owner's folder and are tried only in a guided verification.

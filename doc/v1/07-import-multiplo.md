@@ -3,12 +3,12 @@
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 19 rilievi, 2 decisioni
 > (D-41, D-57). Pronta per l'implementazione.
 > **Branch**: `feature/07-bulk-import` da `main` aggiornato dopo il merge della 06. **Dipende da**: 06
-> (in esercizio: il suo esito in produzione l'ha scritto il commit di chiusura della 06, D-41).
+> (ritirata il 2026-10-26).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-7, D-15, D-17, D-18, D-24, D-41, D-42,
 > D-57, D-59; scelte T-14, T-17, T-22, T-23; contratti: usa C-4, C-5, C-7, C-8 (`formatUsd` della
 > 06), C-14, C-16, C-18, C-22 (`loadProductionTarget`), C-23 (`signUpTestUser`); estende C-1
-> (aggiunge `E2E_EXTRACTOR_DELAY_MS`), C-12 (tre repository nuovi in `extractions.ts` e
-> `documents.ts`), C-17 (servizi nuovi in `extractions.ts` e l'opzione `delayMs` di
+> (aggiunge `E2E_EXTRACTOR_DELAY_MS`), C-12 (due repository nuovi in `extractions.ts`; riusa
+> `listDocumentsOfExtractions` di `documents.ts`), C-17 (servizi nuovi in `extractions.ts` e l'opzione `delayMs` di
 > `createFakeExtractor`).
 
 ## 1. Il problema oggi (prove)
@@ -129,9 +129,10 @@ ogni immagine).
 
 Repository nuovi (C-12), tutti `(db, userId, …)`: in `extractions.ts`
 `listExtractionsOfBatch(db, userId, batchId)` (le estrazioni aperte del lotto) e
-`listBatchedExtractions(db, userId)` (le estrazioni aperte con `batch_id` non nullo); in
-`documents.ts` `listDocumentsOfExtractions(db, userId, extractionIds)`, una sola query per le stime e
-le etichette di tutti i lotti (mai una query per estrazione).
+`listBatchedExtractions(db, userId)` (le estrazioni aperte con `batch_id` non nullo). Le stime e le
+etichette di tutti i lotti leggono i documenti con `listDocumentsOfExtractions(db, userId,
+extractionIds)` di `documents.ts`, che esiste dal 2026-10-26 (lo usa già `listPendingExtractions`):
+una sola query, mai una per estrazione.
 
 Nessuna migrazione: `batch_id` esiste dalla 06 (indice `extractions_batch_idx`).
 
@@ -305,7 +306,7 @@ da meno di 6 minuti); ogni 5xx (503 `EXTRACTION_UNAVAILABLE`, 504 di Vercel) e o
   chiamano solo i servizi di § 4.1 (anche per le forniture: `listImportSupplies`), mai
   `listSupplies` o i repository nuovi.
 - **AGENTS.md § 2.4 Isolation** — `listBatches`, `listBatchExtractions`, `nextExtractionToReview`
-  e `listImportSupplies` filtrano per `userId`, e i tre repository nuovi hanno la firma `(db,
+  e `listImportSupplies` filtrano per `userId`, e i due repository nuovi hanno la firma `(db,
   userId, …)` (`scope.test.ts`); un `batchId` di un altro utente dà un elenco vuoto, mai le sue righe.
 - **AGENTS.md § 6 Claude** — nessuna estrazione parte senza il clic su «Avvia estrazione» o
   «Riprendi», che mostrano la stima; aprire o ricaricare `/bollette/importa?lotto=` non fa partire
@@ -331,9 +332,9 @@ da meno di 6 minuti); ogni 5xx (503 `EXTRACTION_UNAVAILABLE`, 504 di Vercel) e o
 | Unit | `use-wake-lock.dom.test.ts` (happy-dom, vedi sotto): con un `navigator.wakeLock` finto, `active` vero → `request` chiamato una volta con `'screen'`; `active` falso → `release` chiamato; un `request` che rifiuta → nessuna eccezione non gestita. | Non chiamare `release` alla disattivazione → l'asserzione su `release` fallisce. |
 | Integrazione | `batches.test.ts` (`createTestDb`, estrazioni e documenti inseriti con i repository della 06): lotto di A con 2 `queued` (un PDF da 8 pagine, una foto), 1 `failed` `unavailable` (PDF da 2 pagine), 1 `failed` `invalid_output`, 1 `extracted` → `counts` `{ queued: 2, running: 0, extracted: 1, failed: 2 }`, `resumableCount` 3, `resumableEstimateMicroUsd` = stima(8,0) + stima(0,1) + stima(2,0), `createdAt` = il più vecchio; un lotto con sole `uploading` e uno con sole `confirmed`/`discarded` non compaiono. Ordine: in un secondo lotto di A, create in quest'ordine, una `queued`, poi una `extracted` con `periodStart` `2026-09-01`, poi una `extracted` con `2026-07-01` → `listBatchExtractions` mette luglio, settembre e la `queued` (senza periodo) in fondo; `nextExtractionToReview(…, { batchId, afterExtractionId: <id della queued> })` → luglio; con `afterExtractionId` = luglio → settembre. `listImportSupplies` di A con una fornitura archiviata → presente, ultima, `archived: true`. `batchId` di 5 caratteri → `VALIDATION`. | Ordinare per `createdAt` invece che per `periodStart` → `nextExtractionToReview` restituisce settembre. |
 | Integrazione | `batches.test.ts`, isolamento: lo stesso `batchId` letto da B → `listBatches` di B non lo contiene, `listBatchExtractions` di B → `[]`, `nextExtractionToReview` di B → `null`, `listImportSupplies` di B senza le forniture di A; letto da A → le sue righe. | Togliere la condizione su `user_id` dal `where` di `listExtractionsOfBatch` → B vede le righe di A. |
-| E2E | `import.spec.ts` (fake; ogni test registra il suo utente con `signUpTestUser(page, 'import')` e crea da `/forniture` la casa «Casa Gazza», parola spia di questo file, così i progetti `mobile` e `desktop` e gli altri file non condividono documenti né SHA-256; seed A e B non si toccano): (1) da `/bollette/carica` sceglie `internet-armadillo.pdf` con «Riconosci dalla bolletta», «Carica», poi «Estrai (circa X $)», nella revisione «Crea una nuova fornitura» in «Casa Gazza» e «Conferma»; (2) `/bollette/importa`: sceglie `luce-pellicano.pdf`, `gas-pellicano.pdf`, `acqua-lontra.pdf`, una copia di `internet-armadillo.pdf` con un altro nome e una seconda copia di `acqua-lontra.pdf` (stessi byte, `setInputFiles` con un altro `name`) → «già presente» per la copia dell'internet, «doppione di acqua-lontra.pdf» per la seconda acqua, stima per 3 bollette; sul DB nessuna estrazione del lotto ha `started_at`; «Avvia estrazione» → 3 «da rivedere»; «Rivedi le bollette» → elenco del lotto con in testa «dal 01/07/2024» (l'acqua) e poi due righe «dal 01/09/2024»; axe sull'elenco (`new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze()`) → 0 violazioni; «Rivedi» sulla prima e, in ogni revisione, «Crea una nuova fornitura» in «Casa Gazza» e «Conferma e passa alla prossima» (nessun pulsante «Conferma») → la successiva; dopo la terza → «Nessuna bolletta da rivedere in questo lotto.». Variante «ricarica» (un altro utente, stessi tre file): ricarica della pagina appena una riga è «in corso» → «Lotti in sospeso» con «Riprendi (1 in coda, circa X $)» → nella pagina del lotto «Riprendi» → quella riga «da rivedere»; `/bollette/da-rivedere?lotto=<id>` → 3 «da rivedere» (il test ricarica finché le due partite prima della ricarica finiscono, al massimo 10 s). Variante «pausa» (un altro utente): `luce-pellicano-rotta.pdf`, `gas-pellicano.pdf`, `acqua-lontra.pdf` in quest'ordine → «Anthropic non risponde: riprendi più tardi», `acqua-lontra.pdf` resta «in coda», `gas-pellicano.pdf` «da rivedere»; «Riprendi» → `acqua-lontra.pdf` «da rivedere». | Avviare le estrazioni subito dopo il caricamento → al passo della stima ci sono estrazioni del lotto con `started_at`. |
+| E2E | `import.spec.ts` (fake; ogni test registra il suo utente con `signUpTestUser(page, 'import')` e crea da `/forniture` la casa «Casa Gazza», parola spia di questo file, così i progetti `mobile` e `desktop` e gli altri file non condividono documenti né SHA-256; seed A e B non si toccano): (1) da `/bollette/carica` sceglie `internet-armadillo.pdf` con «Riconosci dalla bolletta», «Carica», poi «Estrai (circa X $)», nella revisione «Crea una nuova fornitura» in «Casa Gazza» e «Conferma»; (2) `/bollette/importa`: sceglie `luce-pellicano.pdf`, `gas-pellicano.pdf`, `acqua-castoro.pdf`, una copia di `internet-armadillo.pdf` con un altro nome e una seconda copia di `acqua-castoro.pdf` (stessi byte, `setInputFiles` con un altro `name`) → «già presente» per la copia dell'internet, «doppione di acqua-castoro.pdf» per la seconda acqua, stima per 3 bollette; sul DB nessuna estrazione del lotto ha `started_at`; «Avvia estrazione» → 3 «da rivedere»; «Rivedi le bollette» → elenco del lotto con in testa «dal 01/07/2024» (l'acqua) e poi due righe «dal 01/09/2024»; axe sull'elenco (`new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).analyze()`) → 0 violazioni; «Rivedi» sulla prima e, in ogni revisione, «Crea una nuova fornitura» in «Casa Gazza» e «Conferma e passa alla prossima» (nessun pulsante «Conferma») → la successiva; dopo la terza → «Nessuna bolletta da rivedere in questo lotto.». Variante «ricarica» (un altro utente, stessi tre file): ricarica della pagina appena una riga è «in corso» → «Lotti in sospeso» con «Riprendi (1 in coda, circa X $)» → nella pagina del lotto «Riprendi» → quella riga «da rivedere»; `/bollette/da-rivedere?lotto=<id>` → 3 «da rivedere» (il test ricarica finché le due partite prima della ricarica finiscono, al massimo 10 s). Variante «pausa» (un altro utente): `luce-pellicano-rotta.pdf`, `gas-pellicano.pdf`, `acqua-castoro.pdf` in quest'ordine → «Anthropic non risponde: riprendi più tardi», `acqua-castoro.pdf` resta «in coda», `gas-pellicano.pdf` «da rivedere»; «Riprendi» → `acqua-castoro.pdf` «da rivedere». | Avviare le estrazioni subito dopo il caricamento → al passo della stima ci sono estrazioni del lotto con `started_at`. |
 | E2E | `a11y.spec.ts` esteso a `/bollette/importa` (seed A in sola lettura, `mobile` e `desktop`, tema chiaro e scuro); in `import.spec.ts` il controllo axe sull'elenco del lotto (riga sopra). | Il campo dei file senza etichetta → violazione. |
-| E2E | `isolamento.spec.ts` esteso: un utente registrato nel test con `signUpTestUser(page, 'isolamento-lotto')` crea un lotto via API con la sua sessione (`POST /api/extractions` con un `batchId` e il file `acqua-lontra.pdf`, il file su `PUT /api/e2e/blob` come fa `uploadDocumentFile` nelle build di Playwright, poi `POST /api/extractions/<id>/uploaded`) e apre `/bollette/da-rivedere?lotto=<id>` → la sua riga «in coda» (controllo positivo); seed A, in sola lettura, apre lo stesso URL → «Nessuna bolletta da rivedere in questo lotto.» e `/bollette/importa?lotto=<id>` → «Nessuna bolletta in questo lotto.». | Togliere la condizione su `user_id` dal `where` di `listExtractionsOfBatch` → seed A vede la riga dell'altro utente. |
+| E2E | `isolamento.spec.ts` esteso: un utente registrato nel test con `signUpTestUser(page, 'isolamento-lotto')` crea un lotto via API con la sua sessione (`POST /api/extractions` con un `batchId` e il file `acqua-castoro.pdf`, il file su `PUT /api/e2e/blob` come fa `uploadDocumentFile` nelle build di Playwright, poi `POST /api/extractions/<id>/uploaded`) e apre `/bollette/da-rivedere?lotto=<id>` → la sua riga «in coda» (controllo positivo); seed A, in sola lettura, apre lo stesso URL → «Nessuna bolletta da rivedere in questo lotto.» e `/bollette/importa?lotto=<id>` → «Nessuna bolletta in questo lotto.». | Togliere la condizione su `user_id` dal `where` di `listExtractionsOfBatch` → seed A vede la riga dell'altro utente. |
 
 Il fake extractor (06) non conta le chiamate: «nessuna chiamata prima del clic» si verifica sul DB.
 Dopo la stima, su `e2e.db` (con `@libsql/client`, come `global-setup.ts`), `select count(*) from
@@ -374,13 +375,13 @@ con `globalThis.IS_REACT_ACT_ENVIRONMENT = true`; `navigator.wakeLock` finto con
   si può scrivere: carica da `/bollette/carica` `internet-armadillo.pdf`, clicca «Estrai (circa X
   $)», nella revisione la assegna alla fornitura «Internet» di seed A e la conferma (nessuna
   sovrapposizione: le fixture sono del 2024, prima delle bollette seed); poi da `/bollette/importa`
-  importa `luce-pellicano.pdf`, `gas-pellicano.pdf`, `acqua-lontra.pdf` e una copia di
+  importa `luce-pellicano.pdf`, `gas-pellicano.pdf`, `acqua-castoro.pdf` e una copia di
   `internet-armadillo.pdf`; verifica su `local.db`: prima del clic nessuna estrazione del lotto con
   `started_at`; dopo, 3 estrazioni del lotto `extracted`; per la copia nessuna riga nuova in
   `extractions` né in `documents`.
 - **D — Sotto la UI**. Esito atteso, detto prima: le righe del proprio lotto sì, quelle del lotto
   altrui no. Lo stesso script, con seed B in `local.db`, crea un lotto di B via API con
-  `acqua-lontra.pdf`; `curl` con la sessione di A a `/bollette/da-rivedere?lotto=<lotto di A>` → le
+  `acqua-castoro.pdf`; `curl` con la sessione di A a `/bollette/da-rivedere?lotto=<lotto di A>` → le
   righe del lotto (controllo positivo); a `/bollette/da-rivedere?lotto=<lotto di B>` → «Nessuna
   bolletta da rivedere in questo lotto.»; a `/bollette/importa?lotto=<lotto di B>` → «Nessuna
   bolletta in questo lotto.».
@@ -451,7 +452,8 @@ Modello: Claude Opus 5.5, effort high. Taglia: **M**.
 Ciao, in questa sessione implemento la spec doc/v1/07-import-multiplo.md.
 
 Prima di tutto: `git branch --show-current` deve dire main, aggiornato con `git pull`; crea
-feature/07-bulk-import e SESSION_NOTES.md. Chiedimi dove sono le mie bollette storiche (una
+feature/07-bulk-import e SESSION_NOTES.md. La 06 è ritirata (2026-10-26, stato in § 5 dell'indice e
+in CLAUDE.md → Latest), quindi non c'è uno stato da scrivere per lei. Chiedimi dove sono le mie bollette storiche (una
 cartella mia, fuori dal repo): il percorso resta in chat, mai in un file tracciato né in
 SESSION_NOTES.md, e serve alla fase F; non aprirle prima della fase F.
 

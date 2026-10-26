@@ -31,14 +31,14 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
   owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
   SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-26)**: spec 06 in service (PR #14): upload to private Blob, Claude extraction
-  at the click on «Estrai», review and confirm, files on the bill (`doc/guide/estrazione.md`);
-  `BillForm` lays out by its own width, with readings as one row per date and «Da pagare» under
-  the total (`doc/guide/app.md` § 5); the prompt gained a summary-only example. Verified locally on
-  three real bills and in production on one (upload, page count, extraction, confirm, «Apri»,
-  delete; database and store left empty), real cost about half the estimate. **Still open**:
-  «Scatta foto» from a phone was never tried (the owner skipped the phone measure); the
-  summary-only prompt example awaits its first bill. **Next**: retire spec 06, then spec 07.
+- **Latest (2026-10-26)**: spec 06 retired (in service since 2026-10-26, PR #14): upload,
+  extraction, review and files live in `doc/guide/estrazione.md`, the short rules in AGENTS.md § 6
+  and § 8. The retirement changed code: `AppShell`'s `reviewCount` is required, and new tests prove
+  «Allega il file» end to end and the file deletion with a supply, a house and an account; the
+  production verification held for the code before and is redone after the deploy. **Still open**:
+  a re-billed month, the «IVA inclusa» warning and the summary-only prompt example await their
+  first real bill (`doc/guide/estrazione.md` § 11); the local guided tour of the extraction was
+  skipped by the owner. **Next**: spec 07.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI, the dashboard and the extraction exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
@@ -135,6 +135,7 @@ None.
   real one comes with the new house.
 - Bills covering more than one supply in one document ("dual"): only the first supply is extracted.
 - Prompt caching for the extraction; Message Batches API for the bulk import.
+- Self-readings from a photo of the meter: self-readings are typed by hand.
 - Seasonal withdrawal profiles for gas (consumption is spread evenly per day).
 - 4 October in the band calendar: unverified until the October 2027 GME PDF.
 - Automatic PUN download (forbidden by GME terms without written permission); STG prices; ARERA

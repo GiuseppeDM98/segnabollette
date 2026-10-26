@@ -14,11 +14,11 @@ const ITEM_FOCUS = 'focus-visible:outline-on-brand';
  */
 export function AppShell({
   children,
-  reviewCount = 0,
+  reviewCount,
 }: {
   children: ReactNode;
   /** Extracted bills waiting for the owner's review: a count on «Bollette» when above zero. */
-  reviewCount?: number;
+  reviewCount: number;
 }) {
   const pathname = usePathname();
   return (

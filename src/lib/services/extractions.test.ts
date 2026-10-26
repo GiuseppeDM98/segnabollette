@@ -32,6 +32,7 @@ import {
   listPendingExtractions,
   markAttachmentUploaded,
 } from './extractions';
+import { deleteHouse, deleteSupply } from './houses-supplies';
 import { deleteAllUserData } from './user-data';
 
 const NOW = Date.parse('2026-10-25T10:00:00Z');
@@ -489,6 +490,28 @@ describe('attachments', () => {
 
     expect(documentPathnames).toEqual(planned.map((document) => document.pathname));
     expect(await ctx.db.select().from(documents)).toEqual([]);
+  });
+
+  it.each([
+    ['supply', (ctx: Context) => deleteSupply(ctx.db, ctx.userId, ctx.supplyId)],
+    ['house', (ctx: Context) => deleteHouse(ctx.db, ctx.userId, ctx.houseId)],
+  ])('deletes the rows, then the files, of the bills of a deleted %s', async (_, remove) => {
+    const ctx = await setup();
+    const billId = await billOf(ctx);
+    const { documents: planned } = await createAttachment(ctx.db, ctx.userId, {
+      billId,
+      files: [fixtureFile('luce-pellicano.pdf')],
+    });
+    const [document] = planned;
+    if (!document) throw new Error('no planned document');
+    await ctx.blob.writeDocument(document.pathname, fixtureBytes('luce-pellicano.pdf'));
+
+    const { documentPathnames } = await remove(ctx);
+    await ctx.blob.deleteDocuments(documentPathnames);
+
+    expect(documentPathnames).toEqual([document.pathname]);
+    expect(await ctx.db.select().from(documents)).toEqual([]);
+    expect(await ctx.blob.readDocument(document.pathname)).toBeNull();
   });
 });
 
