@@ -19,10 +19,14 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
-    "db:migrate:prod": "tsx scripts/migrate-prod.ts"
+    "db:migrate:prod": "tsx scripts/migrate-prod.ts",
+    "fixture:bills": "tsx scripts/make-bill-fixtures.ts",
+    "documents:prune": "tsx --env-file-if-exists=.env.local scripts/prune-documents.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.3.0",
     "@libsql/client": "0.18.0",
+    "@vercel/blob": "2.8.2",
     "better-auth": "1.7.12",
     "drizzle-orm": "0.45.4",
     "nanoid": "6.0.2",
@@ -32,6 +36,7 @@
     "react-is": "19.3.1",
     "recharts": "3.10.1",
     "server-only": "0.0.1",
+    "unpdf": "1.9.1",
     "zod": "4.6.7"
   },
   "devDependencies": {

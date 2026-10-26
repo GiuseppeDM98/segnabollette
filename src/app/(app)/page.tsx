@@ -8,7 +8,7 @@ import { SupplyKindIcon } from '@/components/supplies/supply-kind-icon';
 import { Stamp } from '@/components/ui/stamp';
 import { buttonClass, columnHeaderClass } from '@/components/ui/styles';
 import { percentChange, toHouseCostSeries } from '@/lib/charts/series';
-import { getDb } from '@/lib/container';
+import { getDb, isExtractionConfigured } from '@/lib/container';
 import type { SupplyRow } from '@/lib/db/repositories/supplies';
 import { romeToday, shiftMonth } from '@/lib/domain/dates';
 import { consumptionUnitOf, isMetered } from '@/lib/domain/types';
@@ -123,6 +123,7 @@ export default async function HomePage({
     dashboard.supplies.map((entry) => [entry.supply.id, entry.lastBilled]),
   );
   const hasBilledMonth = dashboard.supplies.some((entry) => entry.lastBilledMonth !== null);
+  const canExtract = isExtractionConfigured();
   const casaQuery = houseId === undefined ? '' : `casa=${encodeURIComponent(houseId)}&`;
 
   return (
@@ -242,6 +243,14 @@ export default async function HomePage({
                     >
                       Nuova bolletta
                     </Link>
+                    {canExtract && (
+                      <Link
+                        href={`/bollette/carica?fornitura=${supply.id}`}
+                        className={buttonClass('secondary', 'text-sm')}
+                      >
+                        Carica bolletta
+                      </Link>
+                    )}
                     {isMetered(supply.kind) && (
                       <Link
                         href={`/letture?fornitura=${supply.id}`}

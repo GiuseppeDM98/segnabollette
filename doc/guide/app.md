@@ -20,7 +20,10 @@ logo).
 | `/forniture/[id]` | `periodo=12\|24\|tutto` | One supply: facts, «Modifica», «Archivia»/«Riattiva», «Elimina», period selector and charts (§ 9; without bills «Ancora nessuna bolletta: aggiungi la prima»), its bills, its last 10 readings |
 | `/bollette` | `fornitura=<supplyId>`, `pagina=<n>` | Bills, newest first, 50 a page |
 | `/bollette/nuova` | `fornitura=<supplyId>` | Without the query: the choice of the non-archived supplies; with it: `BillForm` (an archived supply opens too: past bills of a closed supply) |
-| `/bollette/[id]` | — | The bill: facts, lines grouped by category with subtotals, readings |
+| `/bollette/carica` | — | `BillUploader`: a PDF or photos to extract (`doc/guide/estrazione.md`) |
+| `/bollette/da-rivedere` | — | Extractions queued, running, extracted or failed, with their actions |
+| `/bollette/revisione/[id]` | — | The document beside `BillForm` prefilled by the extraction, «Conferma» / «Scarta» |
+| `/bollette/[id]` | — | The bill: facts, lines grouped by category with subtotals, readings, «Documenti» (its files, «Allega») |
 | `/bollette/[id]/modifica` | — | `BillForm` on the confirmed bill; a replaced bill redirects to its page |
 | `/letture` | `fornitura=<supplyId>` (404 for a flat-fee or archived supply, which the form does not list) | `SelfReadingForm` (metered, non-archived supplies) and the latest 100 readings |
 | `/impostazioni` | — | Account, «Esci», theme, «Elimina account» |
@@ -138,10 +141,20 @@ the overlap panel from the start (the review knows them); manual entry learns th
   divides; Italian comma, no thousands separator, no trailing zeros — «30,5» —, at
   most 2 decimals for euro, 6 for unit prices; quantities and readings keep 20 digits and are never
   rounded, so a fee pro rata 30/365 comes back identical); `inputFromDraft(draft)` parses back with `parseDecimalInput`, collects field errors
-  by path («Importo obbligatorio», «Totale obbligatorio», «Valore obbligatorio» for a reading,
-  «Numero non valido», «Al massimo N decimali») and then runs `BillInputSchema` (its issues land on the same paths). A line without
+  by path («Importo obbligatorio», «Totale obbligatorio», «Numero non valido», «Al massimo N
+  decimali») and then runs `BillInputSchema` (its issues land on the same paths). A line without
   «Periodo diverso» takes the bill's period. `draftFigures` gives the live «Riepilogo» (sums by
   category, «Totale calcolato», `ArithmeticWarnings`) without blocking on half-typed fields.
+  «Fuori bolletta» is not among the categories: it goes under «Totale calcolato», followed by
+  «Da pagare» (`computed-amount-due`, total plus outside), the figure the bill prints as the
+  amount due (owner, 2026-10-25).
+- **Readings as rows** (owner, 2026-10-25): the draft holds them the way a bill prints them, one
+  row per date and source (`BillReadingRowDraft`: `readOn`, `source`, `values` by register) plus
+  `readingRegisters`, the columns, in `READING_REGISTERS` order. An empty cell means the bill
+  prints nothing for that register and is skipped; errors land on `readings.<row>.<register>`.
+  A new electricity bill starts with F1/F2/F3 (`defaultRegisters`); «Registri» toggles the
+  columns («Monoraria» for `single` on electricity) and keeps one that has values. «Aggiungi
+  data» adds a row dated at the end of the period. `BillInput.readings` is unchanged.
 - **New bill**: the page builds the input with `emptyBillInput(supply, today)` from
   `line-templates.ts` — last month's period and the lines of `lineTemplateFor(kind,
   hasPhotovoltaic)` — and passes `blankAmounts`: the line amounts and «Totale bolletta» start
@@ -152,9 +165,14 @@ the overlap panel from the start (the review knows them); manual entry learns th
 - **Fields**: «Consumi stimati» is there for every kind (a flat-fee bill marked estimated, by hand
   or by the extraction, must be clearable) and also marks the commodity lines that are not
   recalculations; the band select lists «—», F1, F2, F3, F23, then «unica» (electricity only).
-- **Layout**: the lines are one `<table>` with a `<tbody data-testid="bill-line">` per line: cards
-  on phones (labels visible), a table from `md` up (labels `sr-only`, the column headers
-  instead). Up/down/remove per line, «Aggiungi voce»; readings of the bill below (`bill-reading`).
+- **Layout by the form's own width** (owner, 2026-10-25): the form is a `@container` and lays
+  itself out with container queries, never the window's breakpoints, because the review puts it
+  in a column about 450 px wide on a desktop. Dates two per row, four from `@2xl`; field pairs
+  from `@md`/`@lg`. The lines are one `<table>` with a `<tbody data-testid="bill-line">` per
+  line, and the readings one `<tr data-testid="bill-reading">` per date: cards below `@3xl`
+  (labels visible), a table from `@3xl` (labels `sr-only`, the column headers instead).
+  Up/down/remove per line, «Aggiungi voce». `estrazione.spec.ts` guards it with
+  `fieldsOutOfTheForm` (every field inside the form and at least 40 px wide).
 - **Errors**: a field shows its error after blur or after the first submit; on submit the first
   invalid field gets focus and `form-has-errors` says «Correggi i campi segnati in rosso.». Server
   results go into `form-errors`: `VALIDATION` lists its details, `UNAUTHORIZED` asks to sign in
@@ -217,8 +235,8 @@ the overlap panel from the start (the review knows them); manual entry learns th
   of the browser, nothing in the database) and `a11y`. Every test that writes signs up its own
   user and builds its house through the UI.
 - Decoy words differ per file: Quokka (`forniture`), Capibara (`bolletta-manuale`), Tucano
-  (`letture`), Koala (`impostazioni`), Ibis (`isolamento`), Lontra (`auth`). A new file picks a
-  new animal.
+  (`letture`), Koala (`impostazioni`), Ibis (`isolamento`), Lontra (`auth`), Pellicano
+  (`estrazione`). A new file picks a new animal.
 - `a11y.spec.ts` runs axe (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`) on every page, light and
   dark, in both projects; a new page is added to its list.
 - `data-testid` on what the tests drive: `supply-card`, `supply-row`, `supply-form`,
@@ -227,7 +245,8 @@ the overlap panel from the start (the review knows them); manual entry learns th
   `overlap-panel`, `line-group`,
   `group-subtotal`, `arithmetic-warnings`, `form-errors`, `field-error`, `reading-row`,
   `self-reading-form`, `lower-reading-warning`, `delete-account`, `confirm-dialog`, `nav-bar`,
-  `nav-active-tick`, `side-bar`, `chart-frame`, `kpi-tile`, `supply-last-month`.
+  `nav-active-tick`, `side-bar`, `chart-frame`, `kpi-tile`, `supply-last-month`,
+  `extraction-warnings`, `pending-extraction`, `review-badge`, `bill-document`, `extraction-spend`.
 - `dashboard.spec.ts` only reads seed A (no decoy word); `seedSupplyIds(email)` gives the seed
   supplies' ids by name. `a11y.spec.ts` opens every `<details>` before axe, so the charts' data
   tables are checked too.

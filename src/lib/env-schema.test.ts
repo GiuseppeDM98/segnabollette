@@ -47,4 +47,15 @@ describe('EnvSchema', () => {
       issuePaths({ ...MINIMAL_ENV, E2E_FAKE_SERVICES: '1', VERCEL_ENV: 'production' }),
     ).toContain('E2E_FAKE_SERVICES');
   });
+
+  it('treats empty extraction secrets as absent and keeps the fake store in .e2e-blob', () => {
+    const env = EnvSchema.parse({
+      ...MINIMAL_ENV,
+      ANTHROPIC_API_KEY: '',
+      BLOB_READ_WRITE_TOKEN: '',
+    });
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(env.BLOB_READ_WRITE_TOKEN).toBeUndefined();
+    expect(env.E2E_BLOB_DIR).toBe('.e2e-blob');
+  });
 });

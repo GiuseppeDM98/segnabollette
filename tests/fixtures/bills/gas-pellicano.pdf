@@ -1,0 +1,65 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 1300 >>
+stream
+BT /F1 10 Tf 40 800 Td 13 TL
+(PELLICANO ENERGIA) '
+(Bolletta gas - Offerta Pellicano Gas Fisso) '
+(Data emissione: 05/10/2024   Scadenza: 25/10/2024) '
+(PDR: 00000000000011) '
+(Periodo di fatturazione: dal 01/09/2024 al 30/09/2024) '
+(Coefficiente C: 1,0200000   Potere calorifico superiore: 38,80 MJ/Smc) '
+() '
+(Totale bolletta: 30,40 EUR) '
+(Totale da pagare: 30,40 EUR) '
+() '
+(Elementi di dettaglio) '
+(Periodo di riferimento: dal 01/08/2024 al 31/08/2024) '
+(Gas   10 Smc x 0,500000 EUR/Smc   5,00) '
+(Gas \(voce di ricalcolo\)   -8 Smc x 0,500000 EUR/Smc   -4,00) '
+(Periodo di riferimento: dal 01/09/2024 al 30/09/2024) '
+(Spesa per la materia gas naturale) '
+(Gas   20 Smc x 0,500000 EUR/Smc   10,00) '
+(Quota fissa vendita   1 mese x 5,000000 EUR/mese   5,00) '
+(Spesa per il trasporto e la gestione del contatore) '
+(Trasporto   20 Smc x 0,100000 EUR/Smc   2,00) '
+(Quota fissa trasporto   1 mese x 3,000000 EUR/mese   3,00) '
+(Spesa per oneri di sistema) '
+(Oneri di sistema   20 Smc x 0,050000 EUR/Smc   1,00) '
+(Imposte) '
+(Accisa   20 Smc x 0,150000 EUR/Smc   3,00) '
+(Addizionale regionale   20 Smc x 0,050000 EUR/Smc   1,00) '
+(IVA 10% su 11,00   1,10) '
+(IVA 22% su 15,00   3,30) '
+() '
+(Letture \(metri cubi\)) '
+(31/08/2024   2000   rilevata) '
+(30/09/2024   2020   rilevata) '
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000212 00000 n 
+0000000338 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1690
+%%EOF

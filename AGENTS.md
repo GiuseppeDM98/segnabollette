@@ -19,21 +19,24 @@ alone.
 ### 2.1 Layers and imports
 
 `src/app` (pages, route handlers, Server Actions) is thin: zod → `requireUser()` → a service →
-map the result (`toActionResult`, `toErrorResponse` *(from spec 06)*). `src/lib/services/*` holds the use cases;
+map the result (`toActionResult`, `toErrorResponse`). `src/lib/services/*` holds the use cases;
 every service takes `db: Db` first and its other dependencies (`blob`, `extractor`, `now`, `clock`)
-explicitly. `src/lib/db/repositories/*` is the only place that writes SQL (Drizzle).
+explicitly. `src/lib/db/repositories/*` is the only place that writes SQL (Drizzle), with one
+exception: `src/lib/db/maintenance/prune.ts`, the queries of `pnpm documents:prune`, which no app
+module imports.
 `src/lib/domain/*` and `src/lib/engine/*` are pure: no Drizzle, no `next/*`, no `fetch`, no clock
 (they take `today`/`now` as parameters). Services import each repository as a namespace
 (`import * as billsRepository from '@/lib/db/repositories/bills'`, likewise `housesRepository`,
 `suppliesRepository`, `readingsRepository`): a service and its repository share function names
 (`listBills`, `listReadings`) with different signatures. Gateways:
 `src/lib/extraction/anthropic-extractor.ts` is the only file importing `@anthropic-ai/sdk`;
-`src/lib/blob/vercel-blob-store.ts` the only server file importing `@vercel/blob` (both *(from spec
-06)*); `src/components/charts/recharts.ts` the only file importing `recharts` (it re-exports what the
+`src/lib/blob/vercel-blob-store.ts` the only server file importing `@vercel/blob` and
+`src/lib/blob/upload-client.ts` the only client one; `src/components/charts/recharts.ts` the only file importing `recharts` (it re-exports what the
 charts use, Recharts' `ReferenceLine` as `RechartsReferenceLine`).
 The app reaches external services through `src/lib/container.ts` (`getDb`; `getBlobStore`,
-`getBillExtractor` and their fakes under `E2E_FAKE_SERVICES=1` *(from spec 06)*); CLI scripts in `scripts/` build their
-clients directly and never import `server-only` modules (`env.ts`, `db/client.ts`, `auth/auth.ts`).
+`getBillExtractor` and their fakes under `E2E_FAKE_SERVICES=1`); CLI scripts in `scripts/` build their
+clients directly and never import `server-only` modules (`env.ts`, `db/client.ts`, `auth/auth.ts`,
+`container.ts`); a module a script needs takes its secrets as arguments (`createVercelBlobStore(token)`).
 Route handlers exist only where a non-form client calls HTTP (auth, Blob upload, extraction steps,
 document download, the offline queue); everything else is a colocated Server Action.
 
@@ -50,7 +53,7 @@ and UI text in Italian; code, identifiers and comments in English. The series la
 Secrets only in `.env.local`, `.env.turso-prod` (both gitignored) and Vercel; `.env.example` lists
 every variable a developer or a deployment sets (`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`,
 `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGNUP_ENABLED`; `ANTHROPIC_API_KEY`,
-`BLOB_READ_WRITE_TOKEN` *(from spec 06)*), with development defaults and empty secrets; the test-only switches
+`BLOB_READ_WRITE_TOKEN`), with development defaults and empty secrets; the test-only switches
 (`E2E_FAKE_SERVICES`, `NEXT_PUBLIC_E2E_FAKE_SERVICES`, `E2E_BLOB_DIR`, `E2E_EXTRACTOR_DELAY_MS`) are
 set only by `playwright.config.ts` (and, for a local verification with the fakes, on the command
 line of that run, never in `.env.local`), and `VERCEL_ENV` only by Vercel. `src/lib/env-schema.ts` is the
@@ -60,7 +63,7 @@ app, except `process.env.NODE_ENV` and the `NEXT_PUBLIC_*` variables read litera
 through the chat: the owner types them. **Nothing of the owner's data in a tracked file, commit or
 PR** (WORKFLOW § 1.6, public repo, no exception): no real bill, POD, PDR, invoice number, customer
 code, address, supplier of the owner or amount. Bill fixtures are synthetic and generated
-(`pnpm fixture:bills` *(from spec 06)*); test numbers are invented and round. GME prices (PUN) never enter a tracked
+(`pnpm fixture:bills`, `scripts/make-bill-fixtures.ts`); test numbers are invented and round. GME prices (PUN) never enter a tracked
 file (licence: private use only).
 
 ### 2.4 Isolation per user (security invariant)
@@ -71,7 +74,9 @@ Every repository function has the signature `(db: Db, userId: string, …)` and 
 missing (`NOT_FOUND`, page 404), never 403. `src/lib/db/repositories/scope.test.ts` fails on any
 exported repository function with another signature and on any exported `const`/`let`/`var` (a
 repository exports only `function` declarations and types); the one declared exception is
-`reference-prices.ts` *(from spec 08)* (market data, no user rows). Every new read or write of
+`reference-prices.ts` *(from spec 08)* (market data, no user rows). The only queries across users
+are in `src/lib/db/maintenance/prune.ts` (used only by `pnpm documents:prune`, which matches the
+file store against every user's documents) and, from spec 08, `reference-prices.ts`. Every new read or write of
 user data ships the pair of tests «own resource passes / someone else's is refused».
 
 ### 2.5 Money, units and dates
@@ -151,7 +156,7 @@ the `(app)` layout calls `getSessionUser()` and every Server Action and route ha
 Next 16 (2026-10-24): the redirect lives in `src/proxy.ts` (not `middleware.ts`) and runs on Node;
 `cookies()` and `headers()` are async; `cacheComponents` stays off.
 
-## 6. Claude *(from spec 06 — stub; guide `doc/guide/estrazione.md`)*
+## 6. Claude *(stub; guide `doc/guide/estrazione.md`)*
 
 One extraction = one streamed call to `claude-opus-5-5` through `client.beta.messages.stream`, with
 `fallbacks: 'default'` (beta `server-side-fallback-2026-07-01`), `output_config: { effort: 'high',
@@ -163,7 +168,9 @@ version 2026-10-21), no prefill, no forced `tool_choice`, no reasoning requested
 The schema has no nullable fields (sentinels). An extraction starts only when the owner clicks
 «Estrai», after seeing the estimate. No automatic retry: failures show «Riprova». Tokens and cost are
 recorded (and summed across retries) on every call that returned usage. Nothing reaches the bill
-tables without the owner's confirmation in the review.
+tables without the owner's confirmation in the review. Files: one PDF (≤ 10 MB, ≤ 40 pages, not
+encrypted) or up to 10 photos converted to JPEG in the browser (≤ 5 MB each, ≤ 20 MB together),
+checked again on the stored bytes (size, magic bytes, SHA-256) before any use.
 
 ## 7. UI *(stub; guide `doc/guide/app.md`, visual system DESIGN.md, voice PRODUCT.md)*
 
@@ -186,10 +193,10 @@ only); Turso in `aws-eu-west-1`. Production migrations run from the owner's mach
 merge (`pnpm db:migrate:prod`); every script that touches production goes through
 `scripts/production-target.ts` (`loadProductionTarget()`, `.env.turso-prod`). Two **private** Blob
 stores in `dub1`: `segnabollette-files` (Production) and `segnabollette-files-dev` (Development);
-never `vercel blob create-store --yes`. *(From specs 06 and 09)* files go from the
-browser straight to Blob (`upload()` + `handleUpload()`; function bodies stop at 4.5 MB); nothing
-depends on `onUploadCompleted` (it never fires on localhost): the server verifies each file before
-using it. Serwist needs `next build --webpack`; `/api/*` is never cached; the offline page is
+never `vercel blob create-store --yes`. Files go from the browser straight to Blob (`upload()` +
+`handleUpload()`; function bodies stop at 4.5 MB); nothing depends on `onUploadCompleted` (it never
+fires on localhost): the server verifies each file before using it. Rows are deleted before their
+files; `pnpm documents:prune` finds what a failure left behind. *(From spec 09)* Serwist needs `next build --webpack`; `/api/*` is never cached; the offline page is
 precached by hand; the offline queue is drained by the pages.
 
 ## 9. Testing
@@ -205,8 +212,9 @@ precached by hand; the offline queue is drained by the pages.
   ignored) or on any exported `const`/`let`/`var` (a typed or wrapped arrow hides its parameters);
   the only exempt file is `reference-prices.ts` *(from spec 08)*.
 - Anthropic and Blob are never called in tests: fake client for the extractor, disk store and
-  fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`) *(from
-  spec 06)*.
+  fixture extractions for Playwright (`E2E_FAKE_SERVICES=1`, `tests/fixtures/extractions/`); the
+  service tests drive the same fakes through `src/lib/extraction/testing/` (`tempBlobStore`,
+  `uploadFixture`, `runFixture`, `scriptedExtractor`, the fixture bytes and their SHA-256).
 - Every test in a spec names the mutation that proves it load-bearing; a test that cannot go red is
   not a test. A mutation must still type-check: under Playwright the `webServer` build fails on a
   type error, and the red then proves nothing (2026-10-24, `{x && false && (…)}` in a page).
@@ -232,8 +240,9 @@ precached by hand; the offline queue is drained by the pages.
 ## 10. Commands *(see WORKFLOW.md § 3 for the table and the gate order)*
 
 `pnpm typecheck`, `pnpm lint` (`lint:fix` writes), `pnpm test`, `pnpm build`, then `pnpm test:e2e`.
-Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`. Later:
-`fixture:bills`, `documents:prune` (06), `riferimenti:update`, `riferimenti:pun` (08), `icons` (09).
+Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`. Files:
+`fixture:bills`, `documents:prune` (`-- --prod`, `-- --delete`). Later: `riferimenti:update`,
+`riferimenti:pun` (08), `icons` (09).
 
 ## 11. Gotchas (measured; add the date to every new one)
 
@@ -332,6 +341,24 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`
   production whatever its branch; the Ignored Build Step of a Git deployment does not see
   `VERCEL_ENV`; the dashboard's «Sensitive» switch is off by default; CLI 65.2.0 deprecates the
   positional environment of `env rm` and `redeploy --target`. Details in `doc/guide/deploy.md` § 3–4.
+- 2026-10-25 — `server-only` throws when `tsx` loads it: a module a CLI script imports
+  (`src/lib/blob/vercel-blob-store.ts`, used by `documents:prune`) does not import it and takes its
+  token as an argument; only the container, which is server-only, reads the environment.
+- 2026-10-25 — unpdf 1.9.1: `PDFDocumentProxy` has no `destroy()` (`pdf.loadingTask.destroy()`
+  frees it), and pdf.js may detach the buffer it is given: pass a copy.
+- 2026-10-25 — Better Auth stores the email in lower case: an E2E that reads `e2e.db` by the email
+  `signUpTestUser` returned (a nanoid, with capitals) lowercases it first.
+- 2026-10-25 — axe `scrollable-region-focusable`: a box with `overflow-y-auto` whose content
+  scrolls needs `tabIndex={0}` and a name (the review's photo column on desktop).
+- 2026-10-25 — TypeScript 7 lib: `new Response(bytes)` refuses a `Uint8Array<ArrayBufferLike>`;
+  `new Response(new Uint8Array(bytes))` (a copy on an `ArrayBuffer`) type-checks.
+- 2026-10-25 — `pnpm dev` does not migrate `local.db`: after a spec with a migration the first
+  page fails with «no such table» until `pnpm db:migrate` runs. In a guided verification's
+  change of context, migrate first and read the dev server's log: an RSC payload can hold the
+  expected text while the server logs the error.
+- 2026-10-25 — A component placed both in a page and in a column (`BillForm` in the review) lays
+  itself out with container queries (`@container`, `@md:`, `@3xl:`), not `md:`: the window's
+  width says nothing about the column's.
 
 ## 12. Definition of done (per session)
 

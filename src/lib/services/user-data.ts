@@ -1,6 +1,14 @@
 import { eq } from 'drizzle-orm';
 import type { Db } from '@/lib/db/create-db';
-import { billLines, bills, houses, meterReadings, supplies } from '@/lib/db/schema/app';
+import {
+  billLines,
+  bills,
+  documents,
+  extractions,
+  houses,
+  meterReadings,
+  supplies,
+} from '@/lib/db/schema/app';
 
 /**
  * Delete every row the app owns for a user, children before parents, in one batch.
@@ -10,6 +18,9 @@ import { billLines, bills, houses, meterReadings, supplies } from '@/lib/db/sche
  */
 export async function deleteAllUserData(db: Db, userId: string): Promise<void> {
   await db.batch([
+    // Documents point at extractions and bills, extractions at bills and supplies: they go first.
+    db.delete(documents).where(eq(documents.userId, userId)),
+    db.delete(extractions).where(eq(extractions.userId, userId)),
     db.delete(meterReadings).where(eq(meterReadings.userId, userId)),
     db.delete(billLines).where(eq(billLines.userId, userId)),
     // A replaced bill points at its replacement: clear the links before deleting the bills.

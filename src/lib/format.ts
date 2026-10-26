@@ -85,12 +85,44 @@ export function formatPercentChange(change: number): string {
   return `${percent.format(change).replace('-', '−')} %`;
 }
 
+const usd = new Intl.NumberFormat('it-IT', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+/** An extraction's cost, stored in micro-dollars: '0,31 $' (the symbol after, as Italians write). */
+export function formatUsd(microUsd: number): string {
+  return `${usd.format(microUsd / 1_000_000)} $`;
+}
+
+const fileSize = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
+
+/** A file's size as a person reads it: '340 kB', '1,2 MB'. */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${fileSize.format(Math.max(1, Math.round(bytes / 1024)))} kB`;
+  return `${fileSize.format(bytes / (1024 * 1024))} MB`;
+}
+
 export function formatQuantity(value: number, unit: QuantityUnit): string {
   return `${quantity.format(value)} ${UNIT_LABELS[unit]}`;
 }
 
 export function formatDate(date: IsoDate): string {
   return day.format(new Date(`${date}T00:00:00Z`));
+}
+
+const instant = new Intl.DateTimeFormat('it-IT', {
+  timeZone: 'Europe/Rome',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+/** An instant (epoch ms) as a day and time in Rome: '25/10/2026, 14:30'. */
+export function formatInstant(ms: number): string {
+  return instant.format(new Date(ms));
 }
 
 export function formatMonth(key: MonthKey): string {

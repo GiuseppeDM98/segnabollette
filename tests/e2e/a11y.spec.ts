@@ -42,6 +42,8 @@ for (const theme of THEMES) {
           `/forniture/${supplies.Internet}`,
           '/bollette',
           '/bollette/nuova',
+          '/bollette/carica',
+          '/bollette/da-rivedere',
           `/bollette/nuova?fornitura=${supplyId}`,
           `/bollette/${billId}`,
           `/bollette/${billId}/modifica`,

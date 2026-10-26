@@ -53,20 +53,26 @@ export function CheckboxField({
   checked,
   onChange,
   name,
+  disabled,
 }: {
   id: string;
   label: ReactNode;
   checked?: boolean;
   onChange?: (checked: boolean) => void;
   name?: string;
+  disabled?: boolean;
 }) {
   return (
-    <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-2.5">
+    <label
+      htmlFor={id}
+      className={`flex min-h-11 items-center gap-2.5 ${disabled ? 'text-ink-soft' : 'cursor-pointer'}`}
+    >
       <input
         id={id}
         name={name}
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={onChange ? (event) => onChange(event.target.checked) : undefined}
         className="size-5 shrink-0"
       />

@@ -3,9 +3,10 @@ import { BillList } from '@/components/bills/bill-list';
 import { BillSupplyFilter } from '@/components/bills/bill-supply-filter';
 import { Page } from '@/components/ui/page';
 import { buttonClass } from '@/components/ui/styles';
-import { getDb } from '@/lib/container';
+import { getDb, isExtractionConfigured } from '@/lib/container';
 import { formatSupplyLabel } from '@/lib/format';
 import { listBills } from '@/lib/services/bills';
+import { listPendingExtractions } from '@/lib/services/extractions';
 import { getSupplyDetail, listHousesWithSupplies } from '@/lib/services/houses-supplies';
 import { orNotFound, pageNumber, pageUser, queryValue } from '../page-helpers';
 
@@ -19,9 +20,10 @@ export default async function BillsPage({
   const page = pageNumber(query.pagina);
   const supplyId = queryValue(query.fornitura);
   if (supplyId !== undefined) await orNotFound(getSupplyDetail(getDb(), user.id, supplyId));
-  const [{ bills, hasNextPage }, houses] = await Promise.all([
+  const [{ bills, hasNextPage }, houses, pending] = await Promise.all([
     listBills(getDb(), user.id, { supplyId, page }),
     listHousesWithSupplies(getDb(), user.id, { includeArchived: true }),
+    listPendingExtractions(getDb(), user.id),
   ]);
   const supplies = houses.flatMap(({ house, supplies: own }) =>
     own.map((supply) => ({
@@ -41,12 +43,24 @@ export default async function BillsPage({
     <Page
       title="Bollette"
       actions={
-        <Link
-          href={supplyId ? `/bollette/nuova?fornitura=${supplyId}` : '/bollette/nuova'}
-          className={buttonClass('primary')}
-        >
-          Nuova bolletta
-        </Link>
+        <>
+          <Link
+            href={supplyId ? `/bollette/nuova?fornitura=${supplyId}` : '/bollette/nuova'}
+            className={buttonClass('primary')}
+          >
+            Nuova bolletta
+          </Link>
+          {isExtractionConfigured() && (
+            <Link href="/bollette/carica" className={buttonClass('secondary')}>
+              Carica bolletta
+            </Link>
+          )}
+          {pending.length > 0 && (
+            <Link href="/bollette/da-rivedere" className={buttonClass('secondary')}>
+              Da rivedere ({pending.length})
+            </Link>
+          )}
+        </>
       }
     >
       {supplies.length > 0 && (

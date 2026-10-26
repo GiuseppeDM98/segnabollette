@@ -11,6 +11,8 @@ const serverEnv = {
   BETTER_AUTH_URL: OPEN,
   SIGNUP_ENABLED: 'false',
   E2E_FAKE_SERVICES: '1',
+  // Read by the client bundle at build time: uploads go to the local fake store.
+  NEXT_PUBLIC_E2E_FAKE_SERVICES: '1',
 };
 
 export default defineConfig({

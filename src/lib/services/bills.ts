@@ -12,6 +12,8 @@ import { nanoid } from 'nanoid';
 import type { Db } from '@/lib/db/create-db';
 import type { BillLineRow, BillRow } from '@/lib/db/repositories/bills';
 import * as billsRepository from '@/lib/db/repositories/bills';
+import * as documentsRepository from '@/lib/db/repositories/documents';
+import * as extractionsRepository from '@/lib/db/repositories/extractions';
 import * as housesRepository from '@/lib/db/repositories/houses';
 import type { ReadingRow } from '@/lib/db/repositories/readings';
 import * as readingsRepository from '@/lib/db/repositories/readings';
@@ -173,7 +175,11 @@ export async function confirmBill(
   return { billId, replacedBillIds };
 }
 
-/** Files on Blob arrive later: the list is always empty for now. */
+/**
+ * The bill's files go with it: their rows here, the files on Blob by the caller after the batch
+ * (row first, file after: an orphan file is found by documents:prune, a row without its file is
+ * not). Its extraction stays, for the month's spend, without the link.
+ */
 export async function deleteBill(
   db: Db,
   userId: string,
@@ -181,6 +187,9 @@ export async function deleteBill(
 ): Promise<{ documentPathnames: string[] }> {
   const bill = await billsRepository.getBill(db, userId, billId);
   if (!bill) throw new DomainError('NOT_FOUND');
+  const documentPathnames = await documentsRepository.listDocumentPathnamesOfBills(db, userId, [
+    billId,
+  ]);
   // A replaced bill hands the bills it had replaced over to its own replacement, so they stay
   // out of the figures; a confirmed one brings them back. A replaced bill always has its
   // replacement (markReplacedQuery sets both columns): the null check only narrows the type.
@@ -192,9 +201,11 @@ export async function deleteBill(
     handOver,
     readingsRepository.deleteReadingsOfBillsQuery(db, userId, [billId]),
     billsRepository.deleteBillLinesQuery(db, userId, [billId]),
+    extractionsRepository.clearBillOfExtractionsQuery(db, userId, [billId]),
+    documentsRepository.deleteDocumentsOfBillsQuery(db, userId, [billId]),
     billsRepository.deleteBillsQuery(db, userId, [billId]),
   ]);
-  return { documentPathnames: [] };
+  return { documentPathnames };
 }
 
 export async function getBillDetail(

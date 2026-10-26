@@ -12,20 +12,50 @@ const ITEM_FOCUS = 'focus-visible:outline-on-brand';
  * The passbook's cover around every page of the protected area: a cloth bar at the bottom on a
  * phone, a cloth sidebar from 1024 px. Client-side only to read the path for aria-current.
  */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  reviewCount = 0,
+}: {
+  children: ReactNode;
+  /** Extracted bills waiting for the owner's review: a count on «Bollette» when above zero. */
+  reviewCount?: number;
+}) {
   const pathname = usePathname();
   return (
     <div className="min-h-dvh lg:flex">
-      <SideBar pathname={pathname} />
+      <SideBar pathname={pathname} reviewCount={reviewCount} />
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <main className="mx-auto w-full max-w-5xl flex-1">{children}</main>
-        <NavBar pathname={pathname} />
+        <NavBar pathname={pathname} reviewCount={reviewCount} />
       </div>
     </div>
   );
 }
 
-function NavBar({ pathname }: { pathname: string }) {
+/** The count of bills to review, paper on cloth; only on «Bollette», never at zero. */
+function ReviewBadge({
+  href,
+  count,
+  className,
+}: {
+  href: string;
+  count: number;
+  className: string;
+}) {
+  if (href !== '/bollette' || count <= 0) return null;
+  return (
+    <span
+      role="img"
+      aria-label={`${count} bollette da rivedere`}
+      data-testid="review-badge"
+      className={`figures inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-on-brand px-1 text-2xs font-extrabold leading-none text-brand ${className}`}
+    >
+      {count}
+    </span>
+  );
+}
+
+function NavBar({ pathname, reviewCount }: { pathname: string; reviewCount: number }) {
   return (
     <nav
       aria-label="Principale"
@@ -55,6 +85,11 @@ function NavBar({ pathname }: { pathname: string }) {
                 )}
                 <Icon />
                 {label}
+                <ReviewBadge
+                  href={href}
+                  count={reviewCount}
+                  className="absolute top-2 left-[calc(50%+0.5rem)]"
+                />
               </Link>
             </li>
           );
@@ -64,7 +99,7 @@ function NavBar({ pathname }: { pathname: string }) {
   );
 }
 
-function SideBar({ pathname }: { pathname: string }) {
+function SideBar({ pathname, reviewCount }: { pathname: string; reviewCount: number }) {
   return (
     <nav
       aria-label="Principale"
@@ -99,6 +134,7 @@ function SideBar({ pathname }: { pathname: string }) {
                 )}
                 <Icon />
                 {label}
+                <ReviewBadge href={href} count={reviewCount} className="ml-auto" />
               </Link>
             </li>
           );

@@ -51,7 +51,7 @@ run against a local file by mistake.
 | Command | What it does |
 |---|---|
 | `pnpm db:migrate:prod` | `scripts/migrate-prod.ts`: prints the host, applies `drizzle/` with Drizzle's libSQL migrator, prints «Done.». Idempotent: a second run changes nothing |
-| `pnpm documents:prune -- --prod` *(arrives with the Blob upload)* | Orphan files of the production store |
+| `pnpm documents:prune -- --prod` | Orphan files of the production store |
 | `pnpm riferimenti:pun -- <zip> --prod` *(arrives with the market references)* | The PUN into the production database |
 
 A script that can write to production does so only behind `--prod` (through

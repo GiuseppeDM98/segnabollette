@@ -47,6 +47,8 @@ describe('deleteAllUserData', () => {
       bills: [],
       billLines: [],
       meterReadings: [],
+      extractions: [],
+      documents: [],
     });
     expect(await snapshotUserRows(db, other.id)).toEqual(otherBefore);
   });

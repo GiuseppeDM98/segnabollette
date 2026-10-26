@@ -6,6 +6,7 @@ import { getDb } from '@/lib/container';
 import { type ActionResult, toActionResult } from '@/lib/errors';
 import { parseInput } from '@/lib/parse-input';
 import { confirmBill, deleteBill, getBillDetail } from '@/lib/services/bills';
+import { deleteDocumentFiles } from '../document-files';
 import { BillIdSchema, OptionalBillIdSchema, SavedSupplySchema } from './schemas';
 
 function revalidateBillPages(supplyId: string): void {
@@ -40,7 +41,8 @@ export async function deleteBillAction(
     const id = parseInput(BillIdSchema, billId);
     const user = await requireUser();
     const { bill } = await getBillDetail(getDb(), user.id, id);
-    await deleteBill(getDb(), user.id, id);
+    const { documentPathnames } = await deleteBill(getDb(), user.id, id);
+    await deleteDocumentFiles(documentPathnames);
     revalidateBillPages(bill.supplyId);
     return { supplyId: bill.supplyId };
   });

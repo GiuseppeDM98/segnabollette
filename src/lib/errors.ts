@@ -7,7 +7,11 @@ export type DomainErrorCode =
   | 'NOT_FOUND'
   | 'VALIDATION'
   | 'OVERLAP_DECISION_REQUIRED'
-  | 'DUPLICATE_IDENTIFIER';
+  | 'DUPLICATE_IDENTIFIER'
+  | 'DUPLICATE_DOCUMENT'
+  | 'DOCUMENT_INVALID'
+  | 'EXTRACTION_UNAVAILABLE'
+  | 'EXTRACTION_BUSY';
 
 export const ERROR_MESSAGES: Record<DomainErrorCode, string> = {
   UNAUTHORIZED: 'Devi accedere per continuare.',
@@ -16,6 +20,10 @@ export const ERROR_MESSAGES: Record<DomainErrorCode, string> = {
   OVERLAP_DECISION_REQUIRED:
     'Questa bolletta copre giorni già coperti: scegli se sommarla o se sostituisce quella vecchia.',
   DUPLICATE_IDENTIFIER: 'Hai già una fornitura con questo codice.',
+  DUPLICATE_DOCUMENT: 'Questo file è già stato caricato.',
+  DOCUMENT_INVALID: 'Il file non è valido.',
+  EXTRACTION_UNAVAILABLE: "L'estrazione non è disponibile in questo momento.",
+  EXTRACTION_BUSY: 'Questa bolletta è già in lavorazione.',
 };
 
 export class DomainError extends Error {

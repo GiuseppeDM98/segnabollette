@@ -1,8 +1,11 @@
 /**
  * Isolation through the pages and the save action. Seed users A and B read (and never write); the
- * write pair uses a user of its own («Casa Ibis») and tampers with the bound bill id.
+ * write pair uses a user of its own («Casa Ibis») and tampers with the bound bill id; the upload
+ * pairs register two users of their own, P and Q.
  */
-import { expect, test } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { type BrowserContext, expect, test } from '@playwright/test';
 import { eq } from 'drizzle-orm';
 import { createDb } from '../../src/lib/db/create-db';
 import { bills } from '../../src/lib/db/schema/app';
@@ -124,4 +127,66 @@ test('salvare con l’id di una bolletta di B dà NOT_FOUND; con il proprio pass
   await page.unrouteAll();
   await page.getByRole('button', { name: 'Salva bolletta' }).click();
   await expect(page).toHaveURL(`/bollette/${ownId}`);
+});
+
+// Upload, files and review: P owns an extracted bill, Q tries the same URLs. The pair on the upload
+// token lives in the service tests: under Playwright there is no real handleUpload.
+test.describe('estrazioni di P', () => {
+  let p: BrowserContext;
+  let q: BrowserContext;
+  let extractionId = '';
+  let documentId = '';
+
+  test.beforeAll(async ({ browser }) => {
+    p = await browser.newContext();
+    q = await browser.newContext();
+    await signUpTestUser(await p.newPage(), 'isolamento-p');
+    await signUpTestUser(await q.newPage(), 'isolamento-q');
+
+    const bytes = readFileSync('tests/fixtures/bills/internet-armadillo.pdf');
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+    const created = await p.request.post('/api/extractions', {
+      data: {
+        supplyId: null,
+        batchId: null,
+        files: [{ sha256, contentType: 'application/pdf', sizeBytes: bytes.length }],
+      },
+    });
+    expect(created.status()).toBe(201);
+    const body = (await created.json()) as {
+      extractionId: string;
+      documents: Array<{ documentId: string; pathname: string }>;
+    };
+    extractionId = body.extractionId;
+    const [document] = body.documents;
+    if (!document) throw new Error('no planned document');
+    documentId = document.documentId;
+    const query = new URLSearchParams({ documentId, pathname: document.pathname });
+    expect(
+      (await p.request.put(`/api/e2e/blob?${query.toString()}`, { data: bytes })).status(),
+    ).toBe(204);
+    expect((await p.request.post(`/api/extractions/${extractionId}/uploaded`)).status()).toBe(200);
+    const run = await p.request.post(`/api/extractions/${extractionId}/run`);
+    expect(await run.json()).toMatchObject({ status: 'extracted' });
+  });
+
+  test.afterAll(async () => {
+    await p.close();
+    await q.close();
+  });
+
+  test('il file, l’esecuzione e la revisione di P sono di P soltanto', async () => {
+    expect((await p.request.get(`/api/documents/${documentId}`)).status()).toBe(200);
+    expect((await q.request.get(`/api/documents/${documentId}`)).status()).toBe(404);
+
+    const again = await p.request.post(`/api/extractions/${extractionId}/run`);
+    expect(again.status()).toBe(409);
+    expect(await again.json()).toMatchObject({ code: 'EXTRACTION_BUSY' });
+    expect((await q.request.post(`/api/extractions/${extractionId}/run`)).status()).toBe(404);
+
+    const pPage = await p.newPage();
+    const qPage = await q.newPage();
+    expect((await pPage.goto(`/bollette/revisione/${extractionId}`))?.status()).toBe(200);
+    expect((await qPage.goto(`/bollette/revisione/${extractionId}`))?.status()).toBe(404);
+  });
 });

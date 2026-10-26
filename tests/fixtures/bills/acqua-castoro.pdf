@@ -1,0 +1,57 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 966 >>
+stream
+BT /F1 10 Tf 40 800 Td 13 TL
+(CASTORO ACQUE) '
+(Bolletta servizio idrico integrato) '
+(Data emissione: 10/10/2024   Scadenza: 10/11/2024) '
+(Codice utenza: 00011) '
+(Periodo di fatturazione: dal 01/07/2024 al 30/09/2024) '
+() '
+(Totale bolletta: 66,00 EUR) '
+(Totale da pagare: 66,00 EUR) '
+() '
+(Dettaglio importi) '
+(Acquedotto quota variabile 1 scaglione   30 m3 x 0,500000 EUR/m3   15,00) '
+(Acquedotto quota variabile 2 scaglione   10 m3 x 1,000000 EUR/m3   10,00) '
+(Acquedotto quota fissa   3 mesi x 2,000000 EUR/mese   6,00) '
+(Fognatura   40 m3 x 0,200000 EUR/m3   8,00) '
+(Depurazione   40 m3 x 0,500000 EUR/m3   20,00) '
+(Componente UI1   40 m3 x 0,005000 EUR/m3   0,20) '
+(Componente UI2   40 m3 x 0,010000 EUR/m3   0,40) '
+(Componente UI3   40 m3 x 0,005000 EUR/m3   0,20) '
+(Componente UI4   40 m3 x 0,005000 EUR/m3   0,20) '
+(IVA 10% su 60,00   6,00) '
+() '
+(Letture \(metri cubi\)) '
+(30/06/2024   100   rilevata) '
+(30/09/2024   140   rilevata) '
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000212 00000 n 
+0000000338 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1355
+%%EOF

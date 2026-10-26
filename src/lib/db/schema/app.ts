@@ -19,6 +19,9 @@ import type {
   Band,
   BillSource,
   BillStatus,
+  DocumentContentType,
+  ExtractionErrorCode,
+  ExtractionStatus,
   IsoDate,
   LineCategory,
   LineComponent,
@@ -162,5 +165,67 @@ export const meterReadings = sqliteTable(
     index('meter_readings_user_id_idx').on(t.userId),
     index('meter_readings_supply_read_on_idx').on(t.supplyId, t.readOn),
     index('meter_readings_bill_id_idx').on(t.billId),
+  ],
+);
+
+/**
+ * One attempt to read a bill with Claude, from the upload to the confirmation. The row outlives
+ * the result: confirmed and discarded extractions keep their tokens and cost (the month's spend)
+ * with result_json cleared, since confirmed data lives in the bill.
+ */
+export const extractions = sqliteTable(
+  'extractions',
+  {
+    id: id(),
+    userId: userId(),
+    status: text('status').$type<ExtractionStatus>().notNull(),
+    supplyId: text('supply_id').references(() => supplies.id),
+    batchId: text('batch_id'),
+    model: text('model'),
+    inputTokens: integer('input_tokens'),
+    outputTokens: integer('output_tokens'),
+    costMicroUsd: integer('cost_micro_usd'),
+    /** Runs started (the first one and every «Riprova»); tokens and cost are summed across them. */
+    attempts: integer('attempts').notNull().default(0),
+    resultJson: text('result_json'),
+    errorCode: text('error_code').$type<ExtractionErrorCode>(),
+    errorMessage: text('error_message'),
+    billId: text('bill_id').references(() => bills.id),
+    startedAt: integer('started_at'),
+    finishedAt: integer('finished_at'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('extractions_user_status_idx').on(t.userId, t.status),
+    index('extractions_batch_idx').on(t.batchId),
+  ],
+);
+
+/**
+ * A file on the private Blob store: a page photo or a PDF, of an extraction or attached to a
+ * bill. uploaded_at stays null until the server has read and verified the file.
+ */
+export const documents = sqliteTable(
+  'documents',
+  {
+    id: id(),
+    userId: userId(),
+    extractionId: text('extraction_id').references(() => extractions.id),
+    billId: text('bill_id').references(() => bills.id),
+    pathname: text('pathname').notNull().unique(),
+    contentType: text('content_type').$type<DocumentContentType>().notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    pageCount: integer('page_count'),
+    sha256: text('sha256').notNull(),
+    position: integer('position').notNull(),
+    uploadedAt: integer('uploaded_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index('documents_user_id_idx').on(t.userId),
+    index('documents_bill_id_idx').on(t.billId),
+    index('documents_extraction_id_idx').on(t.extractionId),
+    uniqueIndex('documents_user_sha256_uq').on(t.userId, t.sha256),
   ],
 );
