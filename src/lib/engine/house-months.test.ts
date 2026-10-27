@@ -16,6 +16,7 @@ function supplyMonth(overrides: Partial<SupplyMonth>): SupplyMonth {
     totalCents: 0,
     commodityUnitPriceMicros: null,
     totalUnitPriceMicros: null,
+    isLowConsumption: false,
     feedInKwh: null,
     productionKwh: null,
     selfConsumptionKwh: null,

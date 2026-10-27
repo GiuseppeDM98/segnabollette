@@ -158,6 +158,14 @@ bill) leaves the month estimated: both stamps carry the same date.
   alone, **net of VAT**, the one comparable with market references.
 - `totalUnitPriceMicros` = `totalCents` ÷ consumption: everything paid per unit, VAT included.
 - Both are null without a positive consumption (flat fees, unbilled months).
+- `isLowConsumption`: the month's billed consumption is under `LOW_CONSUMPTION_SHARE` (a quarter)
+  of the **median** of the supply's months with a positive billed consumption, taken over the
+  whole series (so it does not move with the range). Such a month costs mostly its fixed shares:
+  invented example, gas in summer, 2 Smc for 12 € of which 10 € fixed, gives 6 €/Smc against
+  1,20 in a winter month of 80 Smc, a figure that is right and says nothing about the price. The two prices are still computed;
+  the unit-price chart leaves the **total** out of its line (the commodity stays), the table gives
+  it marked «consumo basso», the «Casa» card writes «consumo basso». A month just at a quarter is
+  not low.
 
 Example: 200 kWh for 20,00 €, VAT 2,00 €, fed-in credit −5,00 € → `totalCents` 1700,
 commodity 0,100000 €/kWh, total 0,085000 €/kWh.
@@ -234,3 +242,31 @@ Nothing is dated after the day of the seed.
   3 months ago, `last12` = 7 × 1000 + 3 × 3000 = 16000, average 16000 ÷ 9 = 1778.
 - Every total is **net of the fed-in credit** (`totalCents`, § 8): house spending, tiles, the sum
   of the categories and the «Totale» of the cost chart.
+- **Year over year by calendar year** (`toYearLinesSeries`, `src/lib/charts/series.ts`): over «24
+  mesi» and «Tutto» the months **shown** become one line per calendar year on a January–December
+  axis, newest year first; a year the range only touches keeps just its months inside it, a year
+  with nothing billed is left out. Values as the bars: billed consumption only (readings after
+  the last bill are not comparable), spending only in months with billed days. Over «12 mesi» the
+  bars stay (the 12 months ending at the last billed month against the 12 before), and the
+  «Ultimi 12 mesi» tiles never move with the range.
+
+## 14. The household (`src/lib/engine/household.ts`, `src/lib/services/household.ts`)
+
+- The people living in a house are a list of changes `{ validFrom, people }` typed on
+  «Forniture» (table `household_sizes`, one change per house and day, people a whole number from
+  1 to 20, never after today); each holds from its day until the day before the next. Before the
+  first change the household is **unknown**, never assumed.
+- `peopleOn(changes, day)`: the last change on or before the day. `buildHouseholdMonths(changes,
+  months)`: for each month the people on its **last day** (the «Persone in casa» column of the cost
+  table) and the changes that fall in it (the marks on the cost charts).
+- `averagePeople(changes, from, to)`: every day weighs the same — 2 people for 9 months and 3 for
+  3 months is 2,25 — and it is null unless **every** day of the period is known, so a per-person
+  figure is never made from a household known only in part.
+- The dashboards (`HouseholdView`, `src/lib/services/dashboard.ts`) take the average over the
+  tiles' two windows, from the first day of their first month to the last day of their last: the
+  supply's 12 months ending at its last billed month (or this month), the house's ending at
+  `houseEndMonth` (no window, no average). The per-person tiles divide the 12-month consumption
+  and spending by the average of those 12 months; their change compares with the 12 before
+  divided by **their** average, shown only when the periods are comparable (§ 13) and both
+  averages are known. Invented example: 2 people from 2024-01-01, 3 from 2026-04-01, window
+  2025-10-01..2026-09-30 → (182 × 2 + 183 × 3) ÷ 365 = 2,50 people.

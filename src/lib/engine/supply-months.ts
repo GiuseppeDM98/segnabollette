@@ -57,7 +57,36 @@ export function buildSupplyMonths(input: SupplyMonthsInput): SupplyMonth[] {
   if (isMetered(input.kind)) addReadingsConsumption(months, confirmed, readings, input);
   if (input.kind === 'electricity' && input.hasPhotovoltaic) addPhotovoltaic(months, readings);
 
-  return [...months.values()].map(finishMonth);
+  return markLowConsumption([...months.values()].map(finishMonth));
+}
+
+/**
+ * A month whose billed consumption is under this share of the supply's median billed month: gas
+ * in summer (2 Smc against 80 in a winter month) costs mostly its fixed shares, so its total per
+ * unit (6 €/Smc against 1,20) says nothing about the price and squeezes every other month.
+ */
+export const LOW_CONSUMPTION_SHARE = 0.25;
+
+/**
+ * The median is taken over every month of the series with a positive billed consumption, so it
+ * does not move with the range the dashboard shows (the series always covers all the data).
+ */
+function markLowConsumption(months: SupplyMonth[]): SupplyMonth[] {
+  const billed = months
+    .map((month) => month.consumption)
+    .filter((consumption): consumption is number => consumption !== null && consumption > 0)
+    .sort((a, b) => a - b);
+  if (billed.length === 0) return months;
+  const middle = Math.floor(billed.length / 2);
+  const median =
+    billed.length % 2 === 1
+      ? (billed[middle] ?? 0)
+      : ((billed[middle - 1] ?? 0) + (billed[middle] ?? 0)) / 2;
+  const threshold = median * LOW_CONSUMPTION_SHARE;
+  return months.map((month) => ({
+    ...month,
+    isLowConsumption: month.consumption !== null && month.consumption < threshold,
+  }));
 }
 
 function emptyMonth(month: MonthKey): MonthAccumulator {
@@ -74,6 +103,7 @@ function emptyMonth(month: MonthKey): MonthAccumulator {
     totalCents: 0,
     commodityUnitPriceMicros: null,
     totalUnitPriceMicros: null,
+    isLowConsumption: false,
     feedInKwh: null,
     productionKwh: null,
     selfConsumptionKwh: null,

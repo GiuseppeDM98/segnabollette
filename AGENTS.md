@@ -377,6 +377,13 @@ Database: `db:generate`, `db:migrate`, `db:studio`, `db:seed`, `db:migrate:prod`
   (`(Get-Item .).GetDirectories()` or Explorer shows it); `pnpm test:e2e` is not affected.
 - 2026-10-26 — `@vercel/cli-config` (under `@vercel/blob`) pins zod 4.1.11: an override in
   `pnpm-workspace.yaml` forces 4.6.7 (`doc/guide/dipendenze.md`); drop it when a release fixes it.
+- 2026-10-27 — A throwaway `tsx` script with top-level `await` must be `.mts` (as `.ts` it is
+  compiled to CommonJS and fails); in such a script `error instanceof DomainError` can be false
+  for a `DomainError` thrown by a service: test `error.code`.
+- 2026-10-27 — On Windows, a Python script that rewrites a source file in text mode writes CRLF
+  (`.gitattributes` wants LF, Biome then flags every line): open it with `newline=''`.
+- 2026-10-27 — Biome's `usePlaywrightValidDescribeCallback` fires on any call named `describe(…)`,
+  in a React component too: do not name a helper `describe`.
 
 ## 12. Definition of done (per session)
 

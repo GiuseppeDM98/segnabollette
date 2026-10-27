@@ -295,7 +295,7 @@ automatica contro le query senza `userId`, `Date.now()` dentro due servizi.
 | 04 | Dashboard e grafici | `feature/04-dashboard` | 03 (ritirata il 2026-10-24) | in esercizio il 2026-10-24, PR #9; ritirata il 2026-10-24 |
 | 05 | Messa in esercizio: Vercel, Turso, Blob | `feature/05-deploy` | 04 (ritirata il 2026-10-24) | in esercizio il 2026-10-25, PR #11; ritirata il 2026-10-25 |
 | 06 | Caricamento su Blob ed estrazione con Claude | `feature/06-extraction` | 05 (ritirata il 2026-10-25) | in esercizio il 2026-10-26, PR #14; ritirata il 2026-10-26 |
-| 07 | Import multiplo | `feature/07-bulk-import` | 06 (ritirata il 2026-10-26) | scritta 2026-10-24; riletta 2026-10-24; implementata il 2026-10-26, branch `feature/07-bulk-import` |
+| 07 | Import multiplo | `feature/07-bulk-import` | 06 (ritirata il 2026-10-26) | in esercizio il 2026-10-27, PR #18 |
 | 08 | Riferimenti di mercato | `feature/08-market-references` | 07 | scritta 2026-10-24; riletta 2026-10-24 |
 | 09 | PWA, fotocamera e coda offline | `feature/09-pwa-offline` | 08 | scritta 2026-10-24; riletta 2026-10-24 |
 
@@ -304,8 +304,9 @@ vede nei grafici; dopo la 05 lo fa dal telefono in produzione; la 06 porta l'est
 bollette passate, la 08 il confronto col mercato, la 09 l'app installata e offline. La 08 dipende
 dalla 07 solo per l'ordine (un branch alla volta), non per codice: la 08 tocca il grafico del costo
 unitario (04) e lo schema (02). Una spec parte solo quando la precedente è **in esercizio** (§ 7).
-La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24), la 05 il 2026-10-25, la 06 il 2026-10-26:
-prossimo passo, il prompt in fondo alla 07.
+La 01, la 02, la 03 e la 04 sono ritirate (2026-10-24), la 05 il 2026-10-25, la 06 il 2026-10-26;
+la 07 è in esercizio dal 2026-10-27: prossimo passo, il suo ritiro (`PROMPT-RITIRO.md`), poi il
+prompt in fondo alla 08.
 
 ## 6. Contratti condivisi fra spec (da usare IDENTICI: nome, firma, file)
 

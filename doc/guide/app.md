@@ -16,7 +16,7 @@ logo).
 | Route | Query | What it shows |
 |---|---|---|
 | `/` | `casa=<houseId>` (only with more than one house), `periodo=12\|24\|tutto` | «Casa»: period selector, the two tiles, the house costs chart, then one `supply-card` per non-archived supply with its latest bill and its last billed month (§ 9); empty state «Comincia creando la tua casa» |
-| `/forniture` | `archiviate=1` | Houses (create, rename, delete with a summary) and their supplies |
+| `/forniture` | `archiviate=1` | Houses (create, rename, delete with a summary), their supplies, and «Persone in casa» per house (§ 9) |
 | `/forniture/[id]` | `periodo=12\|24\|tutto` | One supply: facts, «Modifica», «Archivia»/«Riattiva», «Elimina», period selector and charts (§ 9; without bills «Ancora nessuna bolletta: aggiungi la prima»), its bills, its last 10 readings |
 | `/bollette` | `fornitura=<supplyId>`, `pagina=<n>` | Bills, newest first, 50 a page |
 | `/bollette/nuova` | `fornitura=<supplyId>` | Without the query: the choice of the non-archived supplies; with it: `BillForm` (an archived supply opens too: past bills of a closed supply) |
@@ -52,6 +52,8 @@ foreign `fornitura` filter gives an empty list, and the page has already answere
   bill back into the form's input).
 - `src/lib/services/readings.ts`: `listReadings`, `suggestedRegisters`, `latestReadings` (§ 6).
 - `src/lib/services/dashboard.ts`: `getSupplyDashboard`, `getHouseDashboard` (§ 9).
+- `src/lib/services/household.ts`: `listHousehold(db, userId, houseId)` (the changes, oldest
+  first; a foreign house is `NOT_FOUND`).
 
 Two reads are guarded twice: `getSupplyDetail` reads the supply and then its house with the user,
 `getBillDetail` the bill and then its supply. Dropping `userId` from `getSupply` or `getBill` alone
@@ -99,7 +101,9 @@ export async function saveBillAction(billId: string | null, input: unknown) {
   pages pass `saveBillAction.bind(null, null)` (new) or `saveBillAction.bind(null, bill.id)`
   (edit). The id travels in the POST body, so the service checks it again (the isolation test
   swaps it).
-- Actions: `forniture/actions.ts` (houses and supplies), `bollette/actions.ts` (`saveBillAction`
+- Actions: `forniture/actions.ts` (houses and supplies; `addHouseholdSizeAction(houseId, {
+  validFrom, people })` with `today = romeToday(Date.now())` and `deleteHouseholdSizeAction(id)`),
+  `bollette/actions.ts` (`saveBillAction`
   → `{ billId }`, `deleteBillAction` → `{ supplyId }`), `letture/actions.ts`
   (`createReadingsAction` with `today = romeToday(Date.now())`, `deleteReadingAction`),
   `impostazioni/actions.ts` (`setTheme`). Each revalidates the pages that show the data.
@@ -268,7 +272,8 @@ the user: a foreign id is `NOT_FOUND`, a 404. The pages read `?periodo=` with `d
 
 **Points** — `src/lib/charts/series.ts`, pure: `toConsumptionSeries`, `toUnitPriceSeries`,
 `toCostSeries`, `toHouseCostSeries`, `toYearOverYearSeries(months, endMonth, 'consumption' |
-'cost')`, `percentChange`, and the `ReferenceLine` type (market references; it lives in `src/lib`
+'cost')`, `toYearLinesSeries(months, 'consumption' | 'cost')` (one line per calendar year,
+`calcoli.md` § 13), `percentChange`, and the `ReferenceLine` type (market references; it lives in `src/lib`
 because `src/lib` never imports from `src/components`). It is the one place beside `format.ts`
 that divides by 100 and by 10⁶: points carry euros and euros per unit. A missing value is `null`,
 never 0 (a band without consumption, a month without price, a cost month without billed days), so
@@ -301,17 +306,36 @@ print «0,47 €»); quantities `formatQuantity`; the tiles take cents and micro
 - `UnitPriceChart({ points, unit, references?, note? })`: «Materia prima (senza IVA)» and «Costo
   totale per unità (IVA inclusa)», 2 px lines with ringed dots and gaps where there is no
   consumption; references dashed (empty until the market references exist); water passes the note
-  «Per l'acqua non esiste una serie nazionale di riferimento: nessun confronto.».
+  «Per l'acqua non esiste una serie nazionale di riferimento: nessun confronto.». A month of low
+  consumption (`isLowConsumption`, `calcoli.md` § 8) is a gap in the total line only: its point
+  carries the value in `lowConsumptionTotal`, the table and the tooltip give it as «6,000000 €/Smc
+  · consumo basso», and the note «Mesi con consumo basso: costo totale per unità non
+  mostrato.» appears when the range has one.
 - `CostsChart({ points, mode })`: `supply` the seven categories + «Energia ceduta» (hatched grey,
   below zero); `flat` the total only (no legend: one series); `house` the seven + «Canoni e
   tributi» + «Energia ceduta». Categories that are zero over the whole range are left out. The
-  tooltip lists the non-zero segments and «Totale», net of the fed-in credit.
-- `YearOverYearChart({ consumption, cost, unit, totals })`: «quest'anno» / «anno prima» side by
-  side, a «Consumo / Spesa» switch for metered supplies (`aria-pressed`), and above it the
-  `KpiTile`s «Ultimi 12 mesi · consumo» and «· spesa» (spending only for flat fees).
-- `KpiTile({ label, value, change })` (`data-testid="kpi-tile"`): a number shows «+10,0 % sui 12
-  mesi precedenti», `null` «— sui 12 mesi precedenti» (the periods are not comparable), absent no
-  line.
+  tooltip lists the non-zero segments and «Totale», net of the fed-in credit. With `household`
+  (the house has «Persone in casa»): a thin dashed `--color-ink-muted` line in each month where
+  the people changed, labelled «3 persone» above the plot (24 px top margin, never on the bars),
+  and a table column «Persone in casa» (the people on the month's last day, «—» before the
+  first change).
+- `YearOverYearChart({ consumption, cost, unit, totals, yearLines? })`: without `yearLines`
+  («12 mesi») «quest'anno» / «anno prima» bars side by side; with them («24 mesi», «Tutto») one
+  2 px line per calendar year on «gen»…«dic»: the current year `--color-yoy-current`, the year
+  before `--color-yoy-previous`, every older year `--color-yoy-older` (two lighter greys side by
+  side fail the normal-vision check), drawn oldest first so the current year is on top, each line
+  ending with its year in `ink-soft` with a surface halo (44 px right margin); the legend and the
+  table columns are the years, newest first, the table one row per month. A «Consumo / Spesa»
+  switch for metered supplies (`aria-pressed`), and above it the `KpiTile`s «Ultimi 12 mesi ·
+  consumo» and «· spesa» (spending only for flat fees), then, when `totals.people.last12` is known,
+  «· consumo per persona» and «· spesa per persona» with the note «2,5 persone in media».
+- `KpiTile({ label, value, change, note? })` (`data-testid="kpi-tile"`): a number shows «+10,0 %
+  sui 12 mesi precedenti», `null` «— sui 12 mesi precedenti» (the periods are not comparable),
+  absent no line; `note` says what the figure rests on («2,5 persone in media», `formatPeople`).
+- `HouseholdEditor` (`src/components/houses/household-editor.tsx`, in each `HousePanel`):
+  «Persone in casa», the changes «dal 10/03/2022 · 2 persone» with «Elimina» (asked in
+  `ConfirmDialog`), and a form «Dal» (max today) · «Persone» (1–20) · «Aggiungi»; a wrong change is
+  deleted and typed again, there is no edit in place.
 - `PeriodSelector({ current, hrefFor })`: «12 mesi» · «24 mesi» · «Tutto» as links, the current one
   with `aria-current="true"`. On «Casa» its links keep `?casa=` and the house select keeps
   `?periodo=`.
@@ -333,12 +357,14 @@ print «0,47 €»); quantities `formatQuantity`; the tiles take cents and micro
   contrast, the table) apply inside these constraints and the tokens of DESIGN.md.
 
 **Pages** — `/forniture/[id]`: a metered supply shows consumption, unit price, costs, year over
-year (four `chart-frame`); a flat fee costs and year over year (two, one tile). The year-over-year
-points end at `lastBilledMonth ?? monthKeyOf(today)`. «Casa»: the line «Ultimi 12 mesi fatturati:
+year (four `chart-frame`); a flat fee costs and year over year (two, one tile; two with a household).
+Year over year follows the range: «12 mesi» the bars ending at `lastBilledMonth ??
+monthKeyOf(today)`, «24 mesi» and «Tutto» the year lines of the months shown. «Casa»: the line «Ultimi 12 mesi fatturati:
 <from> – <to>» (absent without a billed month), the tiles «Spesa degli ultimi 12 mesi» (change only
-when comparable) and «Spesa media mensile», `CostsChart mode="house"` (or «Ancora nessuna bolletta
+when comparable), «Spesa media mensile» and, when the people are known over the whole window,
+«Spesa per persona, 12 mesi» (three tiles from `sm`), `CostsChart mode="house"` (or «Ancora nessuna bolletta
 in questa casa» when no supply, archived ones included, has a billed month), then the cards with
-one more line from `lastBilled`: month · consumption · total unit price for metered supplies, month
+one more line from `lastBilled`: month · consumption · total unit price (or «consumo basso») for metered supplies, month
 · spending for flat fees, «Nessun mese fatturato» without one. No second list under the cards.
 
 At 390 px the Y axes need room: 72 px for quantities («240 kWh»), 80 px for euros, 108 px for unit

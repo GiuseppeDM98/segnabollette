@@ -21,3 +21,5 @@ export const SupplyInputSchema = z.object({
 export const SupplyPatchSchema = SupplyInputSchema.omit({ kind: true }).partial();
 
 export const ArchivedSchema = z.boolean();
+
+export const HouseholdSizeSchema = z.object({ validFrom: z.string(), people: z.number() });

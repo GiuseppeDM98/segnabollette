@@ -13,22 +13,30 @@
  * oldest of those months among its active supplies, so that every active supply is billed in the
  * whole window and a supply billed quarterly does not look cheaper than one billed monthly.
  * Every total is net of the credit for energy fed into the grid (the engine's totalCents).
+ *
+ * The household (the people in the house over time) rides along when the house has one: the
+ * people of each month shown, and their day-weighted average over the tiles' two 12-month windows
+ * for the per-person tiles.
  */
 
 import type { Db } from '@/lib/db/create-db';
 import * as billsRepository from '@/lib/db/repositories/bills';
+import * as householdRepository from '@/lib/db/repositories/household-sizes';
 import type { HouseRow } from '@/lib/db/repositories/houses';
 import * as housesRepository from '@/lib/db/repositories/houses';
 import * as readingsRepository from '@/lib/db/repositories/readings';
 import type { SupplyRow } from '@/lib/db/repositories/supplies';
 import * as suppliesRepository from '@/lib/db/repositories/supplies';
-import { daysInMonth, monthKeyOf, shiftMonth } from '@/lib/domain/dates';
+import { daysInMonth, monthEnd, monthKeyOf, monthStart, shiftMonth } from '@/lib/domain/dates';
 import type { IsoDate, MonthKey } from '@/lib/domain/types';
 import {
+  averagePeople,
+  buildHouseholdMonths,
   buildHouseMonths,
   buildSupplyMonths,
   type EngineBill,
   type EngineReading,
+  type HouseholdMonth,
   type HouseMonth,
   rolling12,
   type SupplyMonth,
@@ -36,6 +44,17 @@ import {
 import { DomainError } from '@/lib/errors';
 
 export type DashboardRange = '12' | '24' | 'all';
+
+export interface HouseholdView {
+  /** One entry per month shown (range): the people at the month's end and the changes in it. */
+  months: HouseholdMonth[];
+  /**
+   * The people over the 12 months ending at the tiles' end month, and over the 12 before, each day
+   * weighing the same; null unless every day of the window is known.
+   */
+  last12: number | null;
+  previous12: number | null;
+}
 
 export interface SupplyDashboard {
   supply: SupplyRow;
@@ -47,6 +66,8 @@ export interface SupplyDashboard {
   /** Both 12-month periods have 12 months with bills: only then the change is shown. */
   isComparable: boolean;
   lastBilledMonth: MonthKey | null;
+  /** The household of the supply's house; null when the house has none. */
+  household: HouseholdView | null;
 }
 
 export interface HouseDashboard {
@@ -67,6 +88,8 @@ export interface HouseDashboard {
   rolling: { last12: number; previous12: number; isComparable: boolean } | null;
   /** rolling.last12 over the months of its window with billed days, rounded; null when there are none. */
   averageMonthlyCents: number | null;
+  /** null when the house has no household. */
+  household: HouseholdView | null;
 }
 
 interface SupplyData {
@@ -151,6 +174,26 @@ function lastBilledMonthOf(series: readonly SupplyMonth[]): MonthKey | null {
   return billed.at(-1)?.month ?? null;
 }
 
+async function loadHousehold(
+  db: Db,
+  userId: string,
+  houseId: string,
+  months: readonly MonthKey[],
+  endMonth: MonthKey | null,
+): Promise<HouseholdView | null> {
+  const rows = await householdRepository.listHouseholdSizes(db, userId, houseId);
+  if (rows.length === 0) return null;
+  const changes = rows.map(({ validFrom, people }) => ({ validFrom, people }));
+  const over = (from: MonthKey, to: MonthKey) =>
+    averagePeople(changes, monthStart(from), monthEnd(to));
+  return {
+    months: buildHouseholdMonths(changes, months),
+    last12: endMonth === null ? null : over(shiftMonth(endMonth, -11), endMonth),
+    previous12:
+      endMonth === null ? null : over(shiftMonth(endMonth, -23), shiftMonth(endMonth, -12)),
+  };
+}
+
 function monthsBetween<T extends { month: MonthKey }>(
   series: readonly T[],
   from: MonthKey,
@@ -179,14 +222,22 @@ export async function getSupplyDashboard(
     endMonth,
   );
   const rolling = rolling12(yearOverYearMonths, endMonth);
+  const months = monthsBetween(series, window.fromMonth, window.toMonth);
   return {
     supply,
-    months: monthsBetween(series, window.fromMonth, window.toMonth),
+    months,
     yearOverYearMonths,
     rolling,
     isComparable:
       rolling.last12.monthsWithBills === 12 && rolling.previous12.monthsWithBills === 12,
     lastBilledMonth,
+    household: await loadHousehold(
+      db,
+      userId,
+      supply.houseId,
+      months.map((month) => month.month),
+      endMonth,
+    ),
   };
 }
 
@@ -271,6 +322,13 @@ export async function getHouseDashboard(
     houseEndMonth,
     rolling: tiles?.rolling ?? null,
     averageMonthlyCents: tiles?.averageMonthlyCents ?? null,
+    household: await loadHousehold(
+      db,
+      userId,
+      houseId,
+      houseMonths.map((month) => month.month),
+      houseEndMonth,
+    ),
   };
 }
 

@@ -1,7 +1,13 @@
 # 07 — Import multiplo
 
 > **Stato**: scritta 2026-10-24; riletta in modo adversariale il 2026-10-24: 19 rilievi, 2 decisioni
-> (D-41, D-57). Implementata il 2026-10-26, branch `feature/07-bulk-import`.
+> (D-41, D-57). Implementata il 2026-10-26, branch `feature/07-bulk-import`. In esercizio il
+> 2026-10-27, PR #18: collaudo F in produzione su un lotto di 12 bollette della luce (12 estratte,
+> 0 fallite, 12 confermate dalla revisione del lotto), costo reale 2,00 $ contro una stima di
+> 3,74 $. Per scelta dell'owner le altre bollette passate di una casa non sono passate dall'import:
+> lette in locale, controllate con lo schema e i controlli dell'app, confermate dall'owner su una
+> tabella in chat e scritte in produzione con `confirmBill` da uno script usa e getta (senza
+> file allegati); un'altra casa è rimasta fuori.
 > **Branch**: `feature/07-bulk-import` da `main` aggiornato dopo il merge della 06. **Dipende da**: 06
 > (ritirata il 2026-10-26).
 > **Indice**: [00-INDICE.md](00-INDICE.md) — decisioni D-7, D-15, D-17, D-18, D-24, D-41, D-42,

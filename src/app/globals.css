@@ -70,6 +70,7 @@
   --color-price-total: #eb6834;
   --color-yoy-current: #2a78d6;
   --color-yoy-previous: #8f9a94;
+  --color-yoy-older: #c4cac6;
   --color-reference-wholesale: #1baf7a;
   --color-reference-arera: #eda100;
 
@@ -134,6 +135,7 @@
     --color-price-total: #d95926;
     --color-yoy-current: #3987e5;
     --color-yoy-previous: #6f8279;
+    --color-yoy-older: #465650;
     --color-reference-wholesale: #199e70;
     --color-reference-arera: #c98500;
   }
@@ -184,6 +186,7 @@
       --color-price-total: #d95926;
       --color-yoy-current: #3987e5;
       --color-yoy-previous: #6f8279;
+      --color-yoy-older: #465650;
       --color-reference-wholesale: #199e70;
       --color-reference-arera: #c98500;
     }

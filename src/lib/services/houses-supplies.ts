@@ -9,6 +9,7 @@ import type { Db } from '@/lib/db/create-db';
 import * as billsRepository from '@/lib/db/repositories/bills';
 import * as documentsRepository from '@/lib/db/repositories/documents';
 import * as extractionsRepository from '@/lib/db/repositories/extractions';
+import * as householdRepository from '@/lib/db/repositories/household-sizes';
 import type { HouseRow } from '@/lib/db/repositories/houses';
 import * as housesRepository from '@/lib/db/repositories/houses';
 import * as readingsRepository from '@/lib/db/repositories/readings';
@@ -151,7 +152,10 @@ export async function deleteHouse(
     userId,
     supplies.map((supply) => supply.id),
   );
-  queries.push(housesRepository.deleteHouseQuery(db, userId, houseId));
+  queries.push(
+    householdRepository.deleteHouseholdSizesOfHouseQuery(db, userId, houseId),
+    housesRepository.deleteHouseQuery(db, userId, houseId),
+  );
   await runBatch(db, queries);
   return { documentPathnames };
 }

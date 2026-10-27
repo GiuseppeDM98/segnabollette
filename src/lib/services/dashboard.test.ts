@@ -11,6 +11,7 @@ import { monthEnd, monthRange, monthStart } from '@/lib/domain/dates';
 import type { MonthKey } from '@/lib/domain/types';
 import { confirmBill } from './bills';
 import { getHouseDashboard, getSupplyDashboard } from './dashboard';
+import { addHouseholdSize } from './household';
 import { archiveSupply, createSupply } from './houses-supplies';
 import { createSelfReadings } from './readings';
 
@@ -298,5 +299,66 @@ describe('getHouseDashboard', () => {
       getHouseDashboard(db, otherId, houseId, { today: TODAY, range: '24' }),
       'NOT_FOUND',
     );
+  });
+});
+
+describe('the household on the dashboards', () => {
+  it('gives the people of each month shown and their day-weighted average over the tiles', async () => {
+    const { db, userId } = await setup();
+    const { houseId, supplyId } = await createHouseWithSupply(db, userId);
+    await addMonthlyElectricity(db, userId, supplyId, monthRange('2024-10', LAST_MONTH), 1000);
+    await addHouseholdSize(
+      db,
+      userId,
+      { houseId, validFrom: '2024-01-01', people: 2 },
+      {
+        today: TODAY,
+      },
+    );
+    await addHouseholdSize(
+      db,
+      userId,
+      { houseId, validFrom: '2026-04-01', people: 3 },
+      {
+        today: TODAY,
+      },
+    );
+
+    const supply = await getSupplyDashboard(db, userId, supplyId, { today: TODAY, range: '12' });
+    const house = await getHouseDashboard(db, userId, houseId, { today: TODAY, range: '12' });
+
+    // 2025-10-01..2026-03-31: 182 days with 2 people; 2026-04-01..2026-09-30: 183 days with 3.
+    const last12 = (182 * 2 + 183 * 3) / 365;
+    for (const household of [supply.household, house.household]) {
+      expect(household?.months.map((month) => month.month)).toEqual(
+        monthRange('2025-11', '2026-10'),
+      );
+      expect(household?.months.find((month) => month.month === '2026-03')?.people).toBe(2);
+      expect(household?.months.find((month) => month.month === '2026-04')?.changes).toEqual([
+        { validFrom: '2026-04-01', people: 3 },
+      ]);
+      expect(household?.last12).toBeCloseTo(last12);
+      expect(household?.previous12).toBe(2);
+    }
+  });
+
+  it('has no household for a house without one, and no average without a tiles window', async () => {
+    const { db, userId } = await setup();
+    const { houseId } = await createHouseWithSupply(db, userId);
+
+    const before = await getHouseDashboard(db, userId, houseId, { today: TODAY, range: '12' });
+    await addHouseholdSize(
+      db,
+      userId,
+      { houseId, validFrom: '2024-01-01', people: 2 },
+      {
+        today: TODAY,
+      },
+    );
+    const after = await getHouseDashboard(db, userId, houseId, { today: TODAY, range: '12' });
+
+    expect(before.household).toBeNull();
+    expect(after.household?.months).toHaveLength(12);
+    expect(after.household?.last12).toBeNull();
   });
 });

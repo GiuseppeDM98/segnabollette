@@ -31,14 +31,17 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (`main` only, other builds skipped by `vercel.json`), Turso in `aws-eu-west-1`, migrated from the
   owner's machine (`pnpm db:migrate:prod`, `scripts/production-target.ts`) → `doc/guide/deploy.md`,
   SETUP.md. Versions pinned in `doc/v1/00-INDICE.md` T-1.
-- **Latest (2026-10-26)**: spec 07 implemented, PR open, branch `feature/07-bulk-import`: the bulk
-  import (`/bollette/importa`, `doc/guide/estrazione.md` § 13). Local verification: A, C, D and G
-  passed; the guided tour skipped by the owner. Dependencies audited (`doc/guide/dipendenze.md`);
-  an override in `pnpm-workspace.yaml` forces zod 4.6.7 under `@vercel/cli-config`, the owner's
-  exception to WORKFLOW rule 8. **Next**: the owner's past bills in production after the merge
-  (phase F), then the closing commit.
-  **Still open** from 06: a re-billed month, the «IVA inclusa» warning and the summary-only prompt
-  example await their first real bill (`doc/guide/estrazione.md` § 11).
+- **Latest (2026-10-27)**: spec 07 in service (PR #18): the bulk import (`/bollette/importa`,
+  `doc/guide/estrazione.md` § 13). Verified locally (A, C, D, G; the tour skipped by the owner) and
+  in production on a batch of 12 real bills: 12 extracted and confirmed from the batch review, 2,00 $
+  against a 3,74 $ estimate. The owner's other past bills were read by hand and written with
+  `confirmBill` after the owner confirmed them in chat (the owner's choice; no files attached).
+  The zod override in `pnpm-workspace.yaml` (`doc/guide/dipendenze.md`) held in production.
+  In the same closing session, at the owner's request: the unit price hides the total of a month
+  of low consumption, year over year follows the range (lines per calendar year over 24 months
+  and everything), the people in each house over time (migration 0003, marks on the cost charts,
+  per-person tiles), and gas reviews no longer carry a band. **Still open**: a re-billed month and the «IVA inclusa» warning still await a real extraction
+  (`doc/guide/estrazione.md` § 11). **Next**: retire spec 07, then spec 08.
 
 ## Architecture Snapshot (database, access, test harness, data model, engine, the manual-entry UI, the dashboard, the extraction and the bulk import exist; the rest as specified)
 - **Exists**: `src/lib/env-schema.ts` + `env.ts` (the only reader of `process.env`);
@@ -48,8 +51,9 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   `safeNextPath`); `src/proxy.ts` (optimistic redirect on cookie presence); pages `/accedi` and
   `/registrati`, and the `(app)` layout guard; `src/lib/container.ts`
   (`getDb`); `src/lib/errors.ts`; `src/lib/services/user-data.ts` (`deleteAllUserData`).
-- **Model** (exists): repositories `houses`, `supplies`, `bills`, `readings` and services
-  `houses-supplies.ts`, `bills.ts` (`confirmBill` with overlaps and replaced bills), `readings.ts`;
+- **Model** (exists): repositories `houses`, `supplies`, `bills`, `readings`, `household-sizes`
+  and services `houses-supplies.ts`, `bills.ts` (`confirmBill` with overlaps and replaced bills),
+  `readings.ts`, `household.ts` (the people in a house over time);
   `src/lib/domain/*` (types, dates, money, `BillInputSchema`, checks), `src/lib/format.ts`.
 - **Engine** (exists): `src/lib/engine/*` — `buildSupplyMonths`, `buildHouseMonths`, `rolling12`,
   `yearOverYear`, pure; seed data in `scripts/seed-data.ts` (`buildSeedBills`).
@@ -65,7 +69,9 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   `getHouseDashboard`), pure chart points in `src/lib/charts/series.ts` (euros and €/unit, the
   `ReferenceLine` type), charts in `src/components/charts/*` (`recharts.ts` the only Recharts
   import, `ChartFrame` with its «Vedi i dati» table, `ConsumptionChart`, `UnitPriceChart`,
-  `CostsChart`, `YearOverYearChart`, `KpiTile`, `PeriodSelector`) on `/` and `/forniture/[id]`.
+  `CostsChart`, `YearOverYearChart`, `KpiTile`, `PeriodSelector`) on `/` and `/forniture/[id]`;
+  the household per month and its day-weighted average in `src/lib/engine/household.ts`, edited
+  by `src/components/houses/household-editor.tsx` on `/forniture`.
 - **Extraction** (exists): `src/lib/blob/*` (`BlobStore`, Vercel and disk stores, `upload-client.ts`),
   `src/lib/extraction/*` (schema with sentinels, prompt, pricing, Anthropic and fake extractors,
   `verify-document`, `validate`, `to-bill-input`, `testing/`), repositories `documents` and
@@ -83,7 +89,7 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   `src/lib/extraction/anthropic-extractor.ts`, `src/lib/blob/vercel-blob-store.ts`; services reach
   them through `src/lib/container.ts` (fakes under `E2E_FAKE_SERVICES=1`).
 - Data: one schema for every utility — `houses`, `supplies`, `bills`, `bill_lines` (each line with
-  its own competence period), `meter_readings`; `documents` and `extractions`;
+  its own competence period), `meter_readings`, `household_sizes`; `documents` and `extractions`;
   `reference_prices` (08, PUN only). No ON DELETE CASCADE on app tables (Turso does not enforce
   foreign keys): explicit deletes. Money in integer cents, unit prices in integer micro-euros,
   calendar days as `YYYY-MM-DD`.
@@ -102,12 +108,16 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   (bands, estimated months, readings not yet billed, photovoltaic), unit price (commodity and
   total), costs by category (fed-in credit below zero), year over year with the 12-month tiles —
   and on «Casa» the house costs, two tiles and the last billed month on each card; 12 / 24 months /
-  everything, a data table under every chart. → `doc/guide/app.md` § 9, `doc/guide/calcoli.md` § 13.
+  everything, a data table under every chart. → `doc/guide/app.md` § 9, `doc/guide/calcoli.md`
+  § 8, § 13.
+- **People in the house** (exists since 2026-10-27): a timeline per house typed on «Forniture»
+  («dal <data> N persone»), a mark on the cost charts where it changes, and per-person tiles over
+  the 12 months when the people are known on every day. → `doc/guide/calcoli.md` § 14.
 - **Production** (exists since 2026-10-25): Vercel, Turso, two private Blob stores, SETUP.md. → `doc/guide/deploy.md`.
 - **Extraction** (exists since 2026-10-25): PDF or up to 10 photos to private Blob, Claude Opus 5.5
   only at the click on «Estrai» after the estimate, review and confirm, files reopened from the bill,
   cost recorded. → `doc/guide/estrazione.md`.
-- **Bulk import** (implemented 2026-10-26): up to 50 bills at once, duplicates skipped in the
+- **Bulk import** (exists since 2026-10-27): up to 50 bills at once, duplicates skipped in the
   browser, the estimate before «Avvia estrazione», a queue of two run by the browser with the
   screen kept on, a pause when Anthropic does not answer, batches resumed from «Lotti in sospeso»,
   the review from the oldest bill with «Conferma e passa alla prossima». →

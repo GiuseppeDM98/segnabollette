@@ -79,6 +79,11 @@ export interface SupplyMonth {
   commodityUnitPriceMicros: number | null;
   /** totalCents per unit. */
   totalUnitPriceMicros: number | null;
+  /**
+   * Billed consumption under a quarter of the supply's median billed month (LOW_CONSUMPTION_SHARE):
+   * the month's total per unit is then mostly its fixed shares, and the charts leave it out.
+   */
+  isLowConsumption: boolean;
   feedInKwh: number | null;
   productionKwh: number | null;
   selfConsumptionKwh: number | null;

@@ -1,7 +1,14 @@
 export { type BandShares, bandSharesOfBill } from './bands';
 export { buildHouseMonths, type HouseCostCategory, type HouseMonth } from './house-months';
+export {
+  averagePeople,
+  buildHouseholdMonths,
+  type HouseholdChange,
+  type HouseholdMonth,
+  peopleOn,
+} from './household';
 export { dailyFromReadings, pickReadings } from './readings';
-export { buildSupplyMonths } from './supply-months';
+export { buildSupplyMonths, LOW_CONSUMPTION_SHARE } from './supply-months';
 export type {
   CostBreakdown,
   EngineBill,

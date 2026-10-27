@@ -1,6 +1,6 @@
 # Draft release
 
-> 2026-10-24 – 2026-10-26
+> 2026-10-24 – 2026-10-27
 
 - Added the look of the whole app: a savings-passbook design with aligned figures and clear tables, light and dark themes, and a five-item navigation bar at the bottom on phones and at the side on computers.
 - Fixed the last month under every chart, whose final digit was cut off on phones.
@@ -8,7 +8,7 @@
 
 **Casa**
 
-- Added the home page: the house's spending over its last 12 billed months with the monthly average, a chart of costs by category for the whole house, then for each supply its latest bill, its last billed month («set 2026 · 200 kWh · 0,2365 €/kWh») and one-tap buttons for a new bill, an uploaded bill or a meter reading. With more than one house, a selector picks which one to show.
+- Added the home page: the house's spending over its last 12 billed months with the monthly average and, when you have said who lives there, the spending per person, then a chart of costs by category for the whole house and, for each supply, its latest bill, its last billed month («set 2026 · 200 kWh · 0,2365 €/kWh», or «consumo basso» when the month used almost nothing) and one-tap buttons for a new bill, an uploaded bill or a meter reading. With more than one house, a selector picks which one to show.
 - Added the period choice for the charts: 12 months, 24 months or everything, kept when you switch house.
 
 **Bollette**
@@ -28,9 +28,10 @@
 **Forniture**
 
 - Added houses and supplies: electricity, gas, water, internet and phone, TARI, with the POD/PDR code tidied up when saved (spaces and dashes removed, letters in capitals) and solar panels for electricity. Supplies can be archived, and deleting a house first tells you how many supplies, bills and readings go with it.
-- Added charts on each supply's page: consumption per month by band (estimated months hatched, readings not yet billed striped, solar self-consumption and energy fed into the grid), unit price for energy alone and all-in, costs by category with the fed-in credit below zero, and this year against the year before. Flat fees show costs and year over year only.
-- Added the 12-month tiles: consumption and spending of the last 12 billed months, with the change against the 12 before («+10,0 % sui 12 mesi precedenti») only when both years have a bill every month.
+- Added charts on each supply's page: consumption per month by band (estimated months hatched, readings not yet billed striped, solar self-consumption and energy fed into the grid), unit price for energy alone and all-in (a month of almost no consumption, like gas in summer, leaves the all-in price out instead of squeezing the chart, and its table marks it «consumo basso»), costs by category with the fed-in credit below zero, and year over year: over 12 months the last 12 billed months beside the same months a year earlier, over 24 months or everything one line per calendar year from January to December, each ending with its year. Flat fees show costs and year over year only.
+- Added the 12-month tiles: consumption and spending of the last 12 billed months, and the same per person when you have said who lives in the house, with the change against the 12 before («+10,0 % sui 12 mesi precedenti») only when both years have a bill every month.
 - Added «Vedi i dati» under every chart: the same figures as a table, readable with a screen reader and on narrow screens.
+- Added «Persone in casa» to each house: note how many people live there and from when («dal 10/03/2022 · 2 persone»). The cost charts mark the month it changes («3 persone») and their tables list the people month by month.
 
 **Impostazioni**
 
@@ -45,7 +46,6 @@
 - Added «Importa più bollette»: choose up to 50 past bills at once, a PDF or a photo each, and the app skips files already stored or chosen twice, then shows what extracting the rest would cost («3 bollette pronte · 3 pagine PDF · 0 foto · costo stimato circa 0,90 $»). Extraction starts only at «Avvia estrazione» and runs two bills at a time from your browser, keeping the screen on.
 - Added pausing and resuming: when Anthropic does not answer the queue stops with «Riprendi», and a batch left halfway, because the page was closed, waits in «Lotti in sospeso» with what finishing it would cost.
 - Added the review of a batch from its oldest bill: each bill has «Conferma e passa alla prossima», which opens the next one until the batch is done.
-
 **Deploy**
 
 - Added a setup guide that takes you from the clone to your own deployment on Vercel, Turso and private file storage in Europe, with your own Anthropic API key and a spending limit, ending with registration closed after your account.

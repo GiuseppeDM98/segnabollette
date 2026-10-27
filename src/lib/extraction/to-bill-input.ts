@@ -36,9 +36,12 @@ function textOrNull(value: string): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
-function toLine(line: ExtractionLine, bill: Extraction): BillLineInput {
+function toLine(line: ExtractionLine, bill: Extraction, kind: SupplyKind | null): BillLineInput {
   // A line with half a period cannot be trusted: it takes the bill's whole period.
   const ownPeriod = line.periodStart !== '' && line.periodEnd !== '';
+  // Bands exist on electricity only, and the form shows the band only there: a «single» the model
+  // put on a gas line would block «Conferma» with nothing the person could change (2026-10-27).
+  const band = line.band === 'none' || (kind !== null && kind !== 'electricity') ? null : line.band;
   return {
     description: line.description,
     category: line.category,
@@ -49,7 +52,7 @@ function toLine(line: ExtractionLine, bill: Extraction): BillLineInput {
     quantityUnit: line.quantityUnit === 'none' ? null : line.quantityUnit,
     unitPriceMicros: line.unitPriceMicros === 0 ? null : line.unitPriceMicros,
     amountCents: line.amountCents,
-    band: line.band === 'none' ? null : line.band,
+    band,
     isRecalculation: line.isRecalculation,
     isEstimated: line.isEstimated,
     vatRateBp: line.vatRatePercent < 0 ? null : Math.round(line.vatRatePercent * 100),
@@ -116,7 +119,7 @@ export function toBillInput(extraction: Extraction, context: ToBillInputContext)
     calorificValueGj:
       isGas && extraction.calorificValueGj !== 0 ? extraction.calorificValueGj : null,
     isEstimated: extraction.consumptionEstimated,
-    lines: extraction.lines.map((line) => toLine(line, extraction)),
+    lines: extraction.lines.map((line) => toLine(line, extraction, kind)),
     readings,
     overlapDecision: null,
   };

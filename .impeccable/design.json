@@ -736,6 +736,23 @@
           "#ebf0ed"
         ]
       },
+      "yoy-older": {
+        "role": "chart",
+        "displayName": "Yoy Older",
+        "canonical": "#c4cac6",
+        "cssVar": "--color-yoy-older",
+        "theme": "light",
+        "tonalRamp": [
+          "#090c0a",
+          "#212624",
+          "#3d4440",
+          "#5a645f",
+          "#7b8580",
+          "#9fa7a3",
+          "#c4cbc7",
+          "#ebf0ed"
+        ]
+      },
       "reference-wholesale": {
         "role": "chart",
         "displayName": "Reference Wholesale",
@@ -1489,6 +1506,23 @@
         "displayName": "Yoy Previous (dark)",
         "canonical": "#6f8279",
         "cssVar": "--color-yoy-previous",
+        "theme": "dark",
+        "tonalRamp": [
+          "#070d0a",
+          "#1e2723",
+          "#39453f",
+          "#55665e",
+          "#76877f",
+          "#9aa9a2",
+          "#c1ccc7",
+          "#e8f1ed"
+        ]
+      },
+      "yoy-older-dark": {
+        "role": "chart",
+        "displayName": "Yoy Older (dark)",
+        "canonical": "#465650",
+        "cssVar": "--color-yoy-older",
         "theme": "dark",
         "tonalRamp": [
           "#070d0a",

@@ -9,6 +9,7 @@ import {
   bills,
   documents,
   extractions,
+  householdSizes,
   houses,
   meterReadings,
   supplies,
@@ -114,6 +115,11 @@ export async function snapshotUserRows(db: Db, userId: string) {
       .from(documents)
       .where(eq(documents.userId, userId))
       .orderBy(asc(documents.id)),
+    householdSizes: await db
+      .select()
+      .from(householdSizes)
+      .where(eq(householdSizes.userId, userId))
+      .orderBy(asc(householdSizes.id)),
   };
 }
 
