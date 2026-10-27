@@ -51,8 +51,9 @@ test("l'ultima etichetta dei mesi resta dentro ogni grafico", async ({ page }) =
     const overflows = await page.locator('svg.recharts-surface').evaluateAll((charts) =>
       charts.map((chart) => {
         const right = chart.getBoundingClientRect().right;
+        // Month labels («gen 2026», or «gen» on the year lines) and the years ending those lines.
         const months = [...chart.querySelectorAll('text')].filter((text) =>
-          /^[a-z]{3} \d{4}$/.test(text.textContent?.trim() ?? ''),
+          /^(?:[a-z]{3}(?: \d{4})?|\d{4})$/.test(text.textContent?.trim() ?? ''),
         );
         return months.length === 0
           ? null
@@ -80,6 +81,33 @@ test('con ?periodo=12 ogni grafico ha una tabella di 12 righe', async ({ page })
   await expect(
     page.getByTestId('chart-frame').first().locator('details table tbody tr'),
   ).toHaveCount(24);
+});
+
+test('anno su anno segue il periodo: barre sui 12 mesi, una linea per anno su 24 e su tutto', async ({
+  page,
+}) => {
+  const ids = await seedSupplyIds('seed-a@example.test');
+  const yearOverYear = page.getByTestId('chart-frame').filter({ hasText: 'Anno su anno' });
+
+  await page.goto(`/forniture/${ids.Luce}?periodo=12`);
+  await expect(yearOverYear.getByRole('list', { name: 'Legenda' })).toContainText("quest'anno");
+  await expect(yearOverYear.locator('details table tbody tr')).toHaveCount(12);
+
+  for (const periodo of ['24', 'tutto']) {
+    await page.goto(`/forniture/${ids.Luce}?periodo=${periodo}`);
+    const legend = yearOverYear.getByRole('list', { name: 'Legenda' });
+    await expect(legend).not.toContainText("quest'anno");
+    const years = (await legend.getByRole('listitem').allTextContents()).map((text) => text.trim());
+    expect(years.length).toBeGreaterThanOrEqual(2);
+    for (const year of years) expect(year).toMatch(/^\d{4}$/);
+    // Newest first: the first year is the current one.
+    expect([...years].sort().reverse()).toEqual(years);
+    // January to December, one row per month whatever the range.
+    await expect(yearOverYear.locator('details table tbody tr')).toHaveCount(12);
+    await expect(yearOverYear.locator('details table tbody tr').first()).toContainText('gen');
+  }
+  // The 12-month tiles do not move with the range.
+  await expect(page.getByTestId('kpi-tile')).toHaveCount(2);
 });
 
 test('il gas chiama «Consumo» la serie senza fasce, non «Fascia unica»', async ({ page }) => {

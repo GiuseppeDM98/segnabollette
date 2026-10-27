@@ -15,6 +15,7 @@ import {
   toConsumptionSeries,
   toCostSeries,
   toUnitPriceSeries,
+  toYearLinesSeries,
   toYearOverYearSeries,
 } from '@/lib/charts/series';
 import { getDb, isExtractionConfigured } from '@/lib/container';
@@ -22,7 +23,11 @@ import { monthKeyOf, romeToday } from '@/lib/domain/dates';
 import { consumptionUnitOf, isMetered, readingUnitOf } from '@/lib/domain/types';
 import { KIND_LABELS } from '@/lib/format';
 import { listBills } from '@/lib/services/bills';
-import { getSupplyDashboard, type SupplyDashboard } from '@/lib/services/dashboard';
+import {
+  type DashboardRange,
+  getSupplyDashboard,
+  type SupplyDashboard,
+} from '@/lib/services/dashboard';
 import {
   getDeletionSummary,
   getSupplyDetail,
@@ -35,9 +40,21 @@ import { archiveSupplyAction, deleteSupplyAction, updateSupplyAction } from '../
 const LATEST_READINGS = 10;
 const WATER_NOTE = "Per l'acqua non esiste una serie nazionale di riferimento: nessun confronto.";
 
-/** The charts of one supply, in reading order: consumption, unit price, costs, year over year. */
-function SupplyCharts({ dashboard, today }: { dashboard: SupplyDashboard; today: string }) {
+/**
+ * The charts of one supply, in reading order: consumption, unit price, costs, year over year. Year
+ * over year follows the range: bars over 12 months, one line per calendar year over 24 or all.
+ */
+function SupplyCharts({
+  dashboard,
+  today,
+  range,
+}: {
+  dashboard: SupplyDashboard;
+  today: string;
+  range: DashboardRange;
+}) {
   const { supply, months, yearOverYearMonths, rolling, isComparable } = dashboard;
+  const byYear = range !== '12';
   const endMonth = dashboard.lastBilledMonth ?? monthKeyOf(today);
   const costTotals = {
     last12Cents: rolling.last12.totalCents,
@@ -48,12 +65,19 @@ function SupplyCharts({ dashboard, today }: { dashboard: SupplyDashboard; today:
   if (!isMetered(supply.kind)) {
     return (
       <>
-        <CostsChart points={toCostSeries(months)} mode="flat" />
+        <CostsChart
+          points={toCostSeries(months)}
+          mode="flat"
+          household={dashboard.household?.months}
+        />
         <YearOverYearChart
           consumption={null}
           cost={cost}
           unit={null}
-          totals={{ consumption: null, cost: costTotals }}
+          totals={{ consumption: null, cost: costTotals, people: dashboard.household }}
+          yearLines={
+            byYear ? { consumption: null, cost: toYearLinesSeries(months, 'cost') } : undefined
+          }
         />
       </>
     );
@@ -72,7 +96,11 @@ function SupplyCharts({ dashboard, today }: { dashboard: SupplyDashboard; today:
         references={[]}
         note={supply.kind === 'water' ? WATER_NOTE : undefined}
       />
-      <CostsChart points={toCostSeries(months)} mode="supply" />
+      <CostsChart
+        points={toCostSeries(months)}
+        mode="supply"
+        household={dashboard.household?.months}
+      />
       <YearOverYearChart
         consumption={toYearOverYearSeries(yearOverYearMonths, endMonth, 'consumption')}
         cost={cost}
@@ -84,7 +112,16 @@ function SupplyCharts({ dashboard, today }: { dashboard: SupplyDashboard; today:
             isComparable,
           },
           cost: costTotals,
+          people: dashboard.household,
         }}
+        yearLines={
+          byYear
+            ? {
+                consumption: toYearLinesSeries(months, 'consumption'),
+                cost: toYearLinesSeries(months, 'cost'),
+              }
+            : undefined
+        }
       />
     </>
   );
@@ -188,7 +225,7 @@ export default async function SupplyPage({
             current={range}
             hrefFor={(option) => `/forniture/${supply.id}?periodo=${PERIOD_QUERIES[option]}`}
           />
-          <SupplyCharts dashboard={dashboard} today={today} />
+          <SupplyCharts dashboard={dashboard} today={today} range={range} />
         </div>
       )}
 

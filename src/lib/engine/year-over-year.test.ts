@@ -17,6 +17,7 @@ function supplyMonth(month: string, consumption: number, totalCents: number): Su
     totalCents,
     commodityUnitPriceMicros: null,
     totalUnitPriceMicros: null,
+    isLowConsumption: false,
     feedInKwh: null,
     productionKwh: null,
     selfConsumptionKwh: null,

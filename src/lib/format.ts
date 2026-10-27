@@ -31,6 +31,7 @@ const month = new Intl.DateTimeFormat('it-IT', {
   month: 'short',
   year: 'numeric',
 });
+const monthName = new Intl.DateTimeFormat('it-IT', { timeZone: 'UTC', month: 'short' });
 
 export const UNIT_LABELS: Record<QuantityUnit, string> = {
   kWh: 'kWh',
@@ -85,6 +86,14 @@ export function formatPercentChange(change: number): string {
   return `${percent.format(change).replace('-', '−')} %`;
 }
 
+const people = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
+
+/** The people in a house: «1 persona», «4 persone»; an average «3,4 persone in media». */
+export function formatPeople(count: number): string {
+  if (Number.isInteger(count)) return count === 1 ? '1 persona' : `${count} persone`;
+  return `${people.format(count)} persone in media`;
+}
+
 const usd = new Intl.NumberFormat('it-IT', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -127,6 +136,11 @@ export function formatInstant(ms: number): string {
 
 export function formatMonth(key: MonthKey): string {
   return month.format(new Date(`${key}-01T00:00:00Z`));
+}
+
+/** The month without its year, 1 to 12: «gen». */
+export function formatMonthName(monthNumber: number): string {
+  return monthName.format(new Date(Date.UTC(2000, monthNumber - 1, 1)));
 }
 
 /**

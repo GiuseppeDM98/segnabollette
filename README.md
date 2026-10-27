@@ -26,7 +26,10 @@ self-hosted on Vercel + Turso, installable on your phone as a PWA.
 - **Charts per supply and per house.** Consumption per month (kWh per band, Smc, m³), the price of
   the commodity alone and the total cost per unit, costs by category, year over year — with
   photovoltaic self-consumption when you have panels. Over 12 months, 24 months or everything,
-  each chart with its figures as a table.
+  each chart with its figures as a table; over 24 months or everything, year over year draws one
+  line per calendar year.
+- **People in the house.** Note how many people live in each house and from when: the cost
+  charts mark the changes, and spending and consumption read per person too.
 - **Against the market.** Your commodity price next to the PUN Index GME, the PSV (ARERA's CMEM) and
   ARERA's prices for vulnerable customers. Water has no national reference, and the app says so.
 - **Bulk import.** Choose up to 50 past bills at once (a PDF or a photo each): files already

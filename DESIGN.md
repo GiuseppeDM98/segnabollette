@@ -45,6 +45,7 @@ colors:
   price-total: "#eb6834"
   yoy-current: "#2a78d6"
   yoy-previous: "#8f9a94"
+  yoy-older: "#c4cac6"
   reference-wholesale: "#1baf7a"
   reference-arera: "#eda100"
   bg-dark: "#0f1a17"
@@ -90,6 +91,7 @@ colors:
   price-total-dark: "#d95926"
   yoy-current-dark: "#3987e5"
   yoy-previous-dark: "#6f8279"
+  yoy-older-dark: "#465650"
   reference-wholesale-dark: "#199e70"
   reference-arera-dark: "#c98500"
 typography:
@@ -419,6 +421,7 @@ tokens, never a series colour. Status colours (`stamp`, `danger`) are never seri
 | `--color-price-total` | Unit price line: total per unit | #eb6834 | #d95926 |
 | `--color-yoy-current` | Year over year: current year | #2a78d6 | #3987e5 |
 | `--color-yoy-previous` | Year over year: previous year | #8f9a94 | #6f8279 |
+| `--color-yoy-older` | Year over year by calendar year: every year before the previous one | #c4cac6 | #465650 |
 | `--color-reference-wholesale` | Market reference: wholesale (PUN / PSV), dashed | #1baf7a | #199e70 |
 | `--color-reference-arera` | Market reference: ARERA vulnerable-customer price, dashed | #eda100 | #c98500 |
 
@@ -436,7 +439,14 @@ tokens, never a series colour. Status colours (`stamp`, `danger`) are never seri
 - **Readings not yet billed** are orange, distinct from any band.
 - **Unit price.** Commodity blue, total orange. References: wholesale aqua and ARERA yellow, both
   dashed so they read as benchmarks, not as the owner's own series.
-- **Year over year.** Current blue, previous neutral grey.
+- **Year over year.** Current blue, previous neutral grey. Over 12 months, bars: the last 12
+  billed months beside the same months a year earlier. Over 24 months and the whole history, one
+  line per calendar year on a January–December axis: current year blue, the year before grey,
+  every older year one lighter grey (`yoy-older`; two lighter greys side by side fall under the
+  normal-vision floor, ΔE 7). Each line ends with its year written in ink (`ink-soft`), never in
+  the line colour, so the older years sharing a grey are told apart; `yoy-older` sits below 3:1
+  on the surface (1,6:1 light, 2,1:1 dark), relieved by those labels, the tooltip and the data
+  table. Validated against `yoy-previous`: normal-vision ΔE 15,8 light, 15,1 dark.
 
 **The One Job Rule.** A chart token means one thing. Reusing `cat-commodity` for an unrelated
 series because "blue looks nice" breaks the reading across charts.

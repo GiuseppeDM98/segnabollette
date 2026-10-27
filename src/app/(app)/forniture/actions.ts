@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth/session';
 import { getDb } from '@/lib/container';
+import { romeToday } from '@/lib/domain/dates';
 import { type ActionResult, toActionResult } from '@/lib/errors';
 import { parseInput } from '@/lib/parse-input';
+import { addHouseholdSize, deleteHouseholdSize } from '@/lib/services/household';
 import {
   archiveSupply,
   createHouse,
@@ -17,6 +19,7 @@ import {
 import { deleteDocumentFiles } from '../document-files';
 import {
   ArchivedSchema,
+  HouseholdSizeSchema,
   HouseNameSchema,
   IdSchema,
   SupplyInputSchema,
@@ -72,6 +75,38 @@ export async function deleteHouseAction(houseId: unknown): Promise<ActionResult<
       const user = await requireUser();
       const { documentPathnames } = await deleteHouse(getDb(), user.id, id);
       await deleteDocumentFiles(documentPathnames);
+      return null;
+    }),
+  );
+}
+
+export async function addHouseholdSizeAction(
+  houseId: unknown,
+  input: unknown,
+): Promise<ActionResult<{ householdSizeId: string }>> {
+  return withRevalidation(
+    toActionResult(async () => {
+      const id = parseInput(IdSchema, houseId);
+      const { validFrom, people } = parseInput(HouseholdSizeSchema, input);
+      const user = await requireUser();
+      return addHouseholdSize(
+        getDb(),
+        user.id,
+        { houseId: id, validFrom, people },
+        { today: romeToday(Date.now()) },
+      );
+    }),
+  );
+}
+
+export async function deleteHouseholdSizeAction(
+  householdSizeId: unknown,
+): Promise<ActionResult<null>> {
+  return withRevalidation(
+    toActionResult(async () => {
+      const id = parseInput(IdSchema, householdSizeId);
+      const user = await requireUser();
+      await deleteHouseholdSize(getDb(), user.id, id);
       return null;
     }),
   );

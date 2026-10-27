@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { monthRange } from '@/lib/domain/dates';
 import type { HouseMonth } from '@/lib/engine';
 import { emptyCosts, type SupplyMonth } from '@/lib/engine/types';
-import { formatMonth } from '@/lib/format';
+import { formatMonth, formatMonthName } from '@/lib/format';
 import {
   percentChange,
   toConsumptionSeries,
   toCostSeries,
   toHouseCostSeries,
   toUnitPriceSeries,
+  toYearLinesSeries,
   toYearOverYearSeries,
 } from './series';
 
@@ -26,6 +27,7 @@ function supplyMonth(overrides: Partial<SupplyMonth>): SupplyMonth {
     totalCents: 0,
     commodityUnitPriceMicros: null,
     totalUnitPriceMicros: null,
+    isLowConsumption: false,
     feedInKwh: null,
     productionKwh: null,
     selfConsumptionKwh: null,
@@ -106,6 +108,21 @@ describe('toUnitPriceSeries', () => {
     expect(priced?.total).toBe(0.2365);
     expect(unpriced?.commodity).toBeNull();
     expect(unpriced?.total).toBeNull();
+    expect(priced?.lowConsumptionTotal).toBeNull();
+  });
+
+  it('takes the total of a month of low consumption off the line, keeping the commodity', () => {
+    const [low] = toUnitPriceSeries([
+      supplyMonth({
+        commodityUnitPriceMicros: 500_000,
+        totalUnitPriceMicros: 6_000_000,
+        isLowConsumption: true,
+      }),
+    ]);
+
+    expect(low?.commodity).toBe(0.5);
+    expect(low?.total).toBeNull();
+    expect(low?.lowConsumptionTotal).toBe(6);
   });
 });
 
@@ -195,5 +212,44 @@ describe('percentChange', () => {
   it('gives the change in percent, and null without a base', () => {
     expect(percentChange(110, 100)).toBeCloseTo(10);
     expect(percentChange(5, 0)).toBeNull();
+  });
+});
+
+describe('toYearLinesSeries', () => {
+  it('puts each calendar year on its own January–December line, newest first', () => {
+    const lines = toYearLinesSeries(
+      [
+        supplyMonth({ month: '2024-12', consumption: 40, totalCents: 4000 }),
+        supplyMonth({ month: '2025-01', consumption: 50, totalCents: 5000 }),
+        supplyMonth({ month: '2025-12', consumption: 45, totalCents: 4500 }),
+        supplyMonth({ month: '2026-01', consumption: 55, totalCents: 5500 }),
+        // Readings only, nothing billed: no cost, and no billed consumption either.
+        supplyMonth({ month: '2026-02', billedDays: 0, readingsConsumption: 30 }),
+      ],
+      'consumption',
+    );
+
+    expect(lines.years).toEqual([2026, 2025, 2024]);
+    expect(lines.points).toHaveLength(12);
+    expect(lines.points[0]).toMatchObject({
+      monthNumber: 1,
+      label: formatMonthName(1),
+      values: { 2026: 55, 2025: 50, 2024: null },
+    });
+    expect(lines.points[1]?.values).toEqual({ 2026: null, 2025: null, 2024: null });
+    expect(lines.points[11]?.values).toEqual({ 2026: null, 2025: 45, 2024: 40 });
+  });
+
+  it('gives spending in euros and leaves out a year with nothing billed', () => {
+    const lines = toYearLinesSeries(
+      [
+        supplyMonth({ month: '2025-03', billedDays: 0 }),
+        supplyMonth({ month: '2026-03', totalCents: 2350 }),
+      ],
+      'cost',
+    );
+
+    expect(lines.years).toEqual([2026]);
+    expect(lines.points[2]?.values).toEqual({ 2026: 23.5 });
   });
 });

@@ -5,6 +5,7 @@ import {
   bills,
   documents,
   extractions,
+  householdSizes,
   houses,
   meterReadings,
   supplies,
@@ -27,6 +28,7 @@ export async function deleteAllUserData(db: Db, userId: string): Promise<void> {
     db.update(bills).set({ replacedByBillId: null }).where(eq(bills.userId, userId)),
     db.delete(bills).where(eq(bills.userId, userId)),
     db.delete(supplies).where(eq(supplies.userId, userId)),
+    db.delete(householdSizes).where(eq(householdSizes.userId, userId)),
     db.delete(houses).where(eq(houses.userId, userId)),
   ]);
 }

@@ -345,3 +345,61 @@ describe('buildSupplyMonths — flat fee', () => {
     expect(september.totalUnitPriceMicros).toBeNull();
   });
 });
+
+describe('buildSupplyMonths — low consumption', () => {
+  /** One gas bill a month with the given Smc, each with a fixed share of 1000 cents. */
+  function gasMonth(monthKey: MonthKey, smc: number): EngineBill {
+    const start = `${monthKey}-01`;
+    const end = `${monthKey}-28`;
+    return bill({
+      id: `bill-${monthKey}`,
+      periodStart: start,
+      periodEnd: end,
+      lines: [
+        line({
+          periodStart: start,
+          periodEnd: end,
+          quantity: smc,
+          quantityUnit: 'Smc',
+          amountCents: smc * 50,
+        }),
+        line({ category: 'sale', periodStart: start, periodEnd: end, amountCents: 1000 }),
+      ],
+    });
+  }
+
+  it('marks a month under a quarter of the median billed month, and only that one', () => {
+    // Median of 1, 40, 60, 80 is 50: the threshold is 12,5 Smc.
+    const months = build({
+      kind: 'gas',
+      bills: [
+        gasMonth('2026-06', 80),
+        gasMonth('2026-07', 1),
+        gasMonth('2026-08', 40),
+        gasMonth('2026-09', 60),
+      ],
+      fromMonth: '2026-05',
+      toMonth: '2026-09',
+    });
+
+    expect(month(months, '2026-07').isLowConsumption).toBe(true);
+    expect(month(months, '2026-07').totalUnitPriceMicros).not.toBeNull();
+    for (const key of ['2026-06', '2026-08', '2026-09'] as const) {
+      expect(month(months, key).isLowConsumption).toBe(false);
+    }
+    // A month without bills has no consumption to judge.
+    expect(month(months, '2026-05').isLowConsumption).toBe(false);
+  });
+
+  it('leaves a month just at a quarter of the median unmarked', () => {
+    // Median of 12,5, 50 and 100 is 50: 12,5 is exactly the threshold.
+    const months = build({
+      kind: 'gas',
+      bills: [gasMonth('2026-07', 12.5), gasMonth('2026-08', 50), gasMonth('2026-09', 100)],
+      fromMonth: '2026-07',
+      toMonth: '2026-09',
+    });
+
+    expect(month(months, '2026-07').isLowConsumption).toBe(false);
+  });
+});

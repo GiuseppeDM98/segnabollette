@@ -154,6 +154,11 @@ guards both rules on `z.toJSONSchema(ExtractionSchema)`.
 Other rules of `toBillInput`:
 
 - A quantity of 0 **with** a unit stays `0` («Energia F3 0 kWh» is a fact, not an absence).
+- A band only on electricity: on any other kind (the matched supply's, or the document's) every
+  line's band becomes `null`. The model may write «single» on gas lines; `assertInputFitsSupply`
+  refuses a band off electricity («La fascia vale solo per la luce.») and the form shows no band
+  field there, so the review could not be confirmed (a real gas bill, 2026-10-27). The draft is
+  rebuilt at every open of the review, so an extraction already waiting confirms after the fix.
 - Readings: `actual` → `bill_actual`, `estimated` → `bill_estimated`; a reading without a date is
   dropped with the warning «Lettura senza data scartata: F1 1200».
 - The supply: the preselected one if any (a different kind adds «Il documento sembra una bolletta
@@ -178,7 +183,8 @@ The estimate before the click, `estimateExtractionCost({ pdfPages, photos })`: i
 `pdfPages × 3,000 + photos × 4,800 + 4,000` tokens, output 10,000 tokens. An eight-page PDF:
 `(28,000 × 4 + 10,000 × 20) = 312,000` micro-dollars, shown «0,31 $». The estimate is
 deliberately high: four real bills (2026-10-26) cost about half of it, because their answers took
-1,000–3,300 output tokens instead of 10,000.
+1,000–3,300 output tokens instead of 10,000; a production batch of twelve (2026-10-27, § 13) cost
+2,00 $ against 3,74 $, about 0,17 $ a bill.
 
 Every attempt adds its tokens and cost to the row (`COALESCE(col, 0) + n` in
 `src/lib/db/repositories/extractions.ts`), refusals and truncated answers included: they were paid.
@@ -331,9 +337,20 @@ summary-only one above) and a telephone bill came back with the printed totals; 
 eight-page electricity PDF, and photos from a phone. Never seen on a real bill yet: a block of the
 previous month re-billed with «voce di ricalcolo» lines (the gas example of the prompt is checked
 only on the synthetic `gas-pellicano.pdf`), the warning «Importi stampati IVA inclusa» on a bill
-printed VAT included, and any water bill. The first real bill of each kind — likely in the bulk
-import of past bills — is the check: compare its lines with the printed ones before trusting the
-prompt on it.
+printed VAT included, and any water bill. The first real bill of each kind is the check: compare
+its lines with the printed ones before trusting the prompt on it.
+
+**The production batch (2026-10-27).** Twelve electricity bills came back with their printed
+totals; two of them, printed only as a summary, were read from the summary with the warning, the
+consumption on the commodity line — the second example's first real check, passed. The other past
+bills of the owner were read by hand (the owner's choice, no API) and showed what a future
+extraction of them meets: a supplier that prints gas quantities rounded to whole Smc while it
+computes the amounts on the decimals (the quantity × price check flags those lines; its
+«Consumi» table has the decimals); fixed shares reversed in a «voce di ricalcolo» block printed
+with a positive «28/365» next to a negative amount; a credit bill (negative total) whose credit
+pays the next bills as an `outside` line; and a waste-tax saldo that re-bills the year and
+deducts what the acconto billed, so it **adds** to the acconto («Si somma»), like an electricity
+saldo that deducts its acconto's kWh.
 
 ## 12. The fakes
 
@@ -390,7 +407,8 @@ order of the review.
   batch: an interrupted creation answers as the same `uploading` upload and resumes, § 8).
 - **The estimate before anything runs.** «N bollette pronte · P pagine PDF · F foto · costo
   stimato circa X $» is the sum of what `…/uploaded` answered (§ 5) for each bill; only «Avvia
-  estrazione» starts the queue.
+  estrazione» starts the queue. Estimate against real cost: 12 electricity PDFs of 6–10 pages in
+  production (2026-10-27), «circa 3,74 $» shown, 2,00 $ paid, none failed.
 - **The queue** (`src/lib/import/queue-runner.ts`, pure): `runQueue` runs at most two at a time,
   in the order the files were chosen (a browser keeps six connections per origin, and each run is
   a separate 300 s function). `toQueueItemResult` reads each answer of `…/run`: 200 is the

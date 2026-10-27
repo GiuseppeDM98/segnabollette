@@ -62,6 +62,29 @@ export const houses = sqliteTable(
   (t) => [index('houses_user_id_idx').on(t.userId)],
 );
 
+/**
+ * How many people live in a house, from valid_from until the next row of the same house: typed by
+ * hand, never extracted. The waste tax depends on it, and it turns consumption into per person.
+ */
+export const householdSizes = sqliteTable(
+  'household_sizes',
+  {
+    id: id(),
+    userId: userId(),
+    houseId: text('house_id')
+      .notNull()
+      .references(() => houses.id),
+    validFrom: text('valid_from').$type<IsoDate>().notNull(),
+    people: integer('people').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('household_sizes_user_id_idx').on(t.userId),
+    uniqueIndex('household_sizes_house_valid_from_uq').on(t.houseId, t.validFrom),
+  ],
+);
+
 export const supplies = sqliteTable(
   'supplies',
   {

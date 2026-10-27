@@ -13,6 +13,7 @@ import type { ActionResult } from '@/lib/errors';
 import { KIND_LABELS } from '@/lib/format';
 import { resultMessages } from '@/lib/parse-input';
 import { type DeletionCounts, deletionSummaryText } from './deletion-summary';
+import { HouseholdEditor } from './household-editor';
 
 export interface HousePanelSupply {
   id: string;
@@ -25,7 +26,10 @@ export interface HousePanelSupply {
 
 type Mode = 'idle' | 'rename' | 'new-supply' | 'delete';
 
-/** One house on «Forniture»: its supplies, and rename, delete and new supply in place. */
+/**
+ * One house on «Forniture»: its supplies, rename, delete and new supply in place, and the people
+ * living in it over time.
+ */
 export function HousePanel({
   house,
   houses,
@@ -34,6 +38,7 @@ export function HousePanel({
   renameAction,
   deleteAction,
   createSupplyAction,
+  household,
 }: {
   house: { id: string; name: string };
   houses: Array<{ id: string; name: string }>;
@@ -42,6 +47,7 @@ export function HousePanel({
   renameAction: (input: { name: string }) => Promise<ActionResult<null>>;
   deleteAction: () => Promise<ActionResult<null>>;
   createSupplyAction: (values: SupplyFormValues) => Promise<ActionResult<{ supplyId: string }>>;
+  household: Omit<Parameters<typeof HouseholdEditor>[0], 'houseId'>;
 }) {
   const [mode, setMode] = useState<Mode>('idle');
   const [name, setName] = useState(house.name);
@@ -189,6 +195,8 @@ export function HousePanel({
           Nuova fornitura
         </button>
       )}
+
+      <HouseholdEditor houseId={house.id} {...household} />
 
       <ConfirmDialog
         open={mode === 'delete'}

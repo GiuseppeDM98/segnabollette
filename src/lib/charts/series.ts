@@ -11,7 +11,7 @@
 import { shiftMonth } from '@/lib/domain/dates';
 import type { Band, MonthKey } from '@/lib/domain/types';
 import type { HouseMonth, SupplyMonth } from '@/lib/engine';
-import { formatMonth } from '@/lib/format';
+import { formatMonth, formatMonthName } from '@/lib/format';
 
 const CENTS_PER_EURO = 100;
 const MICROS_PER_EURO = 1_000_000;
@@ -62,22 +62,32 @@ export interface UnitPricePoint {
   label: string;
   /** €/unit, net of VAT */
   commodity: number | null;
-  /** €/unit, VAT included */
+  /** €/unit, VAT included; null in a month of low consumption, which the line skips */
   total: number | null;
+  /** The total per unit of a month of low consumption, for the table only */
+  lowConsumptionTotal: number | null;
 }
 
 function euroPerUnit(micros: number | null): number | null {
   return micros === null ? null : micros / MICROS_PER_EURO;
 }
 
-/** The engine leaves both prices null without a positive consumption: those months stay gaps. */
+/**
+ * The engine leaves both prices null without a positive consumption: those months stay gaps. A
+ * month of low consumption keeps its commodity price, but its total per unit (mostly fixed shares)
+ * leaves the line for the table.
+ */
 export function toUnitPriceSeries(months: SupplyMonth[]): UnitPricePoint[] {
-  return months.map((month) => ({
-    month: month.month,
-    label: formatMonth(month.month),
-    commodity: euroPerUnit(month.commodityUnitPriceMicros),
-    total: euroPerUnit(month.totalUnitPriceMicros),
-  }));
+  return months.map((month) => {
+    const total = euroPerUnit(month.totalUnitPriceMicros);
+    return {
+      month: month.month,
+      label: formatMonth(month.month),
+      commodity: euroPerUnit(month.commodityUnitPriceMicros),
+      total: month.isLowConsumption ? null : total,
+      lowConsumptionTotal: month.isLowConsumption ? total : null,
+    };
+  });
 }
 
 export interface CostPoint {
@@ -166,6 +176,52 @@ export function toYearOverYearSeries(
     });
   }
   return points;
+}
+
+export interface YearLinePoint {
+  /** 1 to 12 */
+  monthNumber: number;
+  label: string;
+  /** The month's value in each year, null where that month has nothing or lies outside the range. */
+  values: Record<number, number | null>;
+}
+
+export interface YearLines {
+  /** Newest first: the first is the current year. Only years with at least one value. */
+  years: number[];
+  /** January to December. */
+  points: YearLinePoint[];
+}
+
+/**
+ * The months shown, one line per calendar year on a January–December axis, for the 24-month and
+ * the whole-history ranges. A year the range only touches keeps just its months inside the range.
+ */
+export function toYearLinesSeries(
+  months: SupplyMonth[],
+  metric: 'consumption' | 'cost',
+): YearLines {
+  const values = new Map<number, Map<number, number>>();
+  for (const month of months) {
+    const value = yearOverYearValue(month, metric);
+    if (value === null) continue;
+    const year = Number(month.month.slice(0, 4));
+    const byMonth = values.get(year) ?? new Map<number, number>();
+    byMonth.set(Number(month.month.slice(5, 7)), value);
+    values.set(year, byMonth);
+  }
+  const years = [...values.keys()].sort((a, b) => b - a);
+  const points: YearLinePoint[] = [];
+  for (let monthNumber = 1; monthNumber <= 12; monthNumber++) {
+    points.push({
+      monthNumber,
+      label: formatMonthName(monthNumber),
+      values: Object.fromEntries(
+        years.map((year) => [year, values.get(year)?.get(monthNumber) ?? null]),
+      ),
+    });
+  }
+  return { years, points };
 }
 
 /** The change from previous to current, in percent; null when previous is 0 (no base). */

@@ -30,6 +30,18 @@ describe('toBillInput', () => {
     expect(input.readings.every((reading) => reading.source === 'bill_actual')).toBe(true);
   });
 
+  it('drops the band from the lines of a supply that is not electricity', () => {
+    const gas = fixtureExtraction('gas-pellicano.pdf');
+    const withBand: Extraction = {
+      ...gas,
+      lines: gas.lines.map((line) => ({ ...line, band: 'single' as const })),
+    };
+
+    const { input } = toBillInput(withBand, context('gas'));
+
+    expect(input.lines.every((line) => line.band === null)).toBe(true);
+  });
+
   it('turns the sentinels back into null', () => {
     const { input } = toBillInput(fixtureExtraction('luce-pellicano.pdf'), context());
 

@@ -17,6 +17,7 @@ import {
   formatDate,
   formatEuro,
   formatMonth,
+  formatPeople,
   formatQuantity,
   formatUnitPrice,
   KIND_LABELS,
@@ -29,9 +30,18 @@ import { dashboardRange, orNotFound, PERIOD_QUERIES, pageUser, queryValue } from
 /** The entry grid: dates, what it is, the amount flush right. The header uses the same columns. */
 const ENTRY_GRID = 'grid grid-cols-[6rem_minmax(0,1fr)_auto] gap-x-3';
 
-/** The two house tiles, over the window ending at the oldest last billed month of its supplies. */
+/**
+ * The house tiles, over the window ending at the oldest last billed month of its supplies; the
+ * spending per person only when the people in the house are known over the whole window.
+ */
 function HouseTiles({ dashboard }: { dashboard: HouseDashboard }) {
-  const { houseEndMonth, rolling, averageMonthlyCents } = dashboard;
+  const { houseEndMonth, rolling, averageMonthlyCents, household } = dashboard;
+  const people = household?.last12 ?? null;
+  const previousPeople = household?.previous12 ?? null;
+  const perPersonChange =
+    rolling?.isComparable && people !== null && previousPeople !== null
+      ? percentChange(rolling.last12 / people, rolling.previous12 / previousPeople)
+      : null;
   return (
     <div className="flex flex-col gap-2">
       {houseEndMonth && (
@@ -42,7 +52,9 @@ function HouseTiles({ dashboard }: { dashboard: HouseDashboard }) {
           </span>
         </p>
       )}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-3 ${rolling && people !== null ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}
+      >
         <KpiTile
           label="Spesa degli ultimi 12 mesi"
           value={rolling ? formatEuro(rolling.last12) : '—'}
@@ -52,6 +64,14 @@ function HouseTiles({ dashboard }: { dashboard: HouseDashboard }) {
           label="Spesa media mensile"
           value={averageMonthlyCents === null ? '—' : formatEuro(averageMonthlyCents)}
         />
+        {rolling && people !== null && (
+          <KpiTile
+            label="Spesa per persona, 12 mesi"
+            value={formatEuro(Math.round(rolling.last12 / people))}
+            change={perPersonChange}
+            note={formatPeople(people)}
+          />
+        )}
       </div>
     </div>
   );
@@ -65,7 +85,11 @@ function LastBilledLine({ supply, month }: { supply: SupplyRow; month: SupplyMon
     const unit = consumptionUnitOf(supply.kind);
     figures = [
       month.consumption === null ? '—' : formatQuantity(month.consumption, unit),
-      month.totalUnitPriceMicros === null ? '—' : formatUnitPrice(month.totalUnitPriceMicros, unit),
+      month.isLowConsumption
+        ? 'consumo basso'
+        : month.totalUnitPriceMicros === null
+          ? '—'
+          : formatUnitPrice(month.totalUnitPriceMicros, unit),
     ];
   } else {
     figures = [formatEuro(month.totalCents)];
@@ -150,7 +174,11 @@ export default async function HomePage({
         />
         <HouseTiles dashboard={dashboard} />
         {hasBilledMonth ? (
-          <CostsChart points={toHouseCostSeries(dashboard.houseMonths)} mode="house" />
+          <CostsChart
+            points={toHouseCostSeries(dashboard.houseMonths)}
+            mode="house"
+            household={dashboard.household?.months}
+          />
         ) : (
           <p className="text-ink-soft">Ancora nessuna bolletta in questa casa</p>
         )}

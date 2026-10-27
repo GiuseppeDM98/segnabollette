@@ -4,6 +4,7 @@ import { users } from '@/lib/db/schema/auth';
 import { createTestDb, createTestUser } from '@/lib/db/testing/create-test-db';
 import { billInput, createHouseWithSupply, snapshotUserRows } from '@/lib/db/testing/fixtures';
 import { confirmBill } from './bills';
+import { addHouseholdSize } from './household';
 import { createSelfReadings } from './readings';
 import { deleteAllUserData } from './user-data';
 
@@ -14,7 +15,13 @@ describe('deleteAllUserData', () => {
     const user = await createTestUser(db);
     const other = await createTestUser(db);
     for (const { id } of [user, other]) {
-      const { supplyId } = await createHouseWithSupply(db, id);
+      const { houseId, supplyId } = await createHouseWithSupply(db, id);
+      await addHouseholdSize(
+        db,
+        id,
+        { houseId, validFrom: '2026-01-10', people: 3 },
+        { today: '2026-10-24' },
+      );
       const readings = [
         {
           readOn: '2026-09-30',
@@ -49,6 +56,7 @@ describe('deleteAllUserData', () => {
       meterReadings: [],
       extractions: [],
       documents: [],
+      householdSizes: [],
     });
     expect(await snapshotUserRows(db, other.id)).toEqual(otherBefore);
   });
