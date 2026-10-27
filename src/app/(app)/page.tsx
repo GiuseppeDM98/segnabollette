@@ -85,11 +85,9 @@ function LastBilledLine({ supply, month }: { supply: SupplyRow; month: SupplyMon
     const unit = consumptionUnitOf(supply.kind);
     figures = [
       month.consumption === null ? '—' : formatQuantity(month.consumption, unit),
-      month.isLowConsumption
-        ? 'consumo basso'
-        : month.totalUnitPriceMicros === null
-          ? '—'
-          : formatUnitPrice(month.totalUnitPriceMicros, unit),
+      month.totalUnitPrice12Micros === null
+        ? '—'
+        : `${formatUnitPrice(month.totalUnitPrice12Micros, unit)} sui 12 mesi`,
     ];
   } else {
     figures = [formatEuro(month.totalCents)];

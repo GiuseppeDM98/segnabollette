@@ -156,16 +156,18 @@ bill) leaves the month estimated: both stamps carry the same date.
   the sum of the categories) is net of it.
 - `commodityUnitPriceMicros` = `costs.commodity` ÷ consumption: the price of the commodity
   alone, **net of VAT**, the one comparable with market references.
-- `totalUnitPriceMicros` = `totalCents` ÷ consumption: everything paid per unit, VAT included.
+- `totalUnitPriceMicros` = `totalCents` ÷ consumption: everything paid per unit in the month
+  alone, VAT included.
 - Both are null without a positive consumption (flat fees, unbilled months).
-- `isLowConsumption`: the month's billed consumption is under `LOW_CONSUMPTION_SHARE` (a quarter)
-  of the **median** of the supply's months with a positive billed consumption, taken over the
-  whole series (so it does not move with the range). Such a month costs mostly its fixed shares:
-  invented example, gas in summer, 2 Smc for 12 € of which 10 € fixed, gives 6 €/Smc against
-  1,20 in a winter month of 80 Smc, a figure that is right and says nothing about the price. The two prices are still computed;
-  the unit-price chart leaves the **total** out of its line (the commodity stays), the table gives
-  it marked «consumo basso», the «Casa» card writes «consumo basso». A month just at a quarter is
-  not low.
+- `totalUnitPrice12Micros` (`addTwelveMonthUnitPrice`): Σ `totalCents` ÷ Σ billed consumption of
+  the **12 months ending at the month** (`UNIT_PRICE_WINDOW_MONTHS`), null unless each of the 12
+  has billed days; built over the whole series, so it does not move with the range. This is the
+  total per unit the charts and the «Casa» card show. A month alone swings with the fixed shares:
+  invented example, gas at 80 Smc a month from October to March and 2 Smc from April to
+  September, 50 cents a Smc plus 10 € fixed a month → September alone 5,50 €/Smc, its 12 months
+  366,00 € ÷ 492 Smc = 0,7439 €/Smc, the figure to set against an offer. A first replacement
+  (2026-10-27, the same day) hid months under a quarter of the median consumption: it left gaps
+  and still showed summer peaks just above the threshold, so the owner chose the 12 months.
 
 Example: 200 kWh for 20,00 €, VAT 2,00 €, fed-in credit −5,00 € → `totalCents` 1700,
 commodity 0,100000 €/kWh, total 0,085000 €/kWh.

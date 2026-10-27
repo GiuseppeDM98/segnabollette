@@ -28,12 +28,12 @@ const PRICE_LINES = [
   { key: 'commodity', label: 'Materia prima (senza IVA)', color: 'var(--color-price-commodity)' },
   {
     key: 'total',
-    label: 'Costo totale per unità (IVA inclusa)',
+    label: 'Costo totale per unità, ultimi 12 mesi (IVA inclusa)',
     color: 'var(--color-price-total)',
   },
 ] as const;
-export const LOW_CONSUMPTION_NOTE = 'Mesi con consumo basso: costo totale per unità non mostrato.';
-const LOW_CONSUMPTION_MARK = 'consumo basso';
+const TOTAL_NOTE =
+  'Costo totale per unità: la spesa dei 12 mesi fino a quel mese divisa per il loro consumo, così le quote fisse non pesano solo sui mesi in cui si consuma poco.';
 const REFERENCE_COLORS = ['var(--color-reference-wholesale)', 'var(--color-reference-arera)'];
 const DOT_RING = { r: 3, strokeWidth: 2, stroke: 'var(--color-surface)' };
 
@@ -46,8 +46,7 @@ function referenceDataKey(reference: ReferenceLine): string {
 /**
  * The two unit prices over time, with market references dashed. A month without consumption has
  * no price and stays a gap (no line drawn across it); the dots keep a lone month visible. A month
- * of low consumption is a gap in the total line only: the table and the tooltip still give it,
- * marked «consumo basso».
+ * the total per unit is over the 12 months ending at each month, drawn once 12 months are billed.
  */
 export function UnitPriceChart({
   points,
@@ -75,12 +74,6 @@ export function UnitPriceChart({
   }));
   const priceText = (value: unknown) =>
     typeof value === 'number' ? formatUnitPriceValue(value, unit) : '—';
-  /** A series' value, or the hidden total of a month of low consumption with its mark. */
-  const cellText = (point: ChartPoint, key: string) =>
-    key === 'total' && point.lowConsumptionTotal !== null
-      ? `${priceText(point.lowConsumptionTotal)} · ${LOW_CONSUMPTION_MARK}`
-      : priceText(point[key]);
-  const hasLowConsumption = points.some((point) => point.lowConsumptionTotal !== null);
 
   const legend: LegendItem[] = [
     ...PRICE_LINES.map((line) => ({ ...line, shape: 'line' as const })),
@@ -98,22 +91,18 @@ export function UnitPriceChart({
   ];
   const rows = data.map((point) => ({
     key: point.month,
-    cells: [point.label, ...allSeries.map((series) => cellText(point, series.key))],
+    cells: [point.label, ...allSeries.map((series) => priceText(point[series.key]))],
   }));
 
   const renderTooltip = ({ active, payload }: TooltipContentProps) => {
     const point = payload?.[0]?.payload as ChartPoint | undefined;
     if (!active || !point) return null;
     const tooltipRows = allSeries
-      .filter(
-        (series) =>
-          typeof point[series.key] === 'number' ||
-          (series.key === 'total' && point.lowConsumptionTotal !== null),
-      )
+      .filter((series) => typeof point[series.key] === 'number')
       .map((series) => ({
         key: series.key,
         label: series.label,
-        value: cellText(point, series.key),
+        value: priceText(point[series.key]),
         color: series.color,
       }));
     if (tooltipRows.length === 0) return null;
@@ -129,15 +118,13 @@ export function UnitPriceChart({
       columns={columns}
       rows={rows}
       notes={
-        note || sources.length > 0 || hasLowConsumption ? (
-          <div className="flex flex-col gap-1 text-xs text-ink-soft">
-            {sources.map((source) => (
-              <p key={source}>{source}</p>
-            ))}
-            {hasLowConsumption && <p>{LOW_CONSUMPTION_NOTE}</p>}
-            {note && <p>{note}</p>}
-          </div>
-        ) : null
+        <div className="flex flex-col gap-1 text-xs text-ink-soft">
+          {sources.map((source) => (
+            <p key={source}>{source}</p>
+          ))}
+          <p>{TOTAL_NOTE}</p>
+          {note && <p>{note}</p>}
+        </div>
       }
     >
       <ResponsiveContainer width="100%" height="100%">

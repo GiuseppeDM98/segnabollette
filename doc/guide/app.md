@@ -303,14 +303,12 @@ print «0,47 €»); quantities `formatQuantity`; the tiles take cents and micro
   «stimato» legend entry; legend entries appear only when the range has them. Gas readings
   converted with C = 1 print «Coefficiente C non noto: i m³ delle autoletture sono convertiti con
   C = 1.».
-- `UnitPriceChart({ points, unit, references?, note? })`: «Materia prima (senza IVA)» and «Costo
-  totale per unità (IVA inclusa)», 2 px lines with ringed dots and gaps where there is no
-  consumption; references dashed (empty until the market references exist); water passes the note
-  «Per l'acqua non esiste una serie nazionale di riferimento: nessun confronto.». A month of low
-  consumption (`isLowConsumption`, `calcoli.md` § 8) is a gap in the total line only: its point
-  carries the value in `lowConsumptionTotal`, the table and the tooltip give it as «6,000000 €/Smc
-  · consumo basso», and the note «Mesi con consumo basso: costo totale per unità non
-  mostrato.» appears when the range has one.
+- `UnitPriceChart({ points, unit, references?, note? })`: «Materia prima (senza IVA)» of each
+  month and «Costo totale per unità, ultimi 12 mesi (IVA inclusa)» (`totalUnitPrice12Micros`,
+  `calcoli.md` § 8: it starts at the twelfth billed month), 2 px lines with ringed dots and gaps
+  where there is no value; references dashed (empty until the market references exist); a note
+  under every unit-price chart says how the total is made, and water adds «Per l'acqua non esiste
+  una serie nazionale di riferimento: nessun confronto.».
 - `CostsChart({ points, mode })`: `supply` the seven categories + «Energia ceduta» (hatched grey,
   below zero); `flat` the total only (no legend: one series); `house` the seven + «Canoni e
   tributi» + «Energia ceduta». Categories that are zero over the whole range are left out. The
@@ -364,7 +362,7 @@ monthKeyOf(today)`, «24 mesi» and «Tutto» the year lines of the months shown
 when comparable), «Spesa media mensile» and, when the people are known over the whole window,
 «Spesa per persona, 12 mesi» (three tiles from `sm`), `CostsChart mode="house"` (or «Ancora nessuna bolletta
 in questa casa» when no supply, archived ones included, has a billed month), then the cards with
-one more line from `lastBilled`: month · consumption · total unit price (or «consumo basso») for metered supplies, month
+one more line from `lastBilled`: month · consumption · total per unit over the 12 months («0,7439 €/Smc sui 12 mesi», «—» before 12 billed months) for metered supplies, month
 · spending for flat fees, «Nessun mese fatturato» without one. No second list under the cards.
 
 At 390 px the Y axes need room: 72 px for quantities («240 kWh»), 80 px for euros, 108 px for unit

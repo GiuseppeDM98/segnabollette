@@ -37,8 +37,8 @@ sees in **README.md**; the v1 plan in **`doc/v1/`** (index `00-INDICE.md`).
   against a 3,74 $ estimate. The owner's other past bills were read by hand and written with
   `confirmBill` after the owner confirmed them in chat (the owner's choice; no files attached).
   The zod override in `pnpm-workspace.yaml` (`doc/guide/dipendenze.md`) held in production.
-  In the same closing session, at the owner's request: the unit price hides the total of a month
-  of low consumption, year over year follows the range (lines per calendar year over 24 months
+  In the same closing session, at the owner's request: the total per unit is drawn over the 12
+  months ending at each month (fix branch `fix/costo-unitario-12-mesi`), year over year follows the range (lines per calendar year over 24 months
   and everything), the people in each house over time (migration 0003, marks on the cost charts,
   per-person tiles), and gas reviews no longer carry a band. **Still open**: a re-billed month and the «IVA inclusa» warning still await a real extraction
   (`doc/guide/estrazione.md` § 11). **Next**: retire spec 07, then spec 08.
