@@ -77,13 +77,13 @@ export interface SupplyMonth {
   totalCents: number;
   /** Commodity cents (net of VAT) per unit. */
   commodityUnitPriceMicros: number | null;
-  /** totalCents per unit. */
+  /** totalCents per unit, of this month alone. */
   totalUnitPriceMicros: number | null;
   /**
-   * Billed consumption under a quarter of the supply's median billed month (LOW_CONSUMPTION_SHARE):
-   * the month's total per unit is then mostly its fixed shares, and the charts leave it out.
+   * The total per unit of the 12 months ending here (UNIT_PRICE_WINDOW_MONTHS): their totalCents
+   * over their billed consumption; null unless all 12 have billed days. The one the charts draw.
    */
-  isLowConsumption: boolean;
+  totalUnitPrice12Micros: number | null;
   feedInKwh: number | null;
   productionKwh: number | null;
   selfConsumptionKwh: number | null;

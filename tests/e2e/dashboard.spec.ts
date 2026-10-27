@@ -118,6 +118,9 @@ test('il gas chiama «Consumo» la serie senza fasce, non «Fascia unica»', asy
   const legend = page.getByTestId('chart-frame').first().getByRole('list', { name: 'Legenda' });
   await expect(legend).toContainText('Consumo');
   await expect(legend).not.toContainText('Fascia unica');
+  // The total per unit is over 12 months: one month of summer gas is mostly fixed shares.
+  const unitPrice = page.getByTestId('chart-frame').filter({ hasText: 'Costo unitario' });
+  await expect(unitPrice.getByRole('list', { name: 'Legenda' })).toContainText('ultimi 12 mesi');
 });
 
 test("l'acqua dice che non ha un riferimento nazionale", async ({ page }) => {

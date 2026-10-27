@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { monthRange } from '@/lib/domain/dates';
+import { unitPriceMicros } from '@/lib/domain/money';
 import type { IsoDate, MonthKey, ReadingRegister, SupplyKind } from '@/lib/domain/types';
 import { buildSupplyMonths } from './supply-months';
 import type { EngineBill, EngineLine, EngineReading, SupplyMonth } from './types';
@@ -346,8 +348,8 @@ describe('buildSupplyMonths — flat fee', () => {
   });
 });
 
-describe('buildSupplyMonths — low consumption', () => {
-  /** One gas bill a month with the given Smc, each with a fixed share of 1000 cents. */
+describe('buildSupplyMonths — total per unit over 12 months', () => {
+  /** One gas bill a month: `smc` at 50 cents each, plus a fixed share of 1000 cents. */
   function gasMonth(monthKey: MonthKey, smc: number): EngineBill {
     const start = `${monthKey}-01`;
     const end = `${monthKey}-28`;
@@ -368,38 +370,27 @@ describe('buildSupplyMonths — low consumption', () => {
     });
   }
 
-  it('marks a month under a quarter of the median billed month, and only that one', () => {
-    // Median of 1, 40, 60, 80 is 50: the threshold is 12,5 Smc.
-    const months = build({
-      kind: 'gas',
-      bills: [
-        gasMonth('2026-06', 80),
-        gasMonth('2026-07', 1),
-        gasMonth('2026-08', 40),
-        gasMonth('2026-09', 60),
-      ],
-      fromMonth: '2026-05',
-      toMonth: '2026-09',
-    });
+  // 80 Smc a month from October to March, 2 Smc from April to September.
+  const YEAR = monthRange('2025-10', '2026-09');
+  const BILLS = YEAR.map((key) =>
+    gasMonth(key, ['04', '05', '06', '07', '08', '09'].includes(key.slice(5)) ? 2 : 80),
+  );
 
-    expect(month(months, '2026-07').isLowConsumption).toBe(true);
-    expect(month(months, '2026-07').totalUnitPriceMicros).not.toBeNull();
-    for (const key of ['2026-06', '2026-08', '2026-09'] as const) {
-      expect(month(months, key).isLowConsumption).toBe(false);
-    }
-    // A month without bills has no consumption to judge.
-    expect(month(months, '2026-05').isLowConsumption).toBe(false);
+  it('divides the spending of the 12 months by their consumption, not one month alone', () => {
+    const months = build({ kind: 'gas', bills: BILLS, fromMonth: '2025-09', toMonth: '2026-10' });
+
+    const september = month(months, '2026-09');
+    // 6 × (4000 + 1000) + 6 × (100 + 1000) cents over 6 × 80 + 6 × 2 Smc.
+    expect(september.totalUnitPrice12Micros).toBe(unitPriceMicros(36_600, 492));
+    // The month alone: 1100 cents over 2 Smc, 5,50 €/Smc.
+    expect(september.totalUnitPriceMicros).toBe(5_500_000);
   });
 
-  it('leaves a month just at a quarter of the median unmarked', () => {
-    // Median of 12,5, 50 and 100 is 50: 12,5 is exactly the threshold.
-    const months = build({
-      kind: 'gas',
-      bills: [gasMonth('2026-07', 12.5), gasMonth('2026-08', 50), gasMonth('2026-09', 100)],
-      fromMonth: '2026-07',
-      toMonth: '2026-09',
-    });
+  it('has no value until 12 months are billed, nor in a month without bills', () => {
+    const months = build({ kind: 'gas', bills: BILLS, fromMonth: '2025-09', toMonth: '2026-10' });
 
-    expect(month(months, '2026-07').isLowConsumption).toBe(false);
+    // August's 12 months start in September 2025, which has no bill.
+    expect(month(months, '2026-08').totalUnitPrice12Micros).toBeNull();
+    expect(month(months, '2026-10').totalUnitPrice12Micros).toBeNull();
   });
 });

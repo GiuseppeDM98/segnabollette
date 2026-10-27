@@ -62,10 +62,8 @@ export interface UnitPricePoint {
   label: string;
   /** €/unit, net of VAT */
   commodity: number | null;
-  /** €/unit, VAT included; null in a month of low consumption, which the line skips */
+  /** €/unit, VAT included, over the 12 months ending at this month */
   total: number | null;
-  /** The total per unit of a month of low consumption, for the table only */
-  lowConsumptionTotal: number | null;
 }
 
 function euroPerUnit(micros: number | null): number | null {
@@ -73,21 +71,16 @@ function euroPerUnit(micros: number | null): number | null {
 }
 
 /**
- * The engine leaves both prices null without a positive consumption: those months stay gaps. A
- * month of low consumption keeps its commodity price, but its total per unit (mostly fixed shares)
- * leaves the line for the table.
+ * The commodity of each month, and the total per unit of the 12 months ending at it (a month alone
+ * swings with the fixed shares). The engine leaves either null without a value: a gap.
  */
 export function toUnitPriceSeries(months: SupplyMonth[]): UnitPricePoint[] {
-  return months.map((month) => {
-    const total = euroPerUnit(month.totalUnitPriceMicros);
-    return {
-      month: month.month,
-      label: formatMonth(month.month),
-      commodity: euroPerUnit(month.commodityUnitPriceMicros),
-      total: month.isLowConsumption ? null : total,
-      lowConsumptionTotal: month.isLowConsumption ? total : null,
-    };
-  });
+  return months.map((month) => ({
+    month: month.month,
+    label: formatMonth(month.month),
+    commodity: euroPerUnit(month.commodityUnitPriceMicros),
+    total: euroPerUnit(month.totalUnitPrice12Micros),
+  }));
 }
 
 export interface CostPoint {

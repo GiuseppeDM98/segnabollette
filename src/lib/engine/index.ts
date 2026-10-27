@@ -8,7 +8,7 @@ export {
   peopleOn,
 } from './household';
 export { dailyFromReadings, pickReadings } from './readings';
-export { buildSupplyMonths, LOW_CONSUMPTION_SHARE } from './supply-months';
+export { buildSupplyMonths, UNIT_PRICE_WINDOW_MONTHS } from './supply-months';
 export type {
   CostBreakdown,
   EngineBill,

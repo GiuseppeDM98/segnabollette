@@ -27,7 +27,7 @@ function supplyMonth(overrides: Partial<SupplyMonth>): SupplyMonth {
     totalCents: 0,
     commodityUnitPriceMicros: null,
     totalUnitPriceMicros: null,
-    isLowConsumption: false,
+    totalUnitPrice12Micros: null,
     feedInKwh: null,
     productionKwh: null,
     selfConsumptionKwh: null,
@@ -100,7 +100,7 @@ describe('toConsumptionSeries', () => {
 describe('toUnitPriceSeries', () => {
   it('turns micro-euros into euros per unit, and keeps a month without price a gap', () => {
     const [priced, unpriced] = toUnitPriceSeries([
-      supplyMonth({ commodityUnitPriceMicros: 100_000, totalUnitPriceMicros: 236_500 }),
+      supplyMonth({ commodityUnitPriceMicros: 100_000, totalUnitPrice12Micros: 236_500 }),
       supplyMonth({ month: '2026-10' }),
     ]);
 
@@ -108,21 +108,19 @@ describe('toUnitPriceSeries', () => {
     expect(priced?.total).toBe(0.2365);
     expect(unpriced?.commodity).toBeNull();
     expect(unpriced?.total).toBeNull();
-    expect(priced?.lowConsumptionTotal).toBeNull();
   });
 
-  it('takes the total of a month of low consumption off the line, keeping the commodity', () => {
-    const [low] = toUnitPriceSeries([
+  it('draws the total of the 12 months, not the total of the month alone', () => {
+    const [summer] = toUnitPriceSeries([
       supplyMonth({
         commodityUnitPriceMicros: 500_000,
         totalUnitPriceMicros: 6_000_000,
-        isLowConsumption: true,
+        totalUnitPrice12Micros: 1_200_000,
       }),
     ]);
 
-    expect(low?.commodity).toBe(0.5);
-    expect(low?.total).toBeNull();
-    expect(low?.lowConsumptionTotal).toBe(6);
+    expect(summer?.commodity).toBe(0.5);
+    expect(summer?.total).toBe(1.2);
   });
 });
 
