@@ -2,6 +2,8 @@ import { type ReactNode, useId } from 'react';
 import { columnHeaderClass, panelClass } from '@/components/ui/styles';
 import { ChartLegend, type LegendItem } from './chart-parts';
 
+const SUMMARY_CLASS = 'flex min-h-11 cursor-pointer items-center font-semibold text-link';
+
 export interface ChartColumn {
   key: string;
   label: string;
@@ -15,9 +17,9 @@ export interface ChartRow {
 
 /**
  * The frame around every chart: title and unit, the plot at a fixed height (a ResponsiveContainer
- * in a parent without one draws nothing), the legend, notes, and the same numbers as a table
- * behind «Vedi i dati» — the accessible alternative, and the place for values the plot only shows
- * on hover.
+ * in a parent without one draws nothing), the legend, notes, an optional «Come si legge» for a
+ * chart whose lines need explaining, and the same numbers as a table behind «Vedi i dati» — the
+ * accessible alternative, and the place for values the plot only shows on hover.
  */
 export function ChartFrame({
   title,
@@ -27,6 +29,7 @@ export function ChartFrame({
   rows,
   controls,
   notes,
+  guide,
   children,
 }: {
   title: string;
@@ -36,6 +39,7 @@ export function ChartFrame({
   rows: ChartRow[];
   controls?: ReactNode;
   notes?: ReactNode;
+  guide?: ReactNode;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -55,10 +59,14 @@ export function ChartFrame({
       <div className="h-60 md:h-80">{children}</div>
       <ChartLegend items={legend} />
       {notes}
+      {guide && (
+        <details>
+          <summary className={SUMMARY_CLASS}>Come si legge</summary>
+          {guide}
+        </details>
+      )}
       <details>
-        <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-link">
-          Vedi i dati
-        </summary>
+        <summary className={SUMMARY_CLASS}>Vedi i dati</summary>
         {/* Why focusable: with many series the table scrolls sideways, and a keyboard must reach it. */}
         {/* biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region needs the focus */}
         <section aria-label={`Dati: ${title}`} tabIndex={0} className="overflow-x-auto">

@@ -306,9 +306,11 @@ print «0,47 €»); quantities `formatQuantity`; the tiles take cents and micro
 - `UnitPriceChart({ points, unit, references?, note? })`: «Materia prima (senza IVA)» of each
   month and «Costo totale per unità, ultimi 12 mesi (IVA inclusa)» (`totalUnitPrice12Micros`,
   `calcoli.md` § 8: it starts at the twelfth billed month), 2 px lines with ringed dots and gaps
-  where there is no value; references dashed (empty until the market references exist); a note
-  under every unit-price chart says how the total is made, and water adds «Per l'acqua non esiste
-  una serie nazionale di riferimento: nessun confronto.».
+  where there is no value; references dashed (empty until the market references exist); water
+  passes the note «Per l'acqua non esiste una serie nazionale di riferimento: nessun confronto.».
+  Its «Come si legge» (`ChartFrame`'s optional `guide`, a `<details>` before «Vedi i dati») defines
+  the two lines beside their swatches and says why they cross: the commodity is one month's price,
+  the total an average of 12.
 - `CostsChart({ points, mode })`: `supply` the seven categories + «Energia ceduta» (hatched grey,
   below zero); `flat` the total only (no legend: one series); `house` the seven + «Canoni e
   tributi» + «Energia ceduta». Categories that are zero over the whole range are left out. The

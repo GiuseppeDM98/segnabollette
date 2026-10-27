@@ -94,6 +94,11 @@ function swatchStyle(item: LegendItem): CSSProperties {
   }
 }
 
+/** A swatch shaped like the mark it stands for, for the legend and the reading guide. */
+export function LegendSwatch({ item }: { item: LegendItem }) {
+  return <span aria-hidden="true" className="inline-block shrink-0" style={swatchStyle(item)} />;
+}
+
 /** The legend under a chart: a swatch shaped like the mark beside a label in ink. */
 export function ChartLegend({ items }: { items: LegendItem[] }) {
   if (items.length === 0) return null;
@@ -101,7 +106,7 @@ export function ChartLegend({ items }: { items: LegendItem[] }) {
     <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-soft" aria-label="Legenda">
       {items.map((item) => (
         <li key={item.key} className="flex items-center gap-1.5">
-          <span aria-hidden="true" className="inline-block shrink-0" style={swatchStyle(item)} />
+          <LegendSwatch item={item} />
           {item.label}
         </li>
       ))}

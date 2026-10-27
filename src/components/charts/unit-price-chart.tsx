@@ -11,6 +11,7 @@ import {
   ChartTooltipBox,
   GRID_STROKE,
   type LegendItem,
+  LegendSwatch,
   LINE_CURSOR,
 } from './chart-parts';
 import {
@@ -32,8 +33,6 @@ const PRICE_LINES = [
     color: 'var(--color-price-total)',
   },
 ] as const;
-const TOTAL_NOTE =
-  'Costo totale per unità: la spesa dei 12 mesi fino a quel mese divisa per il loro consumo, così le quote fisse non pesano solo sui mesi in cui si consuma poco.';
 const REFERENCE_COLORS = ['var(--color-reference-wholesale)', 'var(--color-reference-arera)'];
 const DOT_RING = { r: 3, strokeWidth: 2, stroke: 'var(--color-surface)' };
 
@@ -44,9 +43,55 @@ function referenceDataKey(reference: ReferenceLine): string {
 }
 
 /**
+ * What each line is, and why they cross: the commodity is one month's price, the total an average
+ * of 12, so a fast rise in the commodity runs above the total until the average catches up.
+ */
+function ReadingGuide({ unit }: { unit: ConsumptionUnit }) {
+  const unitLabel = UNIT_LABELS[unit];
+  const [commodity, total] = PRICE_LINES;
+  return (
+    <dl className="flex max-w-prose flex-col gap-3 pt-1 text-sm">
+      <div>
+        <dt className="flex items-center gap-1.5 font-semibold">
+          <LegendSwatch item={{ ...commodity, shape: 'line' }} />
+          Materia prima
+        </dt>
+        <dd className="text-ink-soft">
+          Il prezzo per {unitLabel} della sola materia prima in quel mese, senza IVA, quote fisse,
+          rete, oneri e imposte. Dipende dall'offerta: è il numero da confrontare con le offerte e
+          con i prezzi di mercato.
+        </dd>
+      </div>
+      <div>
+        <dt className="flex items-center gap-1.5 font-semibold">
+          <LegendSwatch item={{ ...total, shape: 'line' }} />
+          Costo totale per unità
+        </dt>
+        <dd className="text-ink-soft">
+          Tutto quello che hai pagato nei 12 mesi fino a quel mese, IVA e quote fisse comprese,
+          diviso per i {unitLabel} consumati negli stessi mesi: quanto ti è costato davvero ogni{' '}
+          {unitLabel}. Così le quote fisse non lo fanno salire nei mesi in cui consumi poco. Parte
+          quando ci sono 12 mesi di bollette.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-semibold">Perché le linee si incrociano</dt>
+        <dd className="text-ink-soft">
+          La materia prima è il prezzo di un mese, il costo totale la media di 12. Di solito il
+          totale sta sopra, perché contiene anche tutto il resto. Quando la materia prima sale in
+          fretta può superarlo per qualche mese, finché la media non la raggiunge; quando scende, il
+          totale resta più alto ancora per un po'.
+        </dd>
+      </div>
+    </dl>
+  );
+}
+
+/**
  * The two unit prices over time, with market references dashed. A month without consumption has
- * no price and stays a gap (no line drawn across it); the dots keep a lone month visible. A month
- * the total per unit is over the 12 months ending at each month, drawn once 12 months are billed.
+ * no price and stays a gap (no line drawn across it); the dots keep a lone month visible. The
+ * total per unit is over the 12 months ending at each month, drawn once 12 months are billed, and
+ * «Come si legge» says so.
  */
 export function UnitPriceChart({
   points,
@@ -118,14 +163,16 @@ export function UnitPriceChart({
       columns={columns}
       rows={rows}
       notes={
-        <div className="flex flex-col gap-1 text-xs text-ink-soft">
-          {sources.map((source) => (
-            <p key={source}>{source}</p>
-          ))}
-          <p>{TOTAL_NOTE}</p>
-          {note && <p>{note}</p>}
-        </div>
+        note || sources.length > 0 ? (
+          <div className="flex flex-col gap-1 text-xs text-ink-soft">
+            {sources.map((source) => (
+              <p key={source}>{source}</p>
+            ))}
+            {note && <p>{note}</p>}
+          </div>
+        ) : null
       }
+      guide={<ReadingGuide unit={unit} />}
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={CHART_MARGIN}>
