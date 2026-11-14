@@ -207,6 +207,7 @@ changes from repo to repo and is the only part to rewrite when the tooling chang
 
 | Purpose | Command | Since |
 | --- | --- | --- |
+| Collaudo count (first gate) | `node ~/.claude/processi-collaudo.mjs` — zero collaudo trees and forgotten services (the Next `dev`/`start` server), or the gates do not start (§ 2) | 2026-11-14 |
 | Types | `pnpm typecheck` (`tsc --noEmit`) | 2026-10-24 |
 | Lint + format | `pnpm lint` (`biome check .`; `pnpm lint:fix` to write) | 2026-10-24 |
 | Unit tests | `pnpm test` (Vitest, `TZ=Europe/Rome` set by `vitest.config.ts`) | 2026-10-24 |
@@ -218,7 +219,7 @@ changes from repo to repo and is the only part to rewrite when the tooling chang
 | Fixtures | `pnpm fixture:bills` (rewrites the synthetic bill PDFs in `tests/fixtures/bills/`) | 2026-10-26 |
 | Icons | `pnpm icons` | 09 |
 
-Gates before a commit, in this order: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`,
+Gates before a commit, in this order: `node ~/.claude/processi-collaudo.mjs` (the collaudo count: zero, or nothing starts), then `pnpm typecheck && pnpm lint && pnpm test && pnpm build`,
 then `pnpm test:e2e` (it builds its own production server: no dev server may run beside it). A red
 one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.0`,
 `corepack enable`); Node ≥ 22.
