@@ -3,17 +3,6 @@ allowBuilds:
   esbuild: true
   sharp: false
   unrs-resolver: false
-minimumReleaseAgeExclude:
-  - "@next/env@16.4.3"
-  - "@next/swc-darwin-arm64@16.4.3"
-  - "@next/swc-darwin-x64@16.4.3"
-  - "@next/swc-linux-arm64-gnu@16.4.3"
-  - "@next/swc-linux-arm64-musl@16.4.3"
-  - "@next/swc-linux-x64-gnu@16.4.3"
-  - "@next/swc-linux-x64-musl@16.4.3"
-  - "@next/swc-win32-arm64-msvc@16.4.3"
-  - "@next/swc-win32-x64-msvc@16.4.3"
-  - next@16.4.3
 # Why: every @vercel/cli-config (under @vercel/blob → @vercel/oidc) pins zod 4.1.11, which has a
 # high-severity advisory fixed in 4.6.6; this forces the zod the app already uses. Remove it when a
 # cli-config ships a fixed zod (doc/guide/dipendenze.md).

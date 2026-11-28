@@ -9,8 +9,10 @@ import { createDb } from '../../src/lib/db/create-db';
 import { bills, houses, supplies } from '../../src/lib/db/schema/app';
 import { users } from '../../src/lib/db/schema/auth';
 
-export const SEED_A_STATE = 'playwright/.auth/seed-a.json';
-export const SEED_B_STATE = 'playwright/.auth/seed-b.json';
+/** Where global-setup parks a seed user's signed-in storage state: the one place that names `.auth/`. */
+export const seedStatePath = (key: string): string => `playwright/.auth/seed-${key}.json`;
+export const SEED_A_STATE = seedStatePath('a');
+export const SEED_B_STATE = seedStatePath('b');
 export const E2E_DB_URL = 'file:e2e.db';
 /** A saved bill's page: /bollette/<id>, not /bollette/nuova?… nor …/modifica. */
 export const SAVED_BILL_URL = /\/bollette\/(?!nuova)[^/?]+$/;

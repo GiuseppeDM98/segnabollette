@@ -1,6 +1,6 @@
 # Dependencies — open advisories
 
-Audit of 2026-10-26 with `pnpm audit` · pnpm 11.22.0 · Next.js 16.4.3.
+Audit of 2026-11-28 with `pnpm audit` · pnpm 11.22.0 · Next.js 16.4.6 (from 16.4.3: seven moderate Next.js advisories, fixed in 16.4.5).
 
 Every session starts with `pnpm audit --json` compared with this table (WORKFLOW.md rule 8): a new
 advisory gets a row with the owner's decision, a fixed one leaves. Upgrades happen in a session of

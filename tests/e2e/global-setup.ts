@@ -6,9 +6,9 @@ import { request } from '@playwright/test';
 import { seedDatabase } from '../../scripts/seed';
 import { SEED_USERS } from '../../scripts/seed-data';
 import { createDb, prepareLocalDatabase } from '../../src/lib/db/create-db';
+import { E2E_DB_URL, seedStatePath } from './helpers';
 
 const OPEN = 'http://localhost:3100';
-const E2E_DB_URL = 'file:e2e.db';
 
 export default async function globalSetup(): Promise<void> {
   const { db, client } = createDb({ url: E2E_DB_URL });
@@ -30,7 +30,7 @@ export default async function globalSetup(): Promise<void> {
         `global-setup: sign-in of ${seedUser.email} failed with ${response.status()}: ${await response.text()}`,
       );
     }
-    await context.storageState({ path: `playwright/.auth/seed-${seedUser.key}.json` });
+    await context.storageState({ path: seedStatePath(seedUser.key) });
     await context.dispose();
   }
 }

@@ -236,6 +236,8 @@ then `pnpm test:e2e` (it builds its own production server: no dev server may run
 one stops the session. pnpm is the package manager (`packageManager: pnpm@11.22.0`,
 `corepack enable`); Node ≥ 22.
 
+Browser tests: workers 2 · isolation one `e2e.db` shared, the seed users read-only, every writing test signs up its own user (paths in `tests/e2e/helpers.ts`) · whole run 2,1 min on 2026-11-28 (81 tests)
+
 ### The isolated environment
 
 - **Database**: `TURSO_DATABASE_URL="file:local.db"` in `.env.local` is the development database;

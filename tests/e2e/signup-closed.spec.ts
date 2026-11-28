@@ -6,6 +6,7 @@ import { expect, test } from '@playwright/test';
 import { eq } from 'drizzle-orm';
 import { createDb } from '../../src/lib/db/create-db';
 import { users } from '../../src/lib/db/schema/auth';
+import { E2E_DB_URL } from './helpers';
 
 const CLOSED = 'http://localhost:3101';
 
@@ -33,7 +34,7 @@ test('il server rifiuta la registrazione anche chiamato direttamente', async ({ 
   });
 
   expect(response.status()).toBeGreaterThanOrEqual(400);
-  const { db, client } = createDb({ url: 'file:e2e.db' });
+  const { db, client } = createDb({ url: E2E_DB_URL });
   const rows = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
   client.close();
   expect(rows).toHaveLength(0);
